@@ -41,18 +41,32 @@ makes the next one faster.
   [Shortlisted Cloud](https://shortlist.id) (opt-in), your own API key, or a
   local model via Ollama / LM Studio — your choice, switchable any time.
 
-## The rules this project lives by
+## Why it works when auto-apply tools don't
 
-1. **You click submit. Always.** No auto-apply, no mass-apply, no bots.
-2. **No CAPTCHAs touched, ever.**
-3. **Nothing invented on your CV.** Tailoring rearranges the truth; it cannot
-   add to it.
-4. **Local by default.** If you turn on an AI provider, the text needed for that
-   task is sent, used for the task, and that's it — Shortlisted Cloud stores
-   nothing, sells nothing, trains on nothing.
+- **Every application is genuinely yours — so it gets read.** Shortlisted preps
+  the form; you review and send. Mass-apply bots are why recruiters auto-reject
+  waves of identical applications (and why those tools' users get accounts
+  flagged). A reviewed application from a real person doesn't land in that
+  pile. Quality at volume beats volume alone.
 
-This code is open source so you don't have to take our word for any of that —
-read it, build it yourself, watch the network tab.
+- **You can defend every line of your CV in the interview.** Tailoring picks
+  which true things to lead with and says them in the job's vocabulary — it
+  can't add skills, employers, or numbers, by construction. So when the
+  interviewer digs into a bullet point, you have a story, because it's yours.
+  Candidates of CV-fabricating tools find out the hard way, in round one.
+
+- **Recruiters meet a real person from the very first click.** Nothing the
+  extension does is something you couldn't do yourself — it's just 10× faster.
+  That's also why it sails past the bot-detection that breaks auto-appliers:
+  there's no bot to detect. A human is right there, clicking submit.
+
+- **Your data works for you, not on you.** Profile, answers, and CVs live on
+  your machine. Turn on an AI provider and the text needed for that task is
+  sent, used for the task, and that's it — Shortlisted Cloud stores nothing,
+  sells nothing, trains on nothing.
+
+All of this is open source, so you don't have to take our word for any of it —
+read the code, build it yourself, watch the network tab.
 
 <!-- TODO before launch: screenshots — wizard, on-page fill panel, fit score -->
 
