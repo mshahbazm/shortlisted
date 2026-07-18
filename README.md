@@ -47,26 +47,19 @@ bun run dev          # CRXJS HMR — reload the extension once, then edits hot-r
   subset, so invented experience is structurally impossible.
 - All data in `chrome.storage.local`. BYOK AI calls go extension → provider directly.
 
-## Shortlisted Cloud (hosted AI backend)
+## Shortlisted Cloud
 
-`server/` is the hosted tier: same capability code as the extension, but the AI
-key lives server-side so users need zero setup. Stores usage counts only —
-never CVs, profiles, or job text (check the schema in `server/src/db.ts`).
+The optional hosted AI tier ("no key needed") lives in a separate private repo
+(`shortlisted-cloud`) that consumes this repo as a git submodule — the agent
+capabilities you see here are exactly what runs there. This extension is fully
+functional without it: bring your own key or a local model, forever free.
+In the extension: Settings → AI → "Shortlisted Cloud" (device token
+auto-provisioned; 10 free credits, license key unlocks Pro).
 
-```bash
-cd server && bun install
-LLM_PROVIDER=anthropic LLM_KEY=sk-ant-… bun run dev     # real AI on :8788
-LLM_PROVIDER=mock bun run dev                            # no key, canned outputs
-```
+## License
 
-Env: `LLM_PROVIDER` (anthropic|openai|mock), `LLM_KEY`, `LLM_MODEL` (default
-claude-sonnet-5, used for the writing pass), `LLM_MINI_MODEL` (cheap model for
-extract/match passes), `FREE_CREDITS` (10), `PRO_CREDITS` (100/mo),
-`LICENSE_KEYS` (comma-separated Pro keys until a merchant-of-record is wired),
-`PORT` (8788), `DB_PATH`.
-
-In the extension: Settings → AI → "Shortlisted Cloud". A device token is
-provisioned automatically; free credits, then a license key unlocks Pro.
+AGPL-3.0 — read it, verify it, fork it; if you offer a modified version as a
+service, your changes must be open too.
 
 ## Layout
 
