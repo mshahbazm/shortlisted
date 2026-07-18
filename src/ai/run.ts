@@ -104,6 +104,7 @@ async function cloudCall<T>(
     const msg =
       (data as { error?: string } | null)?.error ??
       `Shortlisted Cloud error ${res.status}. Is the server running at ${settings.cloudUrl}?`
+    console.error(`[shortlisted] cloud ${method} ${path} → ${res.status}:`, msg)
     throw new Error(msg)
   }
   return data as T
@@ -115,7 +116,8 @@ async function cloudCall<T>(
 async function cloudFetch(settings: Settings, path: string, init?: RequestInit): Promise<Response> {
   try {
     return await fetch(settings.cloudUrl.replace(/\/$/, '') + path, init)
-  } catch {
+  } catch (e) {
+    console.error(`[shortlisted] cloud unreachable: ${settings.cloudUrl}${path}`, e)
     throw new Error(
       `Could not reach Shortlisted Cloud at ${settings.cloudUrl}. ` +
         'Is the server running? Check the Cloud server URL in Settings.',
