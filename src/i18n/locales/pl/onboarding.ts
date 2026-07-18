@@ -10,10 +10,10 @@ export const onboarding: tLocale['onboarding'] = {
   welcomeTitle: 'Czas trafić na shortlistę.',
   welcomeLead:
     'Opowiedz o sobie raz. Potem każda aplikacja wypełni się sama — Ty tylko sprawdzasz i klikasz „wyślij”.',
-  importCvTitle: 'Zaimportuj moje CV',
+  importCvTitle: 'Mam CV',
   importCvSub: 'Prześlij lub wklej CV — AI zamieni je w Twój profil. ~1 minuta.',
-  startBlankTitle: 'Zacznij od zera',
-  startBlankSub: 'Wpisz swoje dane ręcznie w zakładce Profil.',
+  startBlankTitle: 'Nie mam CV',
+  startBlankSub: 'Odpowiedz na kilka szybkich pytań — zbudujemy Twój profil i CV za Ciebie.',
 
   pasteTitle: 'Poproszę Twoje CV.',
   pasteLead: 'Prześlij PDF albo wklej tekst.',

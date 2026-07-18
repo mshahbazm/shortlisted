@@ -9,10 +9,10 @@ export const onboarding: tLocale['onboarding'] = {
   welcomeTitle: 'Vamos a que te preseleccionen.',
   welcomeLead:
     'Cuéntame de ti una sola vez. Después cada solicitud de empleo se rellena sola — tú solo revisas y le das a enviar.',
-  importCvTitle: 'Importar mi CV',
+  importCvTitle: 'Tengo un CV',
   importCvSub: 'Sube o pega tu CV — la IA lo convierte en tu perfil. ~1 minuto.',
-  startBlankTitle: 'Empezar en blanco',
-  startBlankSub: 'Escribe tus datos a mano en la pestaña Perfil.',
+  startBlankTitle: 'No tengo CV',
+  startBlankSub: 'Responde unas preguntas rápidas — crearemos tu perfil y un CV por ti.',
 
   pasteTitle: 'Tu CV, por favor.',
   pasteLead: 'Sube el PDF o pega el texto.',

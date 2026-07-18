@@ -6,10 +6,10 @@ export const onboarding = {
   welcomeTitle: "Let's get you shortlisted.",
   welcomeLead:
     'Tell me about yourself once. Then every job application fills itself — you just review and hit submit.',
-  importCvTitle: 'Import my CV',
+  importCvTitle: 'I have a CV',
   importCvSub: 'Upload or paste your resume — AI turns it into your profile. ~1 minute.',
-  startBlankTitle: 'Start blank',
-  startBlankSub: 'Type your details by hand in the Profile tab.',
+  startBlankTitle: "I don't have a CV",
+  startBlankSub: "Answer a few quick questions — we'll build your profile and a CV for you.",
   welcomeLoginLink: 'Already have an account? Log in',
   loginTitle: 'Welcome back.',
   loginLead: "Enter your email — we'll send you a 6-digit code.",

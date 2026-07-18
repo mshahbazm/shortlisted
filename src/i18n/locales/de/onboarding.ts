@@ -9,10 +9,10 @@ export const onboarding: tLocale['onboarding'] = {
   welcomeTitle: 'Bringen wir dich auf die Shortlist.',
   welcomeLead:
     'Erzähl einmal von dir. Danach füllt sich jede Bewerbung von selbst — du prüfst nur noch und klickst auf Absenden.',
-  importCvTitle: 'Meinen Lebenslauf importieren',
+  importCvTitle: 'Ich habe einen Lebenslauf',
   importCvSub: 'Lade deinen Lebenslauf hoch oder füge ihn ein — die KI macht daraus dein Profil. ~1 Minute.',
-  startBlankTitle: 'Leer starten',
-  startBlankSub: 'Trag deine Daten von Hand im Profil-Tab ein.',
+  startBlankTitle: 'Ich habe keinen Lebenslauf',
+  startBlankSub: 'Beantworte ein paar kurze Fragen — wir erstellen dein Profil und einen Lebenslauf für dich.',
 
   pasteTitle: 'Dein Lebenslauf, bitte.',
   pasteLead: 'Lade das PDF hoch oder füge den Text ein.',

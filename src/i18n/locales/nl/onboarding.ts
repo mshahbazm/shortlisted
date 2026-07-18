@@ -9,10 +9,10 @@ export const onboarding: tLocale['onboarding'] = {
   welcomeTitle: 'Zorgen dat jij op de shortlist komt.',
   welcomeLead:
     'Vertel één keer over jezelf. Daarna vult elke sollicitatie zichzelf in — jij controleert en klikt op versturen.',
-  importCvTitle: 'Mijn cv importeren',
+  importCvTitle: 'Ik heb een cv',
   importCvSub: 'Upload of plak je cv — AI maakt er je profiel van. ~1 minuut.',
-  startBlankTitle: 'Leeg beginnen',
-  startBlankSub: 'Typ je gegevens zelf in het tabblad Profiel.',
+  startBlankTitle: 'Ik heb geen cv',
+  startBlankSub: 'Beantwoord een paar korte vragen — wij bouwen je profiel en een cv voor je.',
 
   pasteTitle: 'Je cv, graag.',
   pasteLead: 'Upload de PDF, of plak de tekst.',
