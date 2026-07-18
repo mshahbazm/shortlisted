@@ -18,10 +18,7 @@ export const onboarding: tLocale['onboarding'] = {
   pasteTitle: 'Poproszę Twoje CV.',
   pasteLead: 'Prześlij PDF albo wklej tekst.',
   uploadPdf: 'Wgraj PDF',
-  uploadAgain: 'Mam ✓ — wybierz inny PDF',
   uploadSubIdle: 'AI go odczyta i zbuduje Twój profil.',
-  charsRead: (n: number) =>
-    `Odczytano ${n.toLocaleString('pl-PL')} ${plural(n, 'znak', 'znaki', 'znaków')}`,
   readingCv: 'Czytam Twoje CV…',
   readingCloudSub: 'Wyciągam Twój profil — to zajmie chwilę.',
   pastePlaceholder: '…albo wklej tutaj tekst swojego CV.',

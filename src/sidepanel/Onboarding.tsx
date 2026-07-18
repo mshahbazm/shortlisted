@@ -200,11 +200,9 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
           <button className="bigchoice" disabled={pdfBusy} onClick={() => fileRef.current?.click()}>
             <div className="bt">
               {pdfBusy && <span className="spin" />}
-              {pdfBusy ? t.readingCv : cvText ? t.uploadAgain : t.uploadPdf}
+              {pdfBusy ? t.readingCv : t.uploadPdf}
             </div>
-            <div className="bs">
-              {pdfBusy ? t.readingCloudSub : cvText ? t.charsRead(cvText.length) : t.uploadSubIdle}
-            </div>
+            <div className="bs">{pdfBusy ? t.readingCloudSub : t.uploadSubIdle}</div>
           </button>
           <input
             ref={fileRef} type="file" accept="application/pdf" style={{ display: 'none' }}
@@ -218,6 +216,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
             placeholder={t.pastePlaceholder}
             value={cvText}
             onChange={(e) => setCvText(e.target.value)}
+            spellCheck={false}
             style={{ minHeight: 110 }}
           />
           {err && <p className="error">{err}</p>}

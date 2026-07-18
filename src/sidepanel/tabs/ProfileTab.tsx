@@ -316,7 +316,7 @@ function ImportBox({
           }
         }}
       />
-      <textarea rows={5} placeholder={t.pasteCvPlaceholder} value={text} onChange={(e) => setText(e.target.value)} />
+      <textarea rows={5} placeholder={t.pasteCvPlaceholder} value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} />
       <div className="spacer" />
       <button
         className="ghost small"
