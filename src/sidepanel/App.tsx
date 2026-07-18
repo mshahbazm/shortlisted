@@ -19,20 +19,26 @@ export function App() {
   const tabLabels: Record<Tab, string> = {
     Apply: t.apply, Profile: t.profile, CVs: t.cvs, Answers: t.answers, Settings: t.settings,
   }
-  // Read the onboarded flag once, directly — the useStore default would
-  // flash the wizard for already-onboarded users while storage loads.
+  // Read settings once for the initial decision (the useStore default would
+  // flash the wizard for signed-in users while storage loads), then stay
+  // subscribed so signing out re-engages the gate.
   const [ready, setReady] = useState(false)
-  const [showWizard, setShowWizard] = useState(false)
+  const [signedIn, setSignedIn] = useState(false)
 
   useEffect(() => {
-    void Promise.all([store.get('settings'), store.get('profile')]).then(([s, p]) => {
-      setShowWizard(!s.onboarded && !p.identity.firstName && p.work.length === 0)
+    void store.get('settings').then((s) => {
+      setSignedIn(Boolean(s.accountEmail))
       setReady(true)
     })
+    return store.onChange('settings', (s) => setSignedIn(Boolean(s?.accountEmail)))
   }, [])
 
   if (!ready) return null
-  if (showWizard) return <Onboarding onDone={() => setShowWizard(false)} />
+  // No local mode: the panel requires an account. The wizard carries both
+  // paths — new users verify their email at the end, returning users log in
+  // from the welcome screen. Either way, verifying flips settings.accountEmail
+  // and the storage subscription above lets them through.
+  if (!signedIn) return <Onboarding onDone={() => undefined} />
 
   return (
     <>
