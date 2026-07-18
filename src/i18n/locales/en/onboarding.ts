@@ -20,6 +20,8 @@ export const onboarding = {
   uploadSubIdle: 'AI reads it and builds your profile.',
   readingCv: 'Reading your CV…',
   readingCloudSub: 'Extracting your profile — takes a moment.',
+  buildingTitle: 'Setting up your profile…',
+  buildingLead: 'Almost there — just a few seconds.',
   pastePlaceholder: '…or paste your resume text here.',
   buildProfile: 'Build my profile',
 

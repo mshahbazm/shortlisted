@@ -302,8 +302,8 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
 
       {step === 'done' && signedUp && (
         <>
-          <h1>{busy && <span className="spin" />}{t.readingCv}</h1>
-          {!err && <p className="lead">{t.readingCloudSub}</p>}
+          <h1>{busy && <span className="spin" />}{t.buildingTitle}</h1>
+          {!err && <p className="lead">{t.buildingLead}</p>}
           {err && (
             <>
               <p className="error">{err}</p>

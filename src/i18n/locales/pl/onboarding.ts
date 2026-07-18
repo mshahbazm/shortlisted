@@ -21,6 +21,8 @@ export const onboarding: tLocale['onboarding'] = {
   uploadSubIdle: 'AI go odczyta i zbuduje Twój profil.',
   readingCv: 'Czytam Twoje CV…',
   readingCloudSub: 'Wyciągam Twój profil — to zajmie chwilę.',
+  buildingTitle: 'Przygotowujemy Twój profil…',
+  buildingLead: 'Prawie gotowe — kilka sekund.',
   pastePlaceholder: '…albo wklej tutaj tekst swojego CV.',
   buildProfile: 'Zbuduj mój profil',
   reviewTitle: 'Zgadza się?',
