@@ -137,7 +137,9 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
             <div className="bt">{t.importCvTitle}</div>
             <div className="bs">{t.importCvSub}</div>
           </button>
-          <button className="bigchoice" onClick={() => go('answers')}>
+          {/* No CV: don't interrogate them yet — sign them in first, the app
+              helps build the profile and CV from inside. */}
+          <button className="bigchoice" onClick={() => go('done')}>
             <div className="bt">{t.startBlankTitle}</div>
             <div className="bs">{t.startBlankSub}</div>
           </button>
@@ -223,7 +225,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
             <button className="primary" disabled={busy || pdfBusy || cvText.trim().length < 50} onClick={runImport}>
               {busy ? t.readingCv : t.buildProfile}
             </button>
-            <button className="link" onClick={() => go('answers')}>{t.skip}</button>
+            <button className="link" onClick={() => go('done')}>{t.skip}</button>
           </div>
         </>
       )}

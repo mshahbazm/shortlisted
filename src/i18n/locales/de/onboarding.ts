@@ -12,7 +12,7 @@ export const onboarding: tLocale['onboarding'] = {
   importCvTitle: 'Ich habe einen Lebenslauf',
   importCvSub: 'Lade deinen Lebenslauf hoch oder füge ihn ein — die KI macht daraus dein Profil. ~1 Minute.',
   startBlankTitle: 'Ich habe keinen Lebenslauf',
-  startBlankSub: 'Beantworte ein paar kurze Fragen — wir erstellen dein Profil und einen Lebenslauf für dich.',
+  startBlankSub: 'Kein Problem — drinnen helfen wir dir, dein Profil und einen sauberen Lebenslauf aufzubauen.',
 
   pasteTitle: 'Dein Lebenslauf, bitte.',
   pasteLead: 'Lade das PDF hoch oder füge den Text ein.',

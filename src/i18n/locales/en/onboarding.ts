@@ -9,7 +9,7 @@ export const onboarding = {
   importCvTitle: 'I have a CV',
   importCvSub: 'Upload or paste your resume — AI turns it into your profile. ~1 minute.',
   startBlankTitle: "I don't have a CV",
-  startBlankSub: "Answer a few quick questions — we'll build your profile and a CV for you.",
+  startBlankSub: "No problem — we'll help you build your profile and a polished CV inside.",
   welcomeLoginLink: 'Already have an account? Log in',
   loginTitle: 'Welcome back.',
   loginLead: "Enter your email — we'll send you a 6-digit code.",

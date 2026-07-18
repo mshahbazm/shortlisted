@@ -12,7 +12,7 @@ export const onboarding: tLocale['onboarding'] = {
   importCvTitle: 'J’ai un CV',
   importCvSub: 'Importez ou collez votre CV — l\'IA en fait votre profil. ~1 minute.',
   startBlankTitle: 'Je n’ai pas de CV',
-  startBlankSub: 'Répondez à quelques questions rapides — nous créons votre profil et un CV pour vous.',
+  startBlankSub: 'Pas de souci — on vous aide à construire votre profil et un CV soigné une fois à l’intérieur.',
 
   pasteTitle: 'Votre CV, s’il vous plaît.',
   pasteLead: 'Importez le PDF, ou collez le texte.',
