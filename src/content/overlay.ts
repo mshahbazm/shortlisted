@@ -59,11 +59,21 @@ const CSS = `
     background: #fff; color: #1f1f1f; font-weight: 600; font-size: 12.5px; cursor: pointer; }
   .scoreBtn:hover { background: #f6f6f4; }
   .scoreBtn:disabled { opacity: 0.5; cursor: default; }
-  .fitRow { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; }
-  .fitRow b { font-size: 26px; }
-  .fitRow small { color: #71717a; }
-  .fitVerdict { font-size: 12.5px; margin-top: 2px; }
-  .fitMeta { color: #71717a; font-size: 11.5px; margin-top: 4px; }
+  .fitTop { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+  .fitCircle {
+    flex: none; width: 50px; height: 50px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px; font-weight: 750; border: 3.5px solid;
+  }
+  .fitCircle small { font-size: 10px; font-weight: 600; color: #a1a1aa; margin-left: 1px; }
+  .fitVerdict { font-size: 12.5px; line-height: 1.45; }
+  .fitSection { margin-top: 12px; }
+  .fitH {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em;
+    text-transform: uppercase; color: #a1a1aa; margin-bottom: 5px;
+  }
+  .fitLi { display: flex; gap: 7px; font-size: 12px; line-height: 1.45; margin: 4px 0; color: #3f3f46; }
+  .fitLi .ic { flex: none; font-weight: 700; }
   .scoring { text-align: center; padding: 22px 0 16px; }
   .scoring .label { font-weight: 600; font-size: 13.5px; }
   .spinner {
@@ -167,30 +177,52 @@ export class Overlay {
       this.body.append(box)
       return
     }
-    const row = document.createElement('div')
-    row.className = 'fitRow'
-    const score = document.createElement('b')
-    score.textContent = String(fit.score)
+    // Color says it before the number does: green = go, brand = maybe, amber = long shot.
+    const color = fit.score >= 7 ? '#16a34a' : fit.score >= 5 ? '#3d11ff' : '#b45309'
+    const top = document.createElement('div')
+    top.className = 'fitTop'
+    const circle = document.createElement('div')
+    circle.className = 'fitCircle'
+    circle.style.borderColor = color
+    circle.style.color = color
+    circle.textContent = String(fit.score)
     const denom = document.createElement('small')
     denom.textContent = this.t.fitDenominator
-    row.append(score, denom)
+    circle.append(denom)
     const verdict = document.createElement('div')
     verdict.className = 'fitVerdict'
     verdict.textContent = fit.verdict
-    box.append(row, verdict)
-    if (fit.strengths.length) {
-      const s = document.createElement('div')
-      s.className = 'fitMeta'
-      s.textContent = this.t.leadWith(fit.strengths.join(' · '))
-      box.append(s)
-    }
-    if (fit.gaps.length) {
-      const g = document.createElement('div')
-      g.className = 'fitMeta'
-      g.textContent = this.t.gaps(fit.gaps.join(', '))
-      box.append(g)
-    }
+    top.append(circle, verdict)
+    box.append(top)
+
+    box.append(
+      this.fitList(this.t.leadWithHeader, fit.strengths, '✓', '#16a34a'),
+      this.fitList(this.t.gapsHeader, fit.gaps, '–', '#b45309'),
+    )
     this.body.append(box)
+  }
+
+  private fitList(header: string, items: string[], icon: string, color: string): HTMLElement {
+    const section = document.createElement('div')
+    if (!items.length) return section
+    section.className = 'fitSection'
+    const h = document.createElement('div')
+    h.className = 'fitH'
+    h.textContent = header
+    section.append(h)
+    for (const item of items) {
+      const li = document.createElement('div')
+      li.className = 'fitLi'
+      const ic = document.createElement('span')
+      ic.className = 'ic'
+      ic.textContent = icon
+      ic.style.color = color
+      const txt = document.createElement('span')
+      txt.textContent = item
+      li.append(ic, txt)
+      section.append(li)
+    }
+    return section
   }
 
   private fitBox(): HTMLElement | null {

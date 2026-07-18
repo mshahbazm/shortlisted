@@ -10,8 +10,8 @@ export const overlay: tLocale['overlay'] = {
   scoringFailed: 'A avaliação falhou.',
   scoringFailedRetry: 'A avaliação falhou — tenta de novo.',
   fitDenominator: '/10 de match',
-  leadWith: (strengths: string) => `Destaca: ${strengths}`,
-  gaps: (gaps: string) => `Lacunas: ${gaps}`,
+  leadWithHeader: 'Destaca isto',
+  gapsHeader: 'Prepara-te para perguntas sobre',
   filledFields: (n: number) =>
     n === 1 ? 'Preenchi 1 campo.' : `Preenchi ${n} campos.`,
   cvAttached: (label: string) => `CV anexado: ${label}`,
