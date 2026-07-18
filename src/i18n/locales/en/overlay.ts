@@ -1,0 +1,29 @@
+// The on-page panel (content script). Keep these short — the panel is 320px.
+
+export const overlay = {
+  fillApplication: 'Fill this application',
+  fillAgain: 'Fill again',
+  idleNote: 'Fills what it knows, asks about the rest. You review everything and click submit yourself.',
+  filling: 'Filling…',
+  howDoIScore: 'How do I score for this job?',
+  scoringFit: 'Scoring your fit…',
+  scoringFailed: 'Scoring failed.',
+  scoringFailedRetry: 'Scoring failed — try again.',
+  fitDenominator: '/10 fit',
+  leadWith: (strengths: string) => `Lead with: ${strengths}`,
+  gaps: (gaps: string) => `Gaps: ${gaps}`,
+  filledFields: (n: number) => `Filled ${n} field${n === 1 ? '' : 's'}.`,
+  cvAttached: (label: string) => `CV attached: ${label}`,
+  attachWhichCv: 'Attach which CV?',
+  swap: 'Swap',
+  attach: 'Attach',
+  fromBankHeader: 'Filled from your answer bank — double-check these:',
+  usedSimilarAnswer: "Used a similar saved answer. Edit on the page if it doesn't fit.",
+  newQuestionsHeader: 'New questions — answer once, reused forever:',
+  skippedDemographic: (n: number) =>
+    `${n} demographic/survey question(s) left for you — those are yours to answer by hand.`,
+  allDone: 'Everything it knows is in. Review the page, then submit when ready.',
+  answerPlaceholder: 'Your answer… (saved to your bank)',
+  saveAndFill: 'Save & fill',
+  saved: 'Saved ✓',
+}

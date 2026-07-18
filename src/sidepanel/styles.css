@@ -160,7 +160,13 @@ a:hover { text-decoration: underline; }
 }
 .wizard h1 { font-size: 21px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 6px; }
 .wizard .lead { color: var(--muted); font-size: 14px; margin: 0 0 26px; line-height: 1.6; }
-.wizard .steps { display: flex; gap: 6px; margin-bottom: 30px; }
+.wizard .steps { display: flex; gap: 6px; margin-bottom: 30px; align-items: center; }
+.wizard .wizback {
+  margin-left: auto; background: none; border: none; padding: 0;
+  color: var(--muted); font-size: 12.5px; font-family: inherit; cursor: pointer;
+}
+.wizard .wizback:hover { color: var(--fg); }
+.wizard .wizback:disabled { opacity: 0.5; cursor: default; }
 .wizard .steps i {
   width: 22px; height: 3px; border-radius: 2px; background: var(--border);
 }
@@ -173,8 +179,18 @@ a:hover { text-decoration: underline; }
   margin-bottom: 10px; cursor: pointer; font-family: inherit;
 }
 .bigchoice:hover { border-color: var(--fg); }
+.bigchoice:disabled { cursor: default; opacity: 0.85; }
+.bigchoice:disabled:hover { border-color: var(--border); }
 .bigchoice .bt { font-weight: 600; font-size: 14px; color: var(--fg); }
 .bigchoice .bs { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+
+.spin {
+  display: inline-block; width: 12px; height: 12px; margin-right: 7px;
+  vertical-align: -1px; border-radius: 50%;
+  border: 2px solid var(--border); border-top-color: var(--fg);
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ---------- home / apply ---------- */
 

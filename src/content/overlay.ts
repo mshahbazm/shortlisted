@@ -3,6 +3,9 @@
 
 import { FormField } from './fields'
 import { FillResult } from './engine'
+import type { tMerged } from '../i18n/content'
+
+export type tOverlayContent = tMerged<'overlay'>
 
 export interface OverlayCallbacks {
   onFill: () => void
@@ -69,9 +72,11 @@ export class Overlay {
   private panel: HTMLDivElement
   private body: HTMLDivElement
   private cb: OverlayCallbacks
+  private t: tOverlayContent
 
-  constructor(atsName: string, cb: OverlayCallbacks) {
+  constructor(atsName: string, t: tOverlayContent, cb: OverlayCallbacks) {
     this.cb = cb
+    this.t = t
     this.host = document.createElement('div')
     this.host.id = 'shortlisted-overlay-host'
     this.root = this.host.attachShadow({ mode: 'closed' })
@@ -104,19 +109,19 @@ export class Overlay {
     this.body.replaceChildren()
     const btn = document.createElement('button')
     btn.className = 'fillBtn'
-    btn.textContent = 'Fill this application'
+    btn.textContent = this.t.fillApplication
     btn.onclick = () => this.cb.onFill()
     this.body.append(btn, this.scoreButton())
     const note = document.createElement('div')
     note.className = 'note'
-    note.textContent = 'Fills what it knows, asks about the rest. You review everything and click submit yourself.'
+    note.textContent = this.t.idleNote
     this.body.append(note)
   }
 
   private scoreButton(): HTMLButtonElement {
     const btn = document.createElement('button')
     btn.className = 'scoreBtn'
-    btn.textContent = 'How do I score for this job?'
+    btn.textContent = this.t.howDoIScore
     btn.onclick = () => this.cb.onScoreFit()
     return btn
   }
@@ -126,7 +131,7 @@ export class Overlay {
     const box = document.createElement('div')
     box.id = 'fitbox'
     box.className = 'fitMeta'
-    box.textContent = 'Scoring your fit…'
+    box.textContent = this.t.scoringFit
     this.body.append(box)
   }
 
@@ -136,7 +141,7 @@ export class Overlay {
     box.id = 'fitbox'
     if (!fit) {
       box.className = 'note'
-      box.textContent = error ?? 'Scoring failed.'
+      box.textContent = error ?? this.t.scoringFailed
       this.body.append(box)
       return
     }
@@ -145,7 +150,7 @@ export class Overlay {
     const score = document.createElement('b')
     score.textContent = String(fit.score)
     const denom = document.createElement('small')
-    denom.textContent = '/10 fit'
+    denom.textContent = this.t.fitDenominator
     row.append(score, denom)
     const verdict = document.createElement('div')
     verdict.className = 'fitVerdict'
@@ -154,13 +159,13 @@ export class Overlay {
     if (fit.strengths.length) {
       const s = document.createElement('div')
       s.className = 'fitMeta'
-      s.textContent = `Lead with: ${fit.strengths.join(' · ')}`
+      s.textContent = this.t.leadWith(fit.strengths.join(' · '))
       box.append(s)
     }
     if (fit.gaps.length) {
       const g = document.createElement('div')
       g.className = 'fitMeta'
-      g.textContent = `Gaps: ${fit.gaps.join(', ')}`
+      g.textContent = this.t.gaps(fit.gaps.join(', '))
       box.append(g)
     }
     this.body.append(box)
@@ -179,13 +184,13 @@ export class Overlay {
 
     const again = document.createElement('button')
     again.className = 'fillBtn'
-    again.textContent = 'Fill again'
+    again.textContent = this.t.fillAgain
     again.onclick = () => this.cb.onFill()
     this.body.append(again, this.scoreButton())
 
     const stat = document.createElement('div')
     stat.className = 'stat'
-    stat.textContent = `Filled ${result.filled.length} field${result.filled.length === 1 ? '' : 's'}.`
+    stat.textContent = this.t.filledFields(result.filled.length)
     this.body.append(stat)
 
     if (result.resumeFields.length > 0 && resumes.length > 0) {
@@ -193,7 +198,7 @@ export class Overlay {
       wrap.className = 'item'
       const q = document.createElement('div')
       q.className = 'q'
-      q.textContent = attachedResumeLabel ? `CV attached: ${attachedResumeLabel}` : 'Attach which CV?'
+      q.textContent = attachedResumeLabel ? this.t.cvAttached(attachedResumeLabel) : this.t.attachWhichCv
       const row = document.createElement('div')
       row.className = 'resumeRow'
       const sel = document.createElement('select')
@@ -206,7 +211,7 @@ export class Overlay {
       }
       const attach = document.createElement('button')
       attach.className = 'save'
-      attach.textContent = attachedResumeLabel ? 'Swap' : 'Attach'
+      attach.textContent = attachedResumeLabel ? this.t.swap : this.t.attach
       attach.onclick = () => this.cb.onPickResume(sel.value)
       row.append(sel, attach)
       wrap.append(q, row)
@@ -217,7 +222,7 @@ export class Overlay {
     if (fromBank.length) {
       const h = document.createElement('div')
       h.className = 'stat'
-      h.textContent = 'Filled from your answer bank — double-check these:'
+      h.textContent = this.t.fromBankHeader
       this.body.append(h)
       for (const f of fromBank) {
         const item = document.createElement('div')
@@ -227,7 +232,7 @@ export class Overlay {
         q.textContent = f.field.label
         const src = document.createElement('div')
         src.className = 'src'
-        src.textContent = `Used a similar saved answer. Edit on the page if it doesn't fit.`
+        src.textContent = this.t.usedSimilarAnswer
         item.append(q, src)
         item.onclick = () => f.field.el.scrollIntoView({ behavior: 'smooth', block: 'center' })
         this.body.append(item)
@@ -237,7 +242,7 @@ export class Overlay {
     if (result.unknown.length) {
       const h = document.createElement('div')
       h.className = 'stat'
-      h.textContent = `New questions — answer once, reused forever:`
+      h.textContent = this.t.newQuestionsHeader
       this.body.append(h)
       for (const field of result.unknown) {
         this.body.append(this.unknownItem(field))
@@ -247,14 +252,14 @@ export class Overlay {
     if (result.skipped.length) {
       const note = document.createElement('div')
       note.className = 'note'
-      note.textContent = `${result.skipped.length} demographic/survey question(s) left for you — those are yours to answer by hand.`
+      note.textContent = this.t.skippedDemographic(result.skipped.length)
       this.body.append(note)
     }
 
     if (!result.unknown.length && !fromBank.length) {
       const note = document.createElement('div')
       note.className = 'note'
-      note.textContent = 'Everything it knows is in. Review the page, then submit when ready.'
+      note.textContent = this.t.allDone
       this.body.append(note)
     }
   }
@@ -268,16 +273,16 @@ export class Overlay {
     q.style.cursor = 'pointer'
     q.onclick = () => field.el.scrollIntoView({ behavior: 'smooth', block: 'center' })
     const ta = document.createElement('textarea')
-    ta.placeholder = 'Your answer… (saved to your bank)'
+    ta.placeholder = this.t.answerPlaceholder
     const save = document.createElement('button')
     save.className = 'save'
-    save.textContent = 'Save & fill'
+    save.textContent = this.t.saveAndFill
     save.onclick = () => {
       const answer = ta.value.trim()
       if (!answer) return
       this.cb.onAnswer(field, answer)
       item.style.opacity = '0.55'
-      save.textContent = 'Saved ✓'
+      save.textContent = this.t.saved
       save.disabled = true
     }
     item.append(q, ta, save)
@@ -288,7 +293,7 @@ export class Overlay {
     this.body.replaceChildren()
     const note = document.createElement('div')
     note.className = 'note'
-    note.textContent = 'Filling…'
+    note.textContent = this.t.filling
     this.body.append(note)
   }
 }

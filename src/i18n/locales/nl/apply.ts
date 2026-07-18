@@ -1,0 +1,35 @@
+import type { tLocale } from '../en'
+
+export const apply: tLocale['apply'] = {
+  inQueue: 'in de wachtrij',
+  applied: 'gesolliciteerd',
+  openNextJob: 'Volgende vacature openen',
+  fillCurrentTab: 'Huidig tabblad invullen',
+  addedJobs: (n: number) => (n === 1 ? '1 vacature toegevoegd.' : `${n} vacatures toegevoegd.`),
+  permissionDeclined: 'Toestemming geweigerd — automatisch invullen werkt nog op de bekende vacaturesites.',
+  lookForPanel: 'Zoek het Shortlisted-paneel op de pagina.',
+  fitChip: (score: number) => `match ${score}/10`,
+  andMore: (n: number) => `…en nog ${n}`,
+  emptyQueue: 'Geen vacatures in de wachtrij. Voeg er hieronder toe ↓',
+
+  addJobsTitle: 'Vacatures toevoegen',
+  addJobsSummary: 'plak links, één per regel',
+  jobLinksLabel: 'Vacaturelinks — één per regel',
+  addToQueue: 'Toevoegen aan wachtrij',
+  checkFitTitle: 'Check mijn match',
+  checkFitSummary: 'plak een vacature, krijg een eerlijke score',
+  scoreMyFit: 'Beoordeel mijn match',
+  scoring: 'Beoordelen…',
+  leadWith: (strengths: string) => `Zet voorop: ${strengths}`,
+  gapsHint: (gaps: string) => `Hiaten (wees op deze vragen voorbereid): ${gaps}`,
+  notShown: 'niet getoond',
+
+  appliedTitle: 'Gesolliciteerd',
+  appliedSummary: (n: number) => (n ? `${n} tot nu toe` : 'nog niets'),
+  submitsLogged: 'Verstuurde sollicitaties komen hier automatisch te staan.',
+  pageLink: 'pagina',
+  statusApplied: 'gesolliciteerd',
+  statusInterviewing: 'in gesprek',
+  statusOffer: 'aanbod',
+  statusRejected: 'afgewezen',
+}

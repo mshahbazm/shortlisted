@@ -1,0 +1,35 @@
+import type { tLocale } from '../en'
+
+export const apply: tLocale['apply'] = {
+  inQueue: 'in coda',
+  applied: 'inviate',
+  openNextJob: 'Apri prossima offerta',
+  fillCurrentTab: 'Compila questa scheda',
+  addedJobs: (n: number) => `Aggiunt${n === 1 ? 'a 1 offerta' : `e ${n} offerte`}.`,
+  permissionDeclined: 'Permesso negato — la compilazione funziona comunque sui siti di lavoro noti.',
+  lookForPanel: 'Cerca il pannello Shortlisted nella pagina.',
+  fitChip: (score: number) => `affinità ${score}/10`,
+  andMore: (n: number) => `…e altre ${n}`,
+  emptyQueue: 'Nessuna offerta in coda. Aggiungine qui sotto ↓',
+
+  addJobsTitle: 'Aggiungi offerte',
+  addJobsSummary: 'incolla i link, uno per riga',
+  jobLinksLabel: 'Link alle offerte — uno per riga',
+  addToQueue: 'Aggiungi alla coda',
+  checkFitTitle: 'Quanto sono adatto?',
+  checkFitSummary: 'incolla un annuncio, ricevi un voto onesto',
+  scoreMyFit: 'Valuta la mia affinità',
+  scoring: 'Valutazione…',
+  leadWith: (strengths: string) => `Punta su: ${strengths}`,
+  gapsHint: (gaps: string) => `Lacune (preparati a queste domande): ${gaps}`,
+  notShown: 'non mostrato',
+
+  appliedTitle: 'Inviate',
+  appliedSummary: (n: number) => (n ? `${n} finora` : 'ancora nessuna'),
+  submitsLogged: 'Gli invii vengono registrati qui in automatico.',
+  pageLink: 'pagina',
+  statusApplied: 'inviata',
+  statusInterviewing: 'colloquio',
+  statusOffer: 'offerta',
+  statusRejected: 'rifiutata',
+}

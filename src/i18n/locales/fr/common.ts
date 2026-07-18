@@ -1,0 +1,22 @@
+import type { tLocale } from '../en'
+
+export const common: tLocale['common'] = {
+  appName: 'Shortlisted',
+  save: 'Enregistrer',
+  cancel: 'Annuler',
+  done: 'Terminé',
+  edit: 'Modifier',
+  remove: 'Supprimer',
+  open: 'Ouvrir',
+  skip: 'Passer',
+  dismiss: 'Ignorer',
+  empty: 'vide',
+  emptyValue: 'Vide',
+  firstName: 'Prénom',
+  lastName: 'Nom',
+  email: 'E-mail',
+  phone: 'Téléphone',
+  location: 'Localisation',
+  pasteJobPlaceholder: 'Collez l’offre d’emploi complète…',
+  fillProfileFirst: 'Remplissez d’abord votre profil.',
+}

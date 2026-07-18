@@ -323,6 +323,8 @@ export interface Settings {
   cloudToken?: string // device token, auto-provisioned on first use
   accountEmail?: string // set once the email OTP verifies; account = data saved server-side
   onboarded?: boolean
+  /** UI language (i18n/locale.ts code). Unset = follow the browser language. */
+  locale?: string
 }
 
 export const defaultSettings = (): Settings => ({

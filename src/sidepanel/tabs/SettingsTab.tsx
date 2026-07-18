@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
 import { Section } from '../components'
 import { StorageShape, storageDefaults } from '../../lib/types'
+import { LOCALES, LOCALE_LABELS, isLocale, useContent } from '../../i18n'
 import { CLOUD_URL_DEFAULT } from '../../lib/config'
 import { CloudUsage, cloudUsage, sendLoginCode, verifyLoginCode } from '../../ai/run'
 import { sendMsg } from '../../lib/messaging'
 
 export function SettingsTab() {
+  const t = useContent('settings')
   const [settings, saveSettings] = useStore('settings')
   const importRef = useRef<HTMLInputElement>(null)
   const [msg, setMsg] = useState('')
@@ -24,9 +26,9 @@ export function SettingsTab() {
       const toSet: Record<string, unknown> = {}
       for (const k of known) if (data[k] !== undefined) toSet[k] = data[k] ?? defaults[k]
       await chrome.storage.local.set(toSet)
-      setMsg('Imported.')
+      setMsg(t.imported)
     } catch (e) {
-      setMsg(`Import failed: ${e instanceof Error ? e.message : e}`)
+      setMsg(t.importFailed(e instanceof Error ? e.message : String(e)))
     }
   }
 
@@ -40,21 +42,35 @@ export function SettingsTab() {
 
   return (
     <div>
-      <h2>Settings</h2>
-      <p className="hint">Filling works with no setup. Your account unlocks AI (CV import, tailoring, fit scores).</p>
+      <h2>{t.title}</h2>
+      <p className="hint">{t.hint}</p>
+
+      <Section title={t.languageTitle} summary={isLocale(s.locale) ? LOCALE_LABELS[s.locale] : t.languageAuto}>
+        <label className="f"><span>{t.languageTitle}</span>
+          <select
+            value={isLocale(s.locale) ? s.locale : 'auto'}
+            onChange={(e) => set({ locale: e.target.value === 'auto' ? undefined : e.target.value })}
+          >
+            <option value="auto">{t.languageAuto}</option>
+            {LOCALES.map((code) => (
+              <option key={code} value={code}>{LOCALE_LABELS[code]}</option>
+            ))}
+          </select>
+        </label>
+      </Section>
 
       <Section
-        title="Account"
-        summary={s.accountEmail ?? 'not signed in'}
+        title={t.accountTitle}
+        summary={s.accountEmail ?? t.notSignedIn}
         defaultOpen={!s.accountEmail}
       >
         <AccountPanel />
       </Section>
 
-      <Section title="Backup" summary="export / import everything">
+      <Section title={t.backupTitle} summary={t.backupSummary}>
         <div className="row">
-          <button className="ghost small" onClick={exportAll}>Export JSON</button>
-          <button className="ghost small" onClick={() => importRef.current?.click()}>Import JSON</button>
+          <button className="ghost small" onClick={exportAll}>{t.exportJson}</button>
+          <button className="ghost small" onClick={() => importRef.current?.click()}>{t.importJson}</button>
         </div>
         <input
           ref={importRef} type="file" accept="application/json" style={{ display: 'none' }}
@@ -68,10 +84,10 @@ export function SettingsTab() {
       </Section>
 
       <Section
-        title="Cloud server"
-        summary={s.cloudUrl?.trim() ? s.cloudUrl : `${CLOUD_URL_DEFAULT} (default)`}
+        title={t.cloudServerTitle}
+        summary={s.cloudUrl?.trim() ? s.cloudUrl : t.cloudServerDefault(CLOUD_URL_DEFAULT)}
       >
-        <label className="f"><span>Custom URL — leave empty for the default ({CLOUD_URL_DEFAULT})</span>
+        <label className="f"><span>{t.cloudServerLabel(CLOUD_URL_DEFAULT)}</span>
           <input
             type="url"
             value={s.cloudUrl}
@@ -80,17 +96,15 @@ export function SettingsTab() {
           /></label>
       </Section>
 
-      <Section title="The rules" summary="no auto-submit, no lies">
-        <p className="microhint">
-          You click submit — always. CAPTCHAs are yours. CV tailoring only rearranges
-          what's true — it cannot invent skills or experience.
-        </p>
+      <Section title={t.rulesTitle} summary={t.rulesSummary}>
+        <p className="microhint">{t.rulesBody}</p>
       </Section>
     </div>
   )
 }
 
 function AccountPanel() {
+  const t = useContent('settings')
   const [settings, saveSettings] = useStore('settings')
   const [usage, setUsage] = useState<CloudUsage | null>(null)
   const [email, setEmail] = useState('')
@@ -121,7 +135,7 @@ function AccountPanel() {
     try {
       await sendLoginCode(settings, email.trim())
       setCodeSent(true)
-      setMsg('Code sent — check your email.')
+      setMsg(t.codeSent)
     } catch (e) {
       setMsg(e instanceof Error ? e.message : String(e))
     } finally {
@@ -139,7 +153,7 @@ function AccountPanel() {
       setCodeSent(false)
       // Load this account's data from the server (or push local data up).
       await sendMsg({ type: 'cloudPull' })
-      setMsg('Signed in.')
+      setMsg(t.signedIn)
     } catch (e) {
       setMsg(e instanceof Error ? e.message : String(e))
     } finally {
@@ -151,31 +165,28 @@ function AccountPanel() {
     <div style={{ marginTop: 4 }}>
       {!signedIn && (
         <>
-          <p className="microhint">
-            Sign in with your email to unlock AI and keep your data in your
-            account. Free: 10 credits. Pro ($9/mo): 100 credits/month.
-          </p>
-          <label className="f"><span>Email</span>
+          <p className="microhint">{t.accountIntro}</p>
+          <label className="f"><span>{t.email}</span>
             <input
-              type="email" placeholder="you@example.com" value={email}
+              type="email" placeholder={t.emailPlaceholder} value={email}
               onChange={(e) => setEmail(e.target.value)}
             /></label>
           {!codeSent ? (
             <button className="primary small" disabled={busy || !email.trim()} onClick={sendCode}>
-              {busy ? 'Sending…' : 'Send me a code'}
+              {busy ? t.sending : t.sendCode}
             </button>
           ) : (
             <>
-              <label className="f"><span>The 6-digit code from your email</span>
+              <label className="f"><span>{t.codeLabel}</span>
                 <input
-                  type="text" inputMode="numeric" placeholder="123456" value={otp}
+                  type="text" inputMode="numeric" placeholder={t.codePlaceholder} value={otp}
                   onChange={(e) => setOtp(e.target.value)} autoFocus
                 /></label>
               <div className="row">
                 <button className="primary small" disabled={busy || !otp.trim()} onClick={verify}>
-                  {busy ? 'Checking…' : 'Sign in'}
+                  {busy ? t.checking : t.signIn}
                 </button>
-                <button className="link small" disabled={busy} onClick={sendCode}>Resend code</button>
+                <button className="link small" disabled={busy} onClick={sendCode}>{t.resendCode}</button>
               </div>
             </>
           )}
@@ -184,21 +195,25 @@ function AccountPanel() {
 
       {signedIn && (
         <>
-          <p className="microhint">Signed in as <b>{settings.accountEmail}</b>.</p>
+          <p className="microhint">{t.signedInAs(settings.accountEmail!)}</p>
           <div className="row" style={{ marginTop: 8 }}>
-            <button className="ghost small" onClick={refresh}>Check my credits</button>
+            <button className="ghost small" onClick={refresh}>{t.checkCredits}</button>
           </div>
           {usage && (
             <p className="microhint">
-              {usage.plan === 'pro' ? 'Pro' : 'Free'} · {usage.creditsUsed} of {usage.creditsLimit} credits used
-              {usage.plan === 'free' ? ' (lifetime)' : ' this month'}
+              {t.usageLine(
+                usage.plan === 'pro' ? t.planPro : t.planFree,
+                usage.creditsUsed,
+                usage.creditsLimit,
+                usage.plan === 'pro',
+              )}
             </p>
           )}
           <button
             className="link small" style={{ marginTop: 6 }}
             onClick={() => saveSettings({ ...settings, accountEmail: undefined, cloudToken: undefined })}
           >
-            Sign out on this device
+            {t.signOutDevice}
           </button>
         </>
       )}

@@ -1,0 +1,22 @@
+// Shared vocabulary — merged into every namespace by useContent/getContent.
+
+export const common = {
+  appName: 'Shortlisted',
+  save: 'Save',
+  cancel: 'Cancel',
+  done: 'Done',
+  edit: 'Edit',
+  remove: 'Remove',
+  open: 'Open',
+  skip: 'Skip',
+  dismiss: 'Dismiss',
+  empty: 'empty',
+  emptyValue: 'Empty',
+  firstName: 'First name',
+  lastName: 'Last name',
+  email: 'Email',
+  phone: 'Phone',
+  location: 'Location',
+  pasteJobPlaceholder: 'Paste the whole job posting…',
+  fillProfileFirst: 'Fill your profile first.',
+}

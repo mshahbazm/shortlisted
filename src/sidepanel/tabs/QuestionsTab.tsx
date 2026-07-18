@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useStore } from '../hooks'
+import { useContent } from '../../i18n'
 import { normalizeQuestion } from '../../lib/questions'
 import { BankAnswer, uid } from '../../lib/types'
 
 export function QuestionsTab() {
+  const t = useContent('questions')
   const [pending, savePending] = useStore('pendingQuestions')
   const [bank, saveBank] = useStore('answerBank')
   const [drafts, setDrafts] = useState<Record<string, string>>({})
@@ -30,8 +32,8 @@ export function QuestionsTab() {
 
   return (
     <div>
-      <h2>Answers</h2>
-      <p className="hint">Answer once, reused on every application that asks — in any phrasing.</p>
+      <h2>{t.title}</h2>
+      <p className="hint">{t.hint}</p>
 
       {pending.length > 0 && (
         <div style={{ marginBottom: 20 }}>
@@ -39,22 +41,22 @@ export function QuestionsTab() {
             <div key={q.id} style={{ padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
               <div className="title" style={{ fontWeight: 550, fontSize: '13.5px' }}>{q.questionRaw}</div>
               <div className="sub" style={{ color: 'var(--muted)', fontSize: 12 }}>
-                <a href={q.jobUrl} target="_blank" rel="noreferrer">from this job</a>
+                <a href={q.jobUrl} target="_blank" rel="noreferrer">{t.fromThisJob}</a>
               </div>
               <div className="spacer" />
               <textarea
                 rows={2}
-                placeholder="Your answer…"
+                placeholder={t.yourAnswerPlaceholder}
                 value={drafts[q.id] ?? ''}
                 onChange={(e) => setDrafts({ ...drafts, [q.id]: e.target.value })}
               />
               <div className="spacer" />
               <div className="row">
                 <button className="primary small" onClick={() => answerPending(q.id)} disabled={!(drafts[q.id] ?? '').trim()}>
-                  Save
+                  {t.save}
                 </button>
                 <button className="link small" onClick={() => savePending(pending.filter((p) => p.id !== q.id))}>
-                  Dismiss
+                  {t.dismiss}
                 </button>
               </div>
             </div>
@@ -63,7 +65,7 @@ export function QuestionsTab() {
       )}
 
       {bank.length === 0 && pending.length === 0 && (
-        <div className="empty">Fill an application — every question I can't answer lands here, once.</div>
+        <div className="empty">{t.emptyState}</div>
       )}
 
       {bank.length > 0 && (
@@ -84,16 +86,16 @@ export function QuestionsTab() {
                         setEditing(null)
                       }}
                     >
-                      Save
+                      {t.save}
                     </button>
-                    <button className="link small" onClick={() => setEditing(null)}>Cancel</button>
+                    <button className="link small" onClick={() => setEditing(null)}>{t.cancel}</button>
                   </div>
                 </>
               ) : (
                 <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
                   <div className="sub" style={{ flex: 1 }}>{a.answer}</div>
-                  <span className="chip">{a.timesUsed}×</span>
-                  <button className="link small" onClick={() => { setEditing(a.id); setEditText(a.answer) }}>Edit</button>
+                  <span className="chip">{t.timesUsed(a.timesUsed)}</span>
+                  <button className="link small" onClick={() => { setEditing(a.id); setEditText(a.answer) }}>{t.edit}</button>
                   <button className="danger small" onClick={() => saveBank(bank.filter((x) => x.id !== a.id))}>✕</button>
                 </div>
               )}

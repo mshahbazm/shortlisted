@@ -1,0 +1,57 @@
+import type { tLocale } from '../en'
+
+export const onboarding: tLocale['onboarding'] = {
+  back: '← Terug',
+  welcomeLoginLink: 'Heb je al een account? Log in',
+  loginTitle: 'Welkom terug.',
+  loginLead: 'Vul je e-mailadres in — we sturen je een 6-cijferige code.',
+
+  welcomeTitle: 'Zorgen dat jij op de shortlist komt.',
+  welcomeLead:
+    'Vertel één keer over jezelf. Daarna vult elke sollicitatie zichzelf in — jij controleert en klikt op versturen.',
+  importCvTitle: 'Mijn cv importeren',
+  importCvSub: 'Upload of plak je cv — AI maakt er je profiel van. ~1 minuut.',
+  startBlankTitle: 'Leeg beginnen',
+  startBlankSub: 'Typ je gegevens zelf in het tabblad Profiel.',
+
+  pasteTitle: 'Je cv, graag.',
+  pasteLead: 'Upload de PDF, of plak de tekst.',
+  uploadPdf: 'PDF uploaden',
+  uploadAgain: 'Gelukt ✓ — kies een andere PDF',
+  uploadSubIdle: 'AI leest hem en bouwt je profiel.',
+  charsRead: (n: number) => `${n.toLocaleString()} tekens gelezen`,
+  readingCv: 'Je cv lezen…',
+  readingCloudSub: 'Je profiel wordt opgebouwd — momentje.',
+  pastePlaceholder: '…of plak hier je cv-tekst.',
+  buildProfile: 'Bouw mijn profiel',
+  reviewTitle: 'Klopt dit zo?',
+  reviewLead: (roles: number, skills: number) =>
+    `${roles} ${roles === 1 ? 'functie' : 'functies'} en ${skills} vaardigheden gevonden. Verbeter wat niet klopt — de rest kun je later aanpassen.`,
+  looksRight: 'Ziet er goed uit',
+
+  answersTitle: 'Drie vragen die elke werkgever stelt.',
+  answersLead: 'Beantwoord ze hier één keer, daarna nooit meer.',
+  salaryLabel: 'Salarisverwachting',
+  salaryPlaceholder: '"€ 4.000/maand" of "In overleg"',
+  noticeLabel: 'Wanneer kun je beginnen?',
+  noticePlaceholder: '"Per direct" of "2 weken opzegtermijn"',
+  sponsorshipLabel: 'Heb je visumsponsoring nodig?',
+  sponsorshipPlaceholder: '"Nee — werk remote als contractor"',
+  continue: 'Doorgaan',
+
+  verifyTitle: 'Nog één ding — bevestig je e-mail.',
+  verifyLead:
+    'Eén code en je bent binnen: je profiel geback-upt, je gratis AI-credits vrij, en je gratis Shortlisted-profielpagina wanneer je die wilt.',
+  emailPlaceholder: 'jij@voorbeeld.nl',
+  sendCode: 'Code versturen',
+  sending: 'Versturen…',
+  inboxTitle: 'Kijk in je inbox.',
+  inboxLead: (email: string) =>
+    `We hebben een 6-cijferige code naar ${email} gestuurd. Typ hem hier en je bent klaar — open daarna een vacature en klik op "Vul deze sollicitatie in".`,
+  codeLabel: 'Code',
+  codePlaceholder: '123456',
+  verifyStart: 'Bevestigen & starten',
+  checking: 'Controleren…',
+  resendCode: 'Code opnieuw sturen',
+  changeEmail: 'E-mail wijzigen',
+}

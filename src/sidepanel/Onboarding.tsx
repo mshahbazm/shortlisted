@@ -1,39 +1,67 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from './hooks'
-import { cloudParseResumePdf, runExtractProfile } from '../ai/run'
-import { masterVariant, renderResumePdf } from '../pdf/resumePdf'
-import { uid } from '../lib/types'
+import { useContent } from '../i18n'
+import { cloudParseResumePdf, runExtractProfile, sendLoginCode, verifyLoginCode } from '../ai/run'
+import { sendMsg } from '../lib/messaging'
 
 // One question per screen. The user hands us everything up front;
 // the app reveals itself afterwards.
 
-type Step = 'welcome' | 'paste' | 'review' | 'answers' | 'done'
+type Step = 'welcome' | 'paste' | 'review' | 'answers' | 'done' | 'login'
 
 export function Onboarding({ onDone }: { onDone: () => void }) {
   const [profile, saveProfile] = useStore('profile')
   const [settings, saveSettings] = useStore('settings')
-  const [resumes, saveResumes] = useStore('resumes')
+  const t = useContent('onboarding')
 
   const [step, setStep] = useState<Step>('welcome')
+  const [trail, setTrail] = useState<Step[]>([])
   const [cvText, setCvText] = useState('')
   const [busy, setBusy] = useState(false)
+  const [pdfBusy, setPdfBusy] = useState(false)
   const [err, setErr] = useState('')
+  const [acctEmail, setAcctEmail] = useState('')
+  const [otp, setOtp] = useState('')
+  const [codeSent, setCodeSent] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // The account screen opens with the email the CV parse found — the user has
+  // already seen it on the review step, so prefilling reads as consistent, not
+  // creepy. Still fully editable (CVs carry stale addresses).
+  useEffect(() => {
+    if (step === 'done' && !acctEmail && profile.identity.email) setAcctEmail(profile.identity.email)
+  }, [step]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const onPdf = async (file: File) => {
     setErr('')
-    setBusy(true)
+    setPdfBusy(true)
     try {
       // Send the PDF itself — the server deep-reads it (OCR for scanned
       // resumes) and returns the finished profile in one step.
       const { profile: extracted } = await cloudParseResumePdf(settings, await file.arrayBuffer())
       saveProfile({ ...extracted, facts: profile.facts })
-      setStep('review')
+      go('review')
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
     } finally {
-      setBusy(false)
+      setPdfBusy(false)
     }
+  }
+
+  // Navigate forward remembering where we came from; back pops the trail.
+  // The flow branches (paste can skip to answers, login sits aside), so back
+  // must follow the path actually taken, not the step order.
+  const go = (s: Step) => {
+    setTrail((prev) => [...prev, step])
+    setStep(s)
+  }
+  const back = () => {
+    setTrail((prev) => {
+      const last = prev[prev.length - 1]
+      if (last) setStep(last)
+      return prev.slice(0, -1)
+    })
+    setErr('')
   }
 
   const STEPS: Step[] = ['welcome', 'paste', 'review', 'answers', 'done']
@@ -44,13 +72,13 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
     onDone()
   }
 
-  const runImport = async () => {
+  const sendCode = async () => {
     setErr('')
     setBusy(true)
     try {
-      const extracted = await runExtractProfile(settings, cvText)
-      saveProfile({ ...extracted, facts: profile.facts })
-      setStep('review')
+      await sendLoginCode(settings, acctEmail)
+      setCodeSent(true)
+      setOtp('')
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
     } finally {
@@ -58,23 +86,33 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
     }
   }
 
-  const generateCv = () => {
+  const verifyCode = async () => {
+    setErr('')
+    setBusy(true)
     try {
-      const variant = masterVariant(profile)
-      const base64 = renderResumePdf(profile, variant)
-      const name = `${profile.identity.firstName}-${profile.identity.lastName}-CV.pdf`.replace(/\s+/g, '-')
-      saveResumes([
-        ...resumes,
-        {
-          id: uid(), label: 'Master CV', fileName: name, tags: ['master'],
-          isDefault: resumes.length === 0, createdAt: Date.now(), source: 'generated',
-          dataBase64: base64, content: variant,
-        },
-      ])
-    } catch {
-      // non-fatal — they can generate later from the CVs tab
+      await verifyLoginCode(settings, acctEmail, otp)
+      // Load the account's data from the server (or push this device's up).
+      void sendMsg({ type: 'cloudPull' })
+      finish()
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(false)
     }
-    finish()
+  }
+
+  const runImport = async () => {
+    setErr('')
+    setBusy(true)
+    try {
+      const extracted = await runExtractProfile(settings, cvText)
+      saveProfile({ ...extracted, facts: profile.facts })
+      go('review')
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(false)
+    }
   }
 
   const setFact = (k: keyof typeof profile.facts, v: string) =>
@@ -85,37 +123,86 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
   return (
     <div className="wizard">
       <div className="steps">
-        {STEPS.slice(0, 4).map((s, i) => <i key={s} className={i <= idx ? 'on' : ''} />)}
+        {STEPS.map((s, i) => <i key={s} className={i <= idx ? 'on' : ''} />)}
+        {trail.length > 0 && (
+          <button className="wizback" onClick={back} disabled={busy || pdfBusy}>{t.back}</button>
+        )}
       </div>
 
       {step === 'welcome' && (
         <>
-          <h1>Let's get you shortlisted.</h1>
-          <p className="lead">
-            Tell me about yourself once. Then every job application fills itself —
-            you just review and hit submit.
-          </p>
-          <button className="bigchoice" onClick={() => setStep('paste')}>
-            <div className="bt">Import my CV</div>
-            <div className="bs">Upload or paste your resume — AI turns it into your profile. ~1 minute.</div>
+          <h1>{t.welcomeTitle}</h1>
+          <p className="lead">{t.welcomeLead}</p>
+          <button className="bigchoice" onClick={() => go('paste')}>
+            <div className="bt">{t.importCvTitle}</div>
+            <div className="bs">{t.importCvSub}</div>
           </button>
-          <button className="bigchoice" onClick={() => setStep('answers')}>
-            <div className="bt">Start blank</div>
-            <div className="bs">Type your details by hand in the Profile tab.</div>
+          <button className="bigchoice" onClick={() => go('answers')}>
+            <div className="bt">{t.startBlankTitle}</div>
+            <div className="bs">{t.startBlankSub}</div>
           </button>
           <div className="actions">
-            <button className="link" onClick={finish}>Skip setup</button>
+            <button className="link" onClick={() => go('login')}>{t.welcomeLoginLink}</button>
+          </div>
+        </>
+      )}
+
+      {step === 'login' && !codeSent && (
+        <>
+          <h1>{t.loginTitle}</h1>
+          <p className="lead">{t.loginLead}</p>
+          <label className="f"><span>{t.email}</span>
+            <input
+              type="email" placeholder={t.emailPlaceholder} value={acctEmail}
+              onChange={(e) => setAcctEmail(e.target.value)} autoFocus
+            /></label>
+          {err && <p className="error">{err}</p>}
+          <div className="actions">
+            <button
+              className="primary"
+              disabled={busy || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(acctEmail.trim())}
+              onClick={sendCode}
+            >
+              {busy ? t.sending : t.sendCode}
+            </button>
+          </div>
+        </>
+      )}
+
+      {step === 'login' && codeSent && (
+        <>
+          <h1>{t.inboxTitle}</h1>
+          <p className="lead">{t.inboxLead(acctEmail.trim())}</p>
+          <label className="f"><span>{t.codeLabel}</span>
+            <input
+              inputMode="numeric" autoComplete="one-time-code" placeholder={t.codePlaceholder}
+              value={otp} onChange={(e) => setOtp(e.target.value)} autoFocus
+            /></label>
+          {err && <p className="error">{err}</p>}
+          <div className="actions">
+            <button className="primary" disabled={busy || otp.trim().length < 4} onClick={verifyCode}>
+              {busy ? t.checking : t.verifyStart}
+            </button>
+            <button className="link" disabled={busy} onClick={sendCode}>{t.resendCode}</button>
+            <button className="link" disabled={busy} onClick={() => { setCodeSent(false); setErr('') }}>
+              {t.changeEmail}
+            </button>
           </div>
         </>
       )}
 
       {step === 'paste' && (
         <>
-          <h1>Your CV, please.</h1>
-          <p className="lead">Upload the PDF, or paste the text.</p>
-          <button className="bigchoice" onClick={() => fileRef.current?.click()}>
-            <div className="bt">{cvText ? 'Got it ✓ — pick a different PDF' : 'Upload PDF'}</div>
-            <div className="bs">{cvText ? `${cvText.length.toLocaleString()} characters read` : 'AI reads it and builds your profile.'}</div>
+          <h1>{t.pasteTitle}</h1>
+          <p className="lead">{t.pasteLead}</p>
+          <button className="bigchoice" disabled={pdfBusy} onClick={() => fileRef.current?.click()}>
+            <div className="bt">
+              {pdfBusy && <span className="spin" />}
+              {pdfBusy ? t.readingCv : cvText ? t.uploadAgain : t.uploadPdf}
+            </div>
+            <div className="bs">
+              {pdfBusy ? t.readingCloudSub : cvText ? t.charsRead(cvText.length) : t.uploadSubIdle}
+            </div>
           </button>
           <input
             ref={fileRef} type="file" accept="application/pdf" style={{ display: 'none' }}
@@ -126,94 +213,115 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
             }}
           />
           <textarea
-            placeholder="…or paste your resume text here."
+            placeholder={t.pastePlaceholder}
             value={cvText}
             onChange={(e) => setCvText(e.target.value)}
             style={{ minHeight: 110 }}
           />
           {err && <p className="error">{err}</p>}
           <div className="actions">
-            <button className="primary" disabled={busy || cvText.trim().length < 50} onClick={runImport}>
-              {busy ? 'Reading your CV…' : 'Build my profile'}
+            <button className="primary" disabled={busy || pdfBusy || cvText.trim().length < 50} onClick={runImport}>
+              {busy ? t.readingCv : t.buildProfile}
             </button>
-            <button className="link" onClick={() => setStep('answers')}>Skip</button>
+            <button className="link" onClick={() => go('answers')}>{t.skip}</button>
           </div>
         </>
       )}
 
       {step === 'review' && (
         <>
-          <h1>Did I get this right?</h1>
-          <p className="lead">
-            Found {profile.work.length} role{profile.work.length === 1 ? '' : 's'} and{' '}
-            {profile.skills.length} skills. Fix anything that's off — the rest is editable later.
-          </p>
+          <h1>{t.reviewTitle}</h1>
+          <p className="lead">{t.reviewLead(profile.work.length, profile.skills.length)}</p>
           <div className="row">
-            <label className="f"><span>First name</span>
+            <label className="f"><span>{t.firstName}</span>
               <input type="text" value={profile.identity.firstName} onChange={(e) => setIdentity('firstName', e.target.value)} /></label>
-            <label className="f"><span>Last name</span>
+            <label className="f"><span>{t.lastName}</span>
               <input type="text" value={profile.identity.lastName} onChange={(e) => setIdentity('lastName', e.target.value)} /></label>
           </div>
-          <label className="f"><span>Email</span>
+          <label className="f"><span>{t.email}</span>
             <input type="text" value={profile.identity.email} onChange={(e) => setIdentity('email', e.target.value)} /></label>
           <div className="row">
-            <label className="f"><span>Phone</span>
+            <label className="f"><span>{t.phone}</span>
               <input type="text" value={profile.identity.phone} onChange={(e) => setIdentity('phone', e.target.value)} /></label>
-            <label className="f"><span>Location</span>
+            <label className="f"><span>{t.location}</span>
               <input type="text" value={profile.identity.location} onChange={(e) => setIdentity('location', e.target.value)} /></label>
           </div>
           <div className="actions">
-            <button className="primary" onClick={() => setStep('answers')}>Looks right</button>
+            <button className="primary" onClick={() => go('answers')}>{t.looksRight}</button>
           </div>
         </>
       )}
 
       {step === 'answers' && (
         <>
-          <h1>Three questions every job asks.</h1>
-          <p className="lead">Answer once here, never again on an application.</p>
-          <label className="f"><span>Salary expectation</span>
+          <h1>{t.answersTitle}</h1>
+          <p className="lead">{t.answersLead}</p>
+          <label className="f"><span>{t.salaryLabel}</span>
             <input
-              type="text" placeholder='"$4,000/month" or "Open to discussion"'
+              type="text" placeholder={t.salaryPlaceholder}
               value={profile.facts.salaryExpectation ?? ''}
               onChange={(e) => setFact('salaryExpectation', e.target.value)} autoFocus
             /></label>
-          <label className="f"><span>When can you start?</span>
+          <label className="f"><span>{t.noticeLabel}</span>
             <input
-              type="text" placeholder='"Immediately" or "2 weeks notice"'
+              type="text" placeholder={t.noticePlaceholder}
               value={profile.facts.noticePeriod ?? ''}
               onChange={(e) => setFact('noticePeriod', e.target.value)}
             /></label>
-          <label className="f"><span>Do you need visa sponsorship?</span>
+          <label className="f"><span>{t.sponsorshipLabel}</span>
             <input
-              type="text" placeholder='"No — remote contractor"'
+              type="text" placeholder={t.sponsorshipPlaceholder}
               value={profile.facts.needsSponsorship ?? ''}
               onChange={(e) => setFact('needsSponsorship', e.target.value)}
             /></label>
           <div className="actions">
-            <button className="primary" onClick={() => setStep('done')}>Continue</button>
-            <button className="link" onClick={() => setStep('done')}>Skip</button>
+            <button className="primary" onClick={() => go('done')}>{t.continue}</button>
+            <button className="link" onClick={() => go('done')}>{t.skip}</button>
           </div>
         </>
       )}
 
-      {step === 'done' && (
+      {step === 'done' && !codeSent && (
         <>
-          <h1>You're set.</h1>
-          <p className="lead">
-            Open any job posting and hit "Fill this application" in the little panel
-            that appears. Anything I can't answer, I'll ask you once — then never again.
-          </p>
-          {profile.work.length > 0 ? (
-            <div className="actions">
-              <button className="primary" onClick={generateCv}>Generate my CV & start</button>
-              <button className="link" onClick={finish}>Start without a CV</button>
-            </div>
-          ) : (
-            <div className="actions">
-              <button className="primary" onClick={finish}>Start</button>
-            </div>
-          )}
+          <h1>{t.verifyTitle}</h1>
+          <p className="lead">{t.verifyLead}</p>
+          <label className="f"><span>{t.email}</span>
+            <input
+              type="email" placeholder={t.emailPlaceholder} value={acctEmail}
+              onChange={(e) => setAcctEmail(e.target.value)} autoFocus
+            /></label>
+          {err && <p className="error">{err}</p>}
+          <div className="actions">
+            <button
+              className="primary"
+              disabled={busy || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(acctEmail.trim())}
+              onClick={sendCode}
+            >
+              {busy ? t.sending : t.sendCode}
+            </button>
+          </div>
+        </>
+      )}
+
+      {step === 'done' && codeSent && (
+        <>
+          <h1>{t.inboxTitle}</h1>
+          <p className="lead">{t.inboxLead(acctEmail.trim())}</p>
+          <label className="f"><span>{t.codeLabel}</span>
+            <input
+              inputMode="numeric" autoComplete="one-time-code" placeholder={t.codePlaceholder}
+              value={otp} onChange={(e) => setOtp(e.target.value)} autoFocus
+            /></label>
+          {err && <p className="error">{err}</p>}
+          <div className="actions">
+            <button className="primary" disabled={busy || otp.trim().length < 4} onClick={verifyCode}>
+              {busy ? t.checking : t.verifyStart}
+            </button>
+            <button className="link" disabled={busy} onClick={sendCode}>{t.resendCode}</button>
+            <button className="link" disabled={busy} onClick={() => { setCodeSent(false); setErr('') }}>
+              {t.changeEmail}
+            </button>
+          </div>
         </>
       )}
     </div>

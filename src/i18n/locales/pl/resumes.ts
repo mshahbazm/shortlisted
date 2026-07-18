@@ -1,0 +1,25 @@
+import type { tLocale } from '../en'
+
+export const resumes: tLocale['resumes'] = {
+  title: 'CV',
+  hint: 'Jeden prawdziwy profil, kilka uczciwych ujęć. Domyślne CV dołącza się automatycznie — dla konkretnej oferty zmienisz je w panelu na stronie.',
+  defaultChip: 'domyślne',
+  pdf: 'PDF',
+  makeDefault: 'Domyślne',
+  emptyList: 'Nie ma jeszcze żadnego CV — dodaj poniżej.',
+
+  tailorTitle: 'Dopasuj do oferty',
+  tailorSummary: 'wklej ogłoszenie, dostań uczciwy wariant',
+  tailorMyCv: 'Dopasuj moje CV',
+  working: 'Pracuję…',
+  fillProfileHint:
+    'Najpierw uzupełnij profil — CV powstaje tylko z tego, co naprawdę w nim jest.',
+  gapsIntro:
+    'Ta oferta wymaga rzeczy, których nie ma w Twoim profilu (NIE trafiły do CV — uczciwość to tu podstawa):',
+
+  addTitle: 'Dodaj CV',
+  addSummary: 'wgraj PDF albo wygeneruj z profilu',
+  uploadPdf: 'Wgraj PDF',
+  generateFromProfile: 'Wygeneruj z profilu',
+  masterCvLabel: 'Główne CV',
+}

@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useStore } from '../hooks'
+import { useContent } from '../../i18n'
 import { Section } from '../components'
 import { QueueItem, jobUrlKey, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
 import { runScoreFit, ScoreFitResult } from '../../ai/run'
 
 export function ApplyTab() {
+  const t = useContent('apply')
   const [queue, saveQueue] = useStore('queue')
   const [apps, saveApps] = useStore('applications')
   const [settings] = useStore('settings')
@@ -25,18 +27,18 @@ export function ApplyTab() {
       .map((url) => ({ id: uid(), url, tags: [], status: 'todo', addedAt: Date.now() }))
     saveQueue([...queue, ...fresh])
     setPasteText('')
-    if (fresh.length) setNotice(`Added ${fresh.length} job${fresh.length === 1 ? '' : 's'}.`)
+    if (fresh.length) setNotice(t.addedJobs(fresh.length))
   }
 
   const fillCurrent = async () => {
     setNotice('')
     const granted = await chrome.permissions.request({ origins: ['<all_urls>'] }).catch(() => false)
     if (!granted) {
-      setNotice('Permission declined — auto-fill still works on the known job sites.')
+      setNotice(t.permissionDeclined)
       return
     }
     const res = await sendMsg<{ ok?: boolean; error?: string }>({ type: 'fillCurrentTab' })
-    setNotice(res?.error ?? 'Look for the Shortlisted panel on the page.')
+    setNotice(res?.error ?? t.lookForPanel)
   }
 
   const setStatus = (id: string, status: QueueItem['status']) =>
@@ -45,8 +47,8 @@ export function ApplyTab() {
   return (
     <div>
       <div className="stat-row">
-        <div className="stat"><b>{todo.length}</b><span>in queue</span></div>
-        <div className="stat"><b>{apps.length}</b><span>applied</span></div>
+        <div className="stat"><b>{todo.length}</b><span>{t.inQueue}</span></div>
+        <div className="stat"><b>{apps.length}</b><span>{t.applied}</span></div>
       </div>
 
       <div className="row" style={{ marginBottom: 16 }}>
@@ -55,9 +57,9 @@ export function ApplyTab() {
           disabled={todo.length === 0}
           onClick={() => todo[0] && void chrome.tabs.create({ url: todo[0].url })}
         >
-          Open next job
+          {t.openNextJob}
         </button>
-        <button className="ghost" onClick={fillCurrent}>Fill current tab</button>
+        <button className="ghost" onClick={fillCurrent}>{t.fillCurrentTab}</button>
       </div>
       {notice && <p className="progress">{notice}</p>}
 
@@ -76,41 +78,41 @@ export function ApplyTab() {
                       style={{ marginLeft: 6 }}
                       title={fitScores[jobUrlKey(q.url)].verdict}
                     >
-                      fit {fitScores[jobUrlKey(q.url)].score}/10
+                      {t.fitChip(fitScores[jobUrlKey(q.url)].score)}
                     </span>
                   )}
                 </div>
               </div>
-              <button className="small ghost" onClick={() => void chrome.tabs.create({ url: q.url })}>Open</button>
-              <button className="small link" onClick={() => setStatus(q.id, 'skipped')}>Skip</button>
+              <button className="small ghost" onClick={() => void chrome.tabs.create({ url: q.url })}>{t.open}</button>
+              <button className="small link" onClick={() => setStatus(q.id, 'skipped')}>{t.skip}</button>
             </div>
           ))}
-          {todo.length > 12 && <div className="list-item"><span className="sub">…and {todo.length - 12} more</span></div>}
+          {todo.length > 12 && <div className="list-item"><span className="sub">{t.andMore(todo.length - 12)}</span></div>}
         </div>
       )}
-      {todo.length === 0 && <div className="empty">No jobs queued. Add some below ↓</div>}
+      {todo.length === 0 && <div className="empty">{t.emptyQueue}</div>}
 
-      <Section title="Add jobs" summary="paste links, one per line">
-        <label className="f"><span>Job links — one per line</span>
+      <Section title={t.addJobsTitle} summary={t.addJobsSummary}>
+        <label className="f"><span>{t.jobLinksLabel}</span>
           <textarea
             rows={3}
             placeholder={'https://jobs.lever.co/…\nhttps://boards.greenhouse.io/…'}
             value={pasteText}
             onChange={(e) => setPasteText(e.target.value)}
           /></label>
-        <button className="ghost small" onClick={addPasted} disabled={!pasteText.trim()}>Add to queue</button>
+        <button className="ghost small" onClick={addPasted} disabled={!pasteText.trim()}>{t.addToQueue}</button>
       </Section>
 
-      <Section title="Check my fit" summary="paste a job, get an honest score">
+      <Section title={t.checkFitTitle} summary={t.checkFitSummary}>
         <FitChecker
           disabled={profile.work.length === 0}
           run={(jobText, onStep) => runScoreFit(settings, profile, jobText, onStep)}
         />
-        {profile.work.length === 0 && <p className="microhint">Fill your profile first.</p>}
+        {profile.work.length === 0 && <p className="microhint">{t.fillProfileFirst}</p>}
       </Section>
 
-      <Section title="Applied" summary={apps.length ? `${apps.length} so far` : 'nothing yet'}>
-        {apps.length === 0 && <div className="empty">Submits get logged here automatically.</div>}
+      <Section title={t.appliedTitle} summary={t.appliedSummary(apps.length)}>
+        {apps.length === 0 && <div className="empty">{t.submitsLogged}</div>}
         {apps.length > 0 && (
           <div className="list">
             {[...apps].sort((a, b) => b.appliedAt - a.appliedAt).slice(0, 20).map((a) => (
@@ -119,7 +121,7 @@ export function ApplyTab() {
                   <div className="title">{a.title || a.company}</div>
                   <div className="sub">
                     {a.company} · {new Date(a.appliedAt).toLocaleDateString()} ·{' '}
-                    <a href={a.jobUrl} target="_blank" rel="noreferrer">page</a>
+                    <a href={a.jobUrl} target="_blank" rel="noreferrer">{t.pageLink}</a>
                   </div>
                 </div>
                 <select
@@ -130,7 +132,9 @@ export function ApplyTab() {
                   }
                 >
                   {(['applied', 'interviewing', 'offer', 'rejected'] as const).map((s) => (
-                    <option key={s} value={s}>{s}</option>
+                    <option key={s} value={s}>
+                      {s === 'applied' ? t.statusApplied : s === 'interviewing' ? t.statusInterviewing : s === 'offer' ? t.statusOffer : t.statusRejected}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -149,6 +153,7 @@ function FitChecker({
   disabled: boolean
   run: (jobText: string, onStep: (s: string) => void) => Promise<ScoreFitResult>
 }) {
+  const t = useContent('apply')
   const [jobText, setJobText] = useState('')
   const [busyStep, setBusyStep] = useState('')
   const [err, setErr] = useState('')
@@ -170,13 +175,13 @@ function FitChecker({
     <>
       <textarea
         rows={4}
-        placeholder="Paste the whole job posting…"
+        placeholder={t.pasteJobPlaceholder}
         value={jobText}
         onChange={(e) => setJobText(e.target.value)}
       />
       <div className="spacer" />
       <button className="primary small" disabled={disabled || !!busyStep || jobText.trim().length < 80} onClick={go}>
-        {busyStep ? 'Scoring…' : 'Score my fit'}
+        {busyStep ? t.scoring : t.scoreMyFit}
       </button>
       {busyStep && <p className="progress">{busyStep}</p>}
       {err && <p className="error">{err}</p>}
@@ -188,7 +193,7 @@ function FitChecker({
           </div>
           {result.fit.strengths.length > 0 && (
             <p className="microhint" style={{ margin: '8px 0 4px' }}>
-              Lead with: {result.fit.strengths.join(' · ')}
+              {t.leadWith(result.fit.strengths.join(' · '))}
             </p>
           )}
           <div className="list" style={{ marginTop: 8 }}>
@@ -199,7 +204,7 @@ function FitChecker({
                   {!c.notObserved && c.commentary && <div className="sub">{c.commentary}</div>}
                 </div>
                 {c.notObserved ? (
-                  <span className="chip">not shown</span>
+                  <span className="chip">{t.notShown}</span>
                 ) : (
                   <>
                     <span className={`chip ${c.relevance === 'direct' ? 'green' : c.relevance === 'transferable' ? 'blue' : 'amber'}`}>
@@ -213,7 +218,7 @@ function FitChecker({
           </div>
           {result.fit.gaps.length > 0 && (
             <p className="microhint" style={{ marginTop: 8 }}>
-              Gaps (be ready for these questions): {result.fit.gaps.join(', ')}
+              {t.gapsHint(result.fit.gaps.join(', '))}
             </p>
           )}
         </div>

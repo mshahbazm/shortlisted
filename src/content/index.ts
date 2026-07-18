@@ -2,6 +2,8 @@
 // other page when injected on demand ("Fill this page" in the side panel).
 
 import { FillState, Msg, sendMsg } from '../lib/messaging'
+import * as store from '../lib/store'
+import { getContent, type tOverlayContent } from './i18n-bridge'
 import { GENERIC_ADAPTER, detectAdapter } from './adapters'
 import { attachResume, fieldContext, fillForm, watchSubmit, applyValue, FillResult } from './engine'
 import { FormField } from './fields'
@@ -28,7 +30,10 @@ function main() {
   const start = () => {
     if (inIframe && !hasForm()) return
     if (document.getElementById('shortlisted-overlay-host')) return
-    boot(adapter.id === 'generic' ? GENERIC_ADAPTER : adapter)
+    void store.get('settings').then((s) => {
+      if (document.getElementById('shortlisted-overlay-host')) return
+      boot(adapter.id === 'generic' ? GENERIC_ADAPTER : adapter, getContent(s.locale))
+    })
   }
 
   if (document.readyState === 'complete' || document.readyState === 'interactive') start()
@@ -44,12 +49,12 @@ function main() {
   }
 }
 
-function boot(adapter: ReturnType<typeof detectAdapter> & {}) {
+function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent) {
   let state: FillState | null = null
   let lastResult: FillResult | null = null
   let attachedLabel: string | null = null
 
-  const overlay = new Overlay(adapter.name, {
+  const overlay = new Overlay(adapter.name, t, {
     onFill: async () => {
       overlay.setBusy()
       state = await sendMsg<FillState>({ type: 'getFillState' })
@@ -117,7 +122,7 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}) {
           gaps: res.fit.gaps ?? [],
         })
       } else {
-        overlay.renderFitResult(null, res?.error ?? 'Scoring failed — try again.')
+        overlay.renderFitResult(null, res?.error ?? t.scoringFailedRetry)
       }
     },
   })

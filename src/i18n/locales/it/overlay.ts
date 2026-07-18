@@ -1,0 +1,29 @@
+import type { tLocale } from '../en'
+
+export const overlay: tLocale['overlay'] = {
+  fillApplication: 'Compila questa candidatura',
+  fillAgain: 'Compila di nuovo',
+  idleNote: 'Compila ciò che sa, chiede il resto. Tu controlli tutto e clicchi invia di persona.',
+  filling: 'Compilo…',
+  howDoIScore: 'Quanto sono adatto a questa offerta?',
+  scoringFit: 'Valuto la tua affinità…',
+  scoringFailed: 'Valutazione fallita.',
+  scoringFailedRetry: 'Valutazione fallita — riprova.',
+  fitDenominator: '/10 affinità',
+  leadWith: (strengths: string) => `Punta su: ${strengths}`,
+  gaps: (gaps: string) => `Lacune: ${gaps}`,
+  filledFields: (n: number) => `Compilat${n === 1 ? 'o 1 campo' : `i ${n} campi`}.`,
+  cvAttached: (label: string) => `CV allegato: ${label}`,
+  attachWhichCv: 'Quale CV allego?',
+  swap: 'Cambia',
+  attach: 'Allega',
+  fromBankHeader: 'Compilate dal tuo archivio risposte — ricontrollale:',
+  usedSimilarAnswer: 'Ho usato una risposta simile già salvata. Modificala nella pagina se non calza.',
+  newQuestionsHeader: 'Domande nuove — rispondi una volta, riusate per sempre:',
+  skippedDemographic: (n: number) =>
+    `${n === 1 ? '1 domanda demografica/di sondaggio lasciata' : `${n} domande demografiche/di sondaggio lasciate`} a te — quelle spettano a te, a mano.`,
+  allDone: 'Tutto ciò che sa è inserito. Controlla la pagina, poi invia quando sei pronto.',
+  answerPlaceholder: 'La tua risposta… (salvata nel tuo archivio)',
+  saveAndFill: 'Salva e compila',
+  saved: 'Salvato ✓',
+}

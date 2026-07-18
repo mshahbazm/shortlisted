@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useStore } from './hooks'
+import { useContent } from '../i18n'
 import { Onboarding } from './Onboarding'
 import { ApplyTab } from './tabs/ApplyTab'
 import { ProfileTab } from './tabs/ProfileTab'
@@ -14,6 +15,10 @@ type Tab = (typeof TABS)[number]
 export function App() {
   const [tab, setTab] = useState<Tab>('Apply')
   const [pending] = useStore('pendingQuestions')
+  const t = useContent('nav')
+  const tabLabels: Record<Tab, string> = {
+    Apply: t.apply, Profile: t.profile, CVs: t.cvs, Answers: t.answers, Settings: t.settings,
+  }
   // Read the onboarded flag once, directly — the useStore default would
   // flash the wizard for already-onboarded users while storage loads.
   const [ready, setReady] = useState(false)
@@ -34,7 +39,7 @@ export function App() {
       <nav className="tabs">
         {TABS.map((t) => (
           <button key={t} className={t === tab ? 'active' : ''} onClick={() => setTab(t)}>
-            {t}
+            {tabLabels[t]}
             {t === 'Answers' && pending.length > 0 && <span className="dot">{pending.length}</span>}
           </button>
         ))}

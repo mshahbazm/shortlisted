@@ -1,0 +1,36 @@
+import type { tLocale } from '../en'
+
+export const apply: tLocale['apply'] = {
+  inQueue: 'in der Warteschlange',
+  applied: 'beworben',
+  openNextJob: 'Nächsten Job öffnen',
+  fillCurrentTab: 'Aktuellen Tab ausfüllen',
+  addedJobs: (n: number) => `${n} Job${n === 1 ? '' : 's'} hinzugefügt.`,
+  permissionDeclined:
+    'Berechtigung abgelehnt — das Ausfüllen funktioniert weiter auf den bekannten Jobseiten.',
+  lookForPanel: 'Such das Shortlisted-Panel auf der Seite.',
+  fitChip: (score: number) => `Fit ${score}/10`,
+  andMore: (n: number) => `…und ${n} weitere`,
+  emptyQueue: 'Keine Jobs in der Warteschlange. Füg unten welche hinzu ↓',
+
+  addJobsTitle: 'Jobs hinzufügen',
+  addJobsSummary: 'Links einfügen, einer pro Zeile',
+  jobLinksLabel: 'Job-Links — einer pro Zeile',
+  addToQueue: 'Zur Warteschlange',
+  checkFitTitle: 'Passe ich?',
+  checkFitSummary: 'Job einfügen, ehrliche Bewertung bekommen',
+  scoreMyFit: 'Fit bewerten',
+  scoring: 'Bewerte…',
+  leadWith: (strengths: string) => `Punkte mit: ${strengths}`,
+  gapsHint: (gaps: string) => `Lücken (rechne mit Fragen dazu): ${gaps}`,
+  notShown: 'nicht angezeigt',
+
+  appliedTitle: 'Beworben',
+  appliedSummary: (n: number) => (n ? `bisher ${n}` : 'noch nichts'),
+  submitsLogged: 'Abgeschickte Bewerbungen landen automatisch hier.',
+  pageLink: 'Seite',
+  statusApplied: 'beworben',
+  statusInterviewing: 'im Gespräch',
+  statusOffer: 'Angebot',
+  statusRejected: 'abgelehnt',
+}
