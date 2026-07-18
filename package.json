@@ -11,6 +11,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:dev": "tsc --noEmit && vite build --mode development",
     "zip": "cd dist && zip -r ../shortlisted-v$npm_package_version.zip ."
   },
   "dependencies": {

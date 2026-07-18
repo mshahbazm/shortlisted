@@ -4,6 +4,7 @@
 //    code right here in the extension.
 
 import { Profile, Settings } from '../lib/types'
+import { cloudBaseUrl } from '../lib/config'
 import * as store from '../lib/store'
 import { clientFromSettings } from './client'
 import { extractProfile } from './capabilities/extract-profile'
@@ -103,7 +104,7 @@ async function cloudCall<T>(
   if (!res.ok) {
     const msg =
       (data as { error?: string } | null)?.error ??
-      `Shortlisted Cloud error ${res.status}. Is the server running at ${settings.cloudUrl}?`
+      `Shortlisted Cloud error ${res.status}. Is the server running at ${cloudBaseUrl(settings)}?`
     console.error(`[shortlisted] cloud ${method} ${path} → ${res.status}:`, msg)
     throw new Error(msg)
   }
@@ -115,11 +116,11 @@ async function cloudCall<T>(
 // user can actually see what to fix.
 async function cloudFetch(settings: Settings, path: string, init?: RequestInit): Promise<Response> {
   try {
-    return await fetch(settings.cloudUrl.replace(/\/$/, '') + path, init)
+    return await fetch(cloudBaseUrl(settings) + path, init)
   } catch (e) {
-    console.error(`[shortlisted] cloud unreachable: ${settings.cloudUrl}${path}`, e)
+    console.error(`[shortlisted] cloud unreachable: ${cloudBaseUrl(settings)}${path}`, e)
     throw new Error(
-      `Could not reach Shortlisted Cloud at ${settings.cloudUrl}. ` +
+      `Could not reach Shortlisted Cloud at ${cloudBaseUrl(settings)}. ` +
         'Is the server running? Check the Cloud server URL in Settings.',
     )
   }
@@ -128,7 +129,7 @@ async function cloudFetch(settings: Settings, path: string, init?: RequestInit):
 async function ensureDeviceToken(settings: Settings): Promise<string> {
   if (settings.cloudToken) return settings.cloudToken
   const res = await cloudFetch(settings, '/v1/device', { method: 'POST' })
-  if (!res.ok) throw new Error(`Could not reach Shortlisted Cloud at ${settings.cloudUrl}.`)
+  if (!res.ok) throw new Error(`Could not reach Shortlisted Cloud at ${cloudBaseUrl(settings)}.`)
   const { token } = (await res.json()) as { token: string }
   // Persist for next time (read-modify-write against live storage, not the
   // possibly-stale settings object we were handed).

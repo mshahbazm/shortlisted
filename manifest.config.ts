@@ -44,6 +44,8 @@ export default defineManifest({
     // BYOK AI calls go straight from the extension to the provider.
     'https://api.anthropic.com/*',
     'https://api.openai.com/*',
+    // Shortlisted Cloud (production origin; dev uses localhost below).
+    'https://shortlist.id/*',
     // Ollama + the local job-finder app (match patterns ignore ports).
     'http://localhost/*',
     'http://127.0.0.1/*',

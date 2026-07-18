@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useStore } from '../hooks'
 import { Section } from '../components'
 import { AiProvider, StorageShape, storageDefaults } from '../../lib/types'
+import { CLOUD_URL_DEFAULT } from '../../lib/config'
 import { activateLicense, cloudUsage, CloudUsage } from '../../ai/run'
 
 export function SettingsTab() {
@@ -124,9 +125,17 @@ export function SettingsTab() {
         {msg && <p className="microhint">{msg}</p>}
       </Section>
 
-      <Section title="Cloud server (dev)" summary={s.cloudUrl}>
-        <label className="f"><span>Shortlisted Cloud URL</span>
-          <input type="url" value={s.cloudUrl} onChange={(e) => set({ cloudUrl: e.target.value, cloudToken: undefined })} /></label>
+      <Section
+        title="Cloud server"
+        summary={s.cloudUrl?.trim() ? s.cloudUrl : `${CLOUD_URL_DEFAULT} (default)`}
+      >
+        <label className="f"><span>Custom URL — leave empty for the default ({CLOUD_URL_DEFAULT})</span>
+          <input
+            type="url"
+            value={s.cloudUrl}
+            placeholder={CLOUD_URL_DEFAULT}
+            onChange={(e) => set({ cloudUrl: e.target.value, cloudToken: undefined })}
+          /></label>
       </Section>
 
       <Section title="The rules" summary="no auto-submit, no lies, local by default">

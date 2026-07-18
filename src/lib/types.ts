@@ -329,7 +329,9 @@ export interface Settings {
   customEndpoint: string
   customModel: string
   customKey?: string
-  // Shortlisted Cloud (hosted AI — no key needed).
+  // Shortlisted Cloud (hosted AI — no key needed). Empty = the build-time
+  // default from lib/config.ts (dev → localhost, prod → hosted origin);
+  // set only as an advanced override.
   cloudUrl: string
   cloudToken?: string // device token, auto-provisioned on first use
   finderUrl: string // the local job-finder app
@@ -344,9 +346,25 @@ export const defaultSettings = (): Settings => ({
   ollamaModel: 'llama3.1',
   customEndpoint: 'http://localhost:1234/v1', // LM Studio's default
   customModel: '',
-  cloudUrl: 'http://localhost:3000', // dev (the app serves /v1 too); hosted origin later
+  cloudUrl: '', // empty = build-time default (see lib/config.ts)
   finderUrl: 'http://localhost:4322',
 })
+
+// Cloud URLs that were once shipped as *defaults* and may linger in saved
+// settings. On read they migrate to '' (= follow the build-time config), so a
+// server move can never strand users on a dead address again. A URL the user
+// typed that isn't in this list is a real override and is left alone.
+const STALE_CLOUD_URLS = ['http://localhost:8788', 'http://localhost:3001', 'http://localhost:3000']
+
+export function normalizeSettings(raw: unknown): Settings {
+  const s = { ...defaultSettings(), ...(raw && typeof raw === 'object' ? (raw as object) : {}) } as Settings
+  if (s.cloudUrl && STALE_CLOUD_URLS.includes(s.cloudUrl.trim().replace(/\/$/, ''))) {
+    // The old default pointed at a server that no longer exists there — the
+    // device token minted by it is dead too.
+    return { ...s, cloudUrl: '', cloudToken: undefined }
+  }
+  return s
+}
 
 // ---------- Fit scores (quick on-page scoring, keyed by normalized job URL) ----------
 
