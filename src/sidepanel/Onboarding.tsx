@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from './hooks'
-import { useContent } from '../i18n'
+import { LOCALES, LOCALE_LABELS, isLocale, useContent } from '../i18n'
 import { cloudPdfText, runExtractProfile, sendLoginCode, verifyLoginCode } from '../ai/run'
 import { assessTextQuality, extractPdfTextFromFile } from '../lib/pdfText'
 import { sendMsg } from '../lib/messaging'
@@ -359,6 +359,36 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
           </div>
         </>
       )}
+
+      <div className="wizfoot">
+        <LocaleSwitcher />
+      </div>
     </div>
+  )
+}
+
+/**
+ * Always-visible language picker. The default follows the browser language
+ * (chrome.i18n); picking one persists in settings.locale and re-renders the
+ * whole panel instantly — the wizard is exactly where a wrong auto-detected
+ * language must be fixable.
+ */
+function LocaleSwitcher() {
+  const [settings] = useStore('settings')
+  const t = useContent('settings')
+  return (
+    <select
+      className="langswitch"
+      value={isLocale(settings.locale) ? settings.locale : 'auto'}
+      onChange={(e) => {
+        const v = e.target.value
+        void store.update('settings', (s) => ({ ...s, locale: v === 'auto' ? undefined : v }))
+      }}
+    >
+      <option value="auto">🌐 {t.languageAuto}</option>
+      {LOCALES.map((code) => (
+        <option key={code} value={code}>{LOCALE_LABELS[code]}</option>
+      ))}
+    </select>
   )
 }

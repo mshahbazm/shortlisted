@@ -177,6 +177,13 @@ a:hover { text-decoration: underline; }
 .wizard .steps i.on { background: var(--fg); }
 .wizard .actions { display: flex; gap: 10px; margin-top: 22px; align-items: center; }
 .wizard textarea { min-height: 150px; }
+.wizfoot { margin-top: 34px; text-align: center; }
+select.langswitch {
+  width: auto; min-height: 0; border: none; background: none;
+  color: var(--muted); font-size: 12px; padding: 4px 6px; cursor: pointer;
+}
+select.langswitch:hover { color: var(--fg); }
+
 .bigchoice {
   display: block; width: 100%; text-align: left; background: var(--bg);
   border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px;
