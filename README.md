@@ -1,7 +1,8 @@
 # Shortlisted — job application copilot (Chrome extension)
 
-Fills job applications from your profile, learns every new question, and tailors
-truthful CV versions. You review and click submit. See `SPEC.md` for the full spec.
+**[shortlist.id](https://shortlist.id)** · Fills job applications from your profile,
+learns every new question, and tailors truthful CV versions. You review and click
+submit.
 
 ## Try it (V1)
 
@@ -50,11 +51,12 @@ bun run dev          # CRXJS HMR — reload the extension once, then edits hot-r
 ## Shortlisted Cloud
 
 The optional hosted AI tier ("no key needed") lives in a separate private repo
-(`shortlisted-cloud`) that consumes this repo as a git submodule — the agent
-capabilities you see here are exactly what runs there. This extension is fully
-functional without it: bring your own key or a local model, forever free.
+that consumes this repo as a git submodule — the agent capabilities you see
+here are exactly what runs there. This extension is fully functional without
+it: bring your own key or a local model, forever free.
 In the extension: Settings → AI → "Shortlisted Cloud" (device token
-auto-provisioned; 10 free credits, license key unlocks Pro).
+auto-provisioned; 10 free credits, license key unlocks Pro). Cloud, profile
+pages, and everything else live at [shortlist.id](https://shortlist.id).
 
 ## License
 
