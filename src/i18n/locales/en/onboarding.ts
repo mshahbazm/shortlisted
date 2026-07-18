@@ -38,9 +38,9 @@ export const onboarding = {
   sponsorshipPlaceholder: '"No — remote contractor"',
   continue: 'Continue',
 
-  verifyTitle: 'Last thing — verify your email.',
+  verifyTitle: 'Create your account.',
   verifyLead:
-    "One code and you're in: your profile backed up, your free AI credits unlocked, and your free shortlisted profile page when you want it.",
+    "One code and you're in — your data saved to your account and your free AI credits unlocked.",
   emailPlaceholder: 'you@example.com',
   sendCode: 'Send code',
   sending: 'Sending…',

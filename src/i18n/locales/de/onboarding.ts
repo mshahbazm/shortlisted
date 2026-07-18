@@ -37,9 +37,9 @@ export const onboarding: tLocale['onboarding'] = {
   sponsorshipPlaceholder: '"Nein — Remote-Freelancer"',
   continue: 'Weiter',
 
-  verifyTitle: 'Letzter Schritt — E-Mail bestätigen.',
+  verifyTitle: 'Erstelle dein Konto.',
   verifyLead:
-    'Ein Code und du bist drin: dein Profil gesichert, deine kostenlosen KI-Credits freigeschaltet, und deine kostenlose Shortlisted-Profilseite, wenn du sie willst.',
+    'Ein Code und du bist drin — deine Daten in deinem Konto und deine kostenlosen KI-Credits freigeschaltet.',
   emailPlaceholder: 'du@beispiel.de',
   sendCode: 'Code senden',
   sending: 'Wird gesendet…',

@@ -26,18 +26,22 @@ export function App() {
   const [signedIn, setSignedIn] = useState(false)
 
   useEffect(() => {
+    // Both flags matter: sign-in happens mid-wizard now (review/answers can
+    // follow it), so only accountEmail + onboarded together open the app.
+    const open = (s: { accountEmail?: string; onboarded?: boolean } | undefined) =>
+      setSignedIn(Boolean(s?.accountEmail && s?.onboarded))
     void store.get('settings').then((s) => {
-      setSignedIn(Boolean(s.accountEmail))
+      open(s)
       setReady(true)
     })
-    return store.onChange('settings', (s) => setSignedIn(Boolean(s?.accountEmail)))
+    return store.onChange('settings', open)
   }, [])
 
   if (!ready) return null
   // No local mode: the panel requires an account. The wizard carries both
-  // paths — new users verify their email at the end, returning users log in
-  // from the welcome screen. Either way, verifying flips settings.accountEmail
-  // and the storage subscription above lets them through.
+  // paths — new users verify their email mid-flow, returning users log in
+  // from the welcome screen. finish() sets onboarded and the storage
+  // subscription above lets them through.
   if (!signedIn) return <Onboarding onDone={() => undefined} />
 
   return (

@@ -37,9 +37,9 @@ export const onboarding: tLocale['onboarding'] = {
   sponsorshipPlaceholder: '"Não — freelancer remoto"',
   continue: 'Continuar',
 
-  verifyTitle: 'Última coisa — verifica o teu email.',
+  verifyTitle: 'Cria a tua conta.',
   verifyLead:
-    'Um código e está feito: o teu perfil com backup, os teus créditos de IA grátis desbloqueados, e a tua página de perfil gratuita quando a quiseres.',
+    'Um código e está feito — os teus dados na tua conta e os teus créditos de IA grátis desbloqueados.',
   emailPlaceholder: 'tu@exemplo.com',
   sendCode: 'Enviar código',
   sending: 'A enviar…',

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from './hooks'
 import { useContent } from '../i18n'
-import { cloudParseResumePdf, runExtractProfile, sendLoginCode, verifyLoginCode } from '../ai/run'
+import { cloudPdfText, runExtractProfile, sendLoginCode, verifyLoginCode } from '../ai/run'
+import { assessTextQuality, extractPdfTextFromFile } from '../lib/pdfText'
 import { sendMsg } from '../lib/messaging'
+import * as store from '../lib/store'
 
 // One question per screen. The user hands us everything up front;
 // the app reveals itself afterwards.
@@ -11,7 +13,7 @@ type Step = 'welcome' | 'paste' | 'review' | 'answers' | 'done' | 'login'
 
 export function Onboarding({ onDone }: { onDone: () => void }) {
   const [profile, saveProfile] = useStore('profile')
-  const [settings, saveSettings] = useStore('settings')
+  const [settings] = useStore('settings')
   const t = useContent('onboarding')
 
   const [step, setStep] = useState<Step>('welcome')
@@ -23,6 +25,9 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
   const [acctEmail, setAcctEmail] = useState('')
   const [otp, setOtp] = useState('')
   const [codeSent, setCodeSent] = useState(false)
+  // True between sign-up and the AI finishing the profile (the CV text is
+  // only sent for structuring once the account exists).
+  const [signedUp, setSignedUp] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   // The account screen opens with the email the CV parse found — the user has
@@ -36,11 +41,16 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
     setErr('')
     setPdfBusy(true)
     try {
-      // Send the PDF itself — the server deep-reads it (OCR for scanned
-      // resumes) and returns the finished profile in one step.
-      const { profile: extracted } = await cloudParseResumePdf(settings, await file.arrayBuffer())
-      saveProfile({ ...extracted, facts: profile.facts })
-      go('review')
+      // No AI before sign-up: read the text layer locally; if it reads poorly
+      // (scanned or heavily designed PDFs), the server OCRs it — still no LLM,
+      // no credit. The text is structured only after the account exists.
+      const local = await extractPdfTextFromFile(file).catch(() => '')
+      if (local && assessTextQuality(local) !== 'low') {
+        setCvText(local)
+      } else {
+        const { text } = await cloudPdfText(settings, await file.arrayBuffer())
+        setCvText(text)
+      }
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
     } finally {
@@ -68,8 +78,9 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
   const idx = STEPS.indexOf(step)
 
   const finish = () => {
-    saveSettings({ ...settings, onboarded: true })
-    onDone()
+    // Read-modify-write against live storage — the settings object in this
+    // closure may predate verifyLoginCode saving accountEmail.
+    void store.update('settings', (s) => ({ ...s, onboarded: true })).then(onDone)
   }
 
   const sendCode = async () => {
@@ -92,8 +103,14 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
     try {
       await verifyLoginCode(settings, acctEmail, otp)
       // Load the account's data from the server (or push this device's up).
-      void sendMsg({ type: 'cloudPull' })
-      finish()
+      await sendMsg({ type: 'cloudPull' })
+      if (step === 'login' || cvText.trim().length < 50) {
+        finish()
+        return
+      }
+      // Signed up with a CV waiting — NOW the AI may structure it.
+      setSignedUp(true)
+      void extractAndReview()
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
     } finally {
@@ -101,12 +118,13 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
     }
   }
 
-  const runImport = async () => {
+  const extractAndReview = async () => {
     setErr('')
     setBusy(true)
     try {
       const extracted = await runExtractProfile(settings, cvText)
       saveProfile({ ...extracted, facts: profile.facts })
+      setSignedUp(false)
       go('review')
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
@@ -221,8 +239,8 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
           />
           {err && <p className="error">{err}</p>}
           <div className="actions">
-            <button className="primary" disabled={busy || pdfBusy || cvText.trim().length < 50} onClick={runImport}>
-              {busy ? t.readingCv : t.buildProfile}
+            <button className="primary" disabled={pdfBusy || cvText.trim().length < 50} onClick={() => go('done')}>
+              {t.buildProfile}
             </button>
             <button className="link" onClick={() => go('done')}>{t.skip}</button>
           </div>
@@ -276,13 +294,29 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
               onChange={(e) => setFact('needsSponsorship', e.target.value)}
             /></label>
           <div className="actions">
-            <button className="primary" onClick={() => go('done')}>{t.continue}</button>
-            <button className="link" onClick={() => go('done')}>{t.skip}</button>
+            <button className="primary" onClick={finish}>{t.continue}</button>
+            <button className="link" onClick={finish}>{t.skip}</button>
           </div>
         </>
       )}
 
-      {step === 'done' && !codeSent && (
+      {step === 'done' && signedUp && (
+        <>
+          <h1>{busy && <span className="spin" />}{t.readingCv}</h1>
+          {!err && <p className="lead">{t.readingCloudSub}</p>}
+          {err && (
+            <>
+              <p className="error">{err}</p>
+              <div className="actions">
+                <button className="primary" disabled={busy} onClick={extractAndReview}>{t.buildProfile}</button>
+                <button className="link" disabled={busy} onClick={finish}>{t.skip}</button>
+              </div>
+            </>
+          )}
+        </>
+      )}
+
+      {step === 'done' && !signedUp && !codeSent && (
         <>
           <h1>{t.verifyTitle}</h1>
           <p className="lead">{t.verifyLead}</p>
@@ -304,7 +338,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
         </>
       )}
 
-      {step === 'done' && codeSent && (
+      {step === 'done' && !signedUp && codeSent && (
         <>
           <h1>{t.inboxTitle}</h1>
           <p className="lead">{t.inboxLead(acctEmail.trim())}</p>

@@ -37,9 +37,9 @@ export const onboarding: tLocale['onboarding'] = {
   sponsorshipPlaceholder: '"No — contratista remoto"',
   continue: 'Continuar',
 
-  verifyTitle: 'Lo último — verifica tu correo.',
+  verifyTitle: 'Crea tu cuenta.',
   verifyLead:
-    'Un código y listo: tu perfil respaldado, tus créditos de IA gratis desbloqueados y tu página de perfil gratuita cuando la quieras.',
+    'Un código y listo — tus datos guardados en tu cuenta y tus créditos de IA gratis desbloqueados.',
   emailPlaceholder: 'tu@ejemplo.com',
   sendCode: 'Enviar código',
   sending: 'Enviando…',

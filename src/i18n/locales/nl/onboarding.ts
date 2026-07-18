@@ -37,9 +37,9 @@ export const onboarding: tLocale['onboarding'] = {
   sponsorshipPlaceholder: '"Nee — werk remote als contractor"',
   continue: 'Doorgaan',
 
-  verifyTitle: 'Nog één ding — bevestig je e-mail.',
+  verifyTitle: 'Maak je account aan.',
   verifyLead:
-    'Eén code en je bent binnen: je profiel geback-upt, je gratis AI-credits vrij, en je gratis Shortlisted-profielpagina wanneer je die wilt.',
+    'Eén code en je bent binnen — je gegevens veilig in je account en je gratis AI-credits ontgrendeld.',
   emailPlaceholder: 'jij@voorbeeld.nl',
   sendCode: 'Code versturen',
   sending: 'Versturen…',
