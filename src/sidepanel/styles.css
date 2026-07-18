@@ -85,9 +85,9 @@ h2 { font-size: 16px; font-weight: 650; margin: 0 0 2px; letter-spacing: -0.01em
 label.f { display: block; margin-bottom: 10px; }
 label.f span { display: block; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
 input[type='text'], input[type='email'], input[type='password'], input[type='url'], textarea, select {
-  width: 100%; background: var(--bg); color: var(--fg);
-  border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 10px;
-  font-size: 13.5px; font-family: inherit; transition: border-color 0.1s;
+  width: 100%; background: var(--bg); color: var(--fg); min-height: 44px;
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px;
+  font-size: 14px; font-family: inherit; transition: border-color 0.1s;
 }
 input::placeholder, textarea::placeholder { color: var(--faint); }
 textarea { resize: vertical; min-height: 64px; line-height: 1.5; }
