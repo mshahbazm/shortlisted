@@ -91,7 +91,7 @@ async function cloudCall<T>(
   method: 'GET' | 'POST' = body === undefined ? 'GET' : 'POST',
 ): Promise<T> {
   const token = await ensureDeviceToken(settings)
-  const res = await fetch(settings.cloudUrl.replace(/\/$/, '') + path, {
+  const res = await cloudFetch(settings, path, {
     method,
     headers: {
       'content-type': 'application/json',
@@ -109,9 +109,23 @@ async function cloudCall<T>(
   return data as T
 }
 
+// fetch() rejects with a bare "Failed to fetch" when nothing answers (server
+// down, or a stale URL saved in Settings). Rethrow with the address so the
+// user can actually see what to fix.
+async function cloudFetch(settings: Settings, path: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(settings.cloudUrl.replace(/\/$/, '') + path, init)
+  } catch {
+    throw new Error(
+      `Could not reach Shortlisted Cloud at ${settings.cloudUrl}. ` +
+        'Is the server running? Check the Cloud server URL in Settings.',
+    )
+  }
+}
+
 async function ensureDeviceToken(settings: Settings): Promise<string> {
   if (settings.cloudToken) return settings.cloudToken
-  const res = await fetch(settings.cloudUrl.replace(/\/$/, '') + '/v1/device', { method: 'POST' })
+  const res = await cloudFetch(settings, '/v1/device', { method: 'POST' })
   if (!res.ok) throw new Error(`Could not reach Shortlisted Cloud at ${settings.cloudUrl}.`)
   const { token } = (await res.json()) as { token: string }
   // Persist for next time (read-modify-write against live storage, not the
