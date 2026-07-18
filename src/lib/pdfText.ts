@@ -61,3 +61,14 @@ export async function extractPdfTextFromFile(file: File): Promise<string> {
   }
   return text
 }
+
+// cuee's production heuristic: word count + contact-info presence.
+// 'low' usually means a scanned/graphic PDF whose text layer is garbage.
+export function assessTextQuality(text: string): 'high' | 'medium' | 'low' {
+  const words = text.split(/\s+/).filter(Boolean).length
+  const hasEmail = /\S+@\S+\.\S+/.test(text)
+  const hasPhone = /[\d\s\-()]+\d{3}[\s\-()]?\d{3}[\s-]?\d{4}/.test(text)
+  if (words > 300 && (hasEmail || hasPhone)) return 'high'
+  if (words > 150) return 'medium'
+  return 'low'
+}

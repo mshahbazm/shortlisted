@@ -1,7 +1,17 @@
 import { useRef, useState } from 'react'
 import { useStore } from '../hooks'
 import { KV, Section } from '../components'
-import { EducationEntry, WorkEntry, uid } from '../../lib/types'
+import {
+  EducationEntry,
+  LanguageEntry,
+  LanguageProficiency,
+  WorkEntry,
+  parseYm,
+  skillNames,
+  uid,
+  ymString,
+  workPeriodLabel,
+} from '../../lib/types'
 import { runExtractProfile } from '../../ai/run'
 import { extractPdfTextFromFile } from '../../lib/pdfText'
 
@@ -18,6 +28,7 @@ export function ProfileTab() {
 
   const name = [p.identity.firstName, p.identity.lastName].filter(Boolean).join(' ')
   const factsFilled = Object.values(p.facts).filter((v) => v && String(v).trim()).length
+  const extras = p.languages.length + p.certifications.length + p.highlights.length
 
   return (
     <div>
@@ -33,12 +44,22 @@ export function ProfileTab() {
         <KV k="Phone" v={p.identity.phone} placeholder="+92 …" onChange={(v) => setIdentity('phone', v)} />
         <KV k="Location" v={p.identity.location} placeholder="City, Country" onChange={(v) => setIdentity('location', v)} />
         <KV k="City" v={p.identity.city ?? ''} onChange={(v) => setIdentity('city', v)} />
-        <KV k="Country" v={p.identity.country ?? ''} onChange={(v) => setIdentity('country', v)} />
+        <KV k="Country (ISO-2)" v={p.identity.country ?? ''} placeholder="PK" onChange={(v) => setIdentity('country', v)} />
         <KV k="Headline" v={p.headline} placeholder="e.g. AI Agent Engineer" onChange={(v) => set({ headline: v })} />
         <KV k="Summary" v={p.summary} multiline onChange={(v) => set({ summary: v })} />
         <KV
-          k="Skills" multiline v={p.skills.join(', ')} placeholder="Comma separated"
-          onChange={(v) => set({ skills: v.split(',').map((s) => s.trim()).filter(Boolean) })}
+          k="Skills" multiline v={skillNames(p).join(', ')} placeholder="Comma separated"
+          onChange={(v) => {
+            const byName = new Map(p.skills.map((s) => [s.name.toLowerCase(), s]))
+            set({
+              skills: v.split(',').map((s) => s.trim()).filter(Boolean)
+                .map((n) => byName.get(n.toLowerCase()) ?? { name: n }),
+            })
+          }}
+        />
+        <KV
+          k="Industries" v={p.industries.join(', ')} placeholder="FinTech, SaaS…"
+          onChange={(v) => set({ industries: v.split(',').map((s) => s.trim()).filter(Boolean) })}
         />
       </Section>
 
@@ -63,7 +84,9 @@ export function ProfileTab() {
         ))}
         <button
           className="ghost small"
-          onClick={() => set({ work: [...p.work, { id: uid(), company: '', title: '', from: '', to: '', highlights: [] }] })}
+          onClick={() =>
+            set({ work: [...p.work, { id: uid(), company: '', title: '', isCurrent: true, skills: [], highlights: [] }] })
+          }
         >
           + Add role
         </button>
@@ -86,11 +109,42 @@ export function ProfileTab() {
         </button>
       </Section>
 
+      <Section title="Highlights, languages, certifications" summary={extras ? `${extras} item${extras === 1 ? '' : 's'}` : 'empty'}>
+        <label className="f"><span>Career highlights — up to 3, short and concrete (top of the CV)</span>
+          <textarea
+            rows={3}
+            placeholder={'8 years building AI agent systems\nLed teams of up to 5 engineers\nShipped a 64k-job harvesting pipeline'}
+            value={p.highlights.join('\n')}
+            onChange={(e) => set({ highlights: e.target.value.split('\n').filter((l) => l.trim()).slice(0, 3) })}
+          /></label>
+        <label className="f"><span>Languages — one per line, "Language — level" (level optional)</span>
+          <textarea
+            rows={2}
+            placeholder={'English — professional\nUrdu — native'}
+            value={p.languages.map((l) => `${l.name} — ${l.proficiency.replaceAll('_', ' ')}`).join('\n')}
+            onChange={(e) => set({ languages: parseLanguages(e.target.value) })}
+          /></label>
+        <label className="f"><span>Certifications — one per line, "Name — Issuer — Year"</span>
+          <textarea
+            rows={2}
+            placeholder={'AWS Solutions Architect — AWS — 2022'}
+            value={p.certifications.map((c) => [c.name, c.issuingOrganization, c.year].filter(Boolean).join(' — ')).join('\n')}
+            onChange={(e) =>
+              set({
+                certifications: e.target.value.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
+                  const [name, issuer, year] = l.split('—').map((s) => s.trim())
+                  return { name: name ?? l, issuingOrganization: issuer || undefined, year: year ? Number(year) || undefined : undefined }
+                }),
+              })
+            }
+          /></label>
+      </Section>
+
       <Section title="Standard answers" summary={`${factsFilled} of 9 answered`}>
         <p className="microhint" style={{ marginBottom: 8 }}>Asked on almost every application — answer once here.</p>
         <KV k="Salary expectation" v={p.facts.salaryExpectation ?? ''} onChange={(v) => setFacts('salaryExpectation', v)} />
         <KV k="Notice period" v={p.facts.noticePeriod ?? ''} placeholder='"Available immediately"' onChange={(v) => setFacts('noticePeriod', v)} />
-        <KV k="Years of experience" v={p.facts.yearsOfExperience ?? ''} onChange={(v) => setFacts('yearsOfExperience', v)} />
+        <KV k="Years of experience" v={p.facts.yearsOfExperience ?? ''} placeholder="auto-computed from work history if empty" onChange={(v) => setFacts('yearsOfExperience', v)} />
         <KV k="Timezone" v={p.facts.timezone ?? ''} placeholder='"PKT (UTC+5)"' onChange={(v) => setFacts('timezone', v)} />
         <KV k="Visa sponsorship?" v={p.facts.needsSponsorship ?? ''} placeholder='"No — remote contractor"' onChange={(v) => setFacts('needsSponsorship', v)} />
         <KV k="Authorized to work in" v={p.facts.authorizedCountries ?? ''} onChange={(v) => setFacts('authorizedCountries', v)} />
@@ -112,15 +166,40 @@ export function ProfileTab() {
   )
 }
 
+const LANG_LEVELS: [RegExp, LanguageProficiency][] = [
+  [/native|bilingual|mother/i, 'native_bilingual'],
+  [/full|fluent/i, 'full_professional'],
+  [/professional|advanced|working/i, 'professional_working'],
+  [/limited|intermediate|conversational/i, 'limited_working'],
+  [/basic|beginner|elementary/i, 'elementary'],
+]
+
+function parseLanguages(text: string): LanguageEntry[] {
+  return text.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
+    const [name, level] = l.split('—').map((s) => s.trim())
+    const proficiency = LANG_LEVELS.find(([re]) => re.test(level ?? ''))?.[1] ?? 'professional_working'
+    return { langCode: (name ?? '').slice(0, 2).toLowerCase(), name: name ?? l, proficiency }
+  })
+}
+
 function WorkRow({ entry, onChange, onRemove }: { entry: WorkEntry; onChange: (w: WorkEntry) => void; onRemove: () => void }) {
   const [open, setOpen] = useState(!entry.company && !entry.title)
   if (!open) {
     return (
       <div className="kv" onClick={() => setOpen(true)}>
-        <span className="k">{entry.from || '—'} → {entry.to || 'now'}</span>
+        <span className="k">{workPeriodLabel(entry) || '—'}</span>
         <span className="v">{entry.title || 'Untitled'} · {entry.company || '?'}</span>
       </div>
     )
+  }
+  const setStart = (v: string) => {
+    const { year, month } = parseYm(v)
+    onChange({ ...entry, startYear: year, startMonth: month })
+  }
+  const setEnd = (v: string) => {
+    if (!v.trim()) return onChange({ ...entry, endYear: undefined, endMonth: undefined, isCurrent: true })
+    const { year, month } = parseYm(v)
+    onChange({ ...entry, endYear: year, endMonth: month, isCurrent: false })
   }
   return (
     <div style={{ padding: '6px 0 12px' }}>
@@ -131,11 +210,17 @@ function WorkRow({ entry, onChange, onRemove }: { entry: WorkEntry; onChange: (w
           <input type="text" value={entry.company} onChange={(e) => onChange({ ...entry, company: e.target.value })} /></label>
       </div>
       <div className="row">
-        <label className="f"><span>From</span>
-          <input type="text" placeholder="2021-03" value={entry.from} onChange={(e) => onChange({ ...entry, from: e.target.value })} /></label>
+        <label className="f"><span>From (YYYY-MM or YYYY)</span>
+          <input type="text" placeholder="2021-03" defaultValue={ymString(entry.startYear, entry.startMonth)} onBlur={(e) => setStart(e.target.value)} /></label>
         <label className="f"><span>To (empty = present)</span>
-          <input type="text" value={entry.to} onChange={(e) => onChange({ ...entry, to: e.target.value })} /></label>
+          <input type="text" defaultValue={entry.isCurrent ? '' : ymString(entry.endYear, entry.endMonth)} onBlur={(e) => setEnd(e.target.value)} /></label>
       </div>
+      <label className="f"><span>Tech used in this role (comma separated)</span>
+        <input
+          type="text"
+          value={entry.skills.join(', ')}
+          onChange={(e) => onChange({ ...entry, skills: e.target.value.split(',').map((s) => s.trim()).filter(Boolean) })}
+        /></label>
       <label className="f"><span>Highlights — one per line, real and concrete</span>
         <textarea
           rows={4}
@@ -155,8 +240,8 @@ function EduRow({ entry, onChange, onRemove }: { entry: EducationEntry; onChange
   if (!open) {
     return (
       <div className="kv" onClick={() => setOpen(true)}>
-        <span className="k">{[entry.from, entry.to].filter(Boolean).join('—') || '—'}</span>
-        <span className="v">{entry.degree || '?'} · {entry.school || '?'}</span>
+        <span className="k">{[entry.startYear, entry.endYear].filter(Boolean).join('—') || '—'}</span>
+        <span className="v">{[entry.degree, entry.fieldOfStudy].filter(Boolean).join(', ') || '?'} · {entry.school || '?'}</span>
       </div>
     )
   }
@@ -165,14 +250,16 @@ function EduRow({ entry, onChange, onRemove }: { entry: EducationEntry; onChange
       <div className="row">
         <label className="f"><span>Degree</span>
           <input type="text" value={entry.degree} onChange={(e) => onChange({ ...entry, degree: e.target.value })} /></label>
-        <label className="f"><span>School</span>
-          <input type="text" value={entry.school} onChange={(e) => onChange({ ...entry, school: e.target.value })} /></label>
+        <label className="f"><span>Field of study</span>
+          <input type="text" value={entry.fieldOfStudy ?? ''} onChange={(e) => onChange({ ...entry, fieldOfStudy: e.target.value })} /></label>
       </div>
+      <label className="f"><span>School</span>
+        <input type="text" value={entry.school} onChange={(e) => onChange({ ...entry, school: e.target.value })} /></label>
       <div className="row">
-        <label className="f"><span>From</span>
-          <input type="text" value={entry.from ?? ''} onChange={(e) => onChange({ ...entry, from: e.target.value })} /></label>
-        <label className="f"><span>To</span>
-          <input type="text" value={entry.to ?? ''} onChange={(e) => onChange({ ...entry, to: e.target.value })} /></label>
+        <label className="f"><span>From (year)</span>
+          <input type="text" defaultValue={entry.startYear ?? ''} onBlur={(e) => onChange({ ...entry, startYear: Number(e.target.value) || undefined })} /></label>
+        <label className="f"><span>To (year)</span>
+          <input type="text" defaultValue={entry.endYear ?? ''} onBlur={(e) => onChange({ ...entry, endYear: Number(e.target.value) || undefined })} /></label>
       </div>
       <div className="row">
         <button className="ghost small" onClick={() => setOpen(false)}>Done</button>

@@ -71,13 +71,17 @@ export async function tailorCv(
   add(matchPass.usage)
   const match: ProfileMatch = matchPass.value ?? {
     relevantWorkIds: profile.work.map((w) => w.id),
-    emphasisSkills: profile.skills.slice(0, 10),
+    emphasisSkills: profile.skills.slice(0, 10).map((s) => s.name),
     angle: '',
     gaps: [],
   }
 
   onStep?.('Writing the tailored version…')
-  const profileSkillsLower = new Set(profile.skills.map((s) => s.toLowerCase().trim()))
+  // Skills may be claimed globally or proven inside a specific role — both are true.
+  const profileSkillsLower = new Set([
+    ...profile.skills.map((s) => s.name.toLowerCase().trim()),
+    ...profile.work.flatMap((w) => w.skills.map((s) => s.toLowerCase().trim())),
+  ])
   const tailorPass = await runJsonPass<TailorOutput>(
     {
       client,
@@ -107,7 +111,7 @@ export async function tailorCv(
     headline: t.headline || profile.headline,
     summary: t.summary || profile.summary,
     highlights: (t.highlights ?? []).slice(0, 5),
-    skills: t.skills?.length ? t.skills : profile.skills,
+    skills: t.skills?.length ? t.skills : profile.skills.map((s) => s.name),
     work: t.work.map((w) => ({ sourceId: w.sourceId, bullets: w.bullets.slice(0, 5) })),
     educationIds: profile.education.map((e) => e.id),
   }

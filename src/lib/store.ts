@@ -1,10 +1,13 @@
-import { StorageShape, storageDefaults } from './types'
+import { StorageShape, normalizeProfile, storageDefaults } from './types'
 
 type Key = keyof StorageShape
 
 export async function get<K extends Key>(key: K): Promise<StorageShape[K]> {
   const res = await chrome.storage.local.get(key)
-  return res[key] ?? storageDefaults()[key]
+  const value = res[key] ?? storageDefaults()[key]
+  // Profiles saved by older versions are migrated transparently on read.
+  if (key === 'profile') return normalizeProfile(value) as StorageShape[K]
+  return value
 }
 
 export async function getAll(): Promise<StorageShape> {

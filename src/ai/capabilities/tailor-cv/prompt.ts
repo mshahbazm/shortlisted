@@ -1,4 +1,4 @@
-import { Profile } from '../../../lib/types'
+import { Profile, durationInMonths, workPeriodLabel } from '../../../lib/types'
 import { JobExtract, ProfileMatch } from './schema'
 
 export const extractJobPrompt = () =>
@@ -40,15 +40,21 @@ function profileForPrompt(p: Profile) {
     identity: { name: `${p.identity.firstName} ${p.identity.lastName}`, location: p.identity.location },
     headline: p.headline,
     summary: p.summary,
-    skills: p.skills,
+    industries: p.industries,
+    skills: p.skills.map((s) => s.name),
+    skillsDetailed: p.skills,
     work: p.work.map((w) => ({
       id: w.id,
       company: w.company,
       title: w.title,
-      from: w.from,
-      to: w.to,
+      period: workPeriodLabel(w),
+      months: durationInMonths(w),
+      contractType: w.contractType,
+      skills: w.skills,
       highlights: w.highlights,
     })),
     education: p.education,
+    certifications: p.certifications,
+    languages: p.languages,
   }
 }

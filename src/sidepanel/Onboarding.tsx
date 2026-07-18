@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useStore } from './hooks'
 import { runExtractProfile } from '../ai/run'
-import { extractPdfTextFromFile } from '../lib/pdfText'
+import { assessTextQuality, extractPdfTextFromFile } from '../lib/pdfText'
 import { masterVariant, renderResumePdf } from '../pdf/resumePdf'
 import { uid } from '../lib/types'
 
@@ -26,7 +26,11 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
     setErr('')
     setBusy(true)
     try {
-      setCvText(await extractPdfTextFromFile(file))
+      const text = await extractPdfTextFromFile(file)
+      setCvText(text)
+      if (assessTextQuality(text) === 'low') {
+        setErr('This PDF reads poorly — possibly a scanned or heavily designed document. Check the text below, or paste it yourself.')
+      }
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
     } finally {

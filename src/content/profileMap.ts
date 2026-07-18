@@ -1,4 +1,4 @@
-import { Profile } from '../lib/types'
+import { Profile, skillNames, totalExperienceYears } from '../lib/types'
 
 // Deterministic label -> profile value mapping. This covers ~80% of every ATS
 // form with zero AI. Order matters: first match wins.
@@ -33,13 +33,21 @@ const RULES: Rule[] = [
   },
   { test: /notice\s*period|how\s*soon|earliest.*start|start\s*date|available|availability/i, value: (p) => p.facts.noticePeriod },
   { test: /time\s*zone/i, value: (p) => p.facts.timezone },
-  { test: /years?\s*(of)?\s*experience|how\s*long.*(working|experience)/i, value: (p) => p.facts.yearsOfExperience },
+  {
+    test: /years?\s*(of)?\s*experience|how\s*long.*(working|experience)/i,
+    value: (p) => {
+      if (p.facts.yearsOfExperience) return p.facts.yearsOfExperience
+      // Deterministic fallback: computed from work-history durations.
+      const years = totalExperienceYears(p)
+      return years ? String(Math.floor(years)) : undefined
+    },
+  },
   { test: /sponsor(ship)?|visa/i, value: (p) => p.facts.needsSponsorship },
   { test: /authori[sz]ed?\s*to\s*work|work\s*authori[sz]ation|legally\s*(able|entitled)/i, value: (p) => p.facts.authorizedCountries },
   { test: /relocat/i, value: (p) => p.facts.relocation },
   { test: /overlap|working\s*hours/i, value: (p) => p.facts.hoursOverlap },
   { test: /english/i, value: (p) => p.facts.englishLevel },
-  { test: /skills|technologies|tech\s*stack/i, value: (p) => (p.skills.length ? p.skills.join(', ') : undefined) },
+  { test: /skills|technologies|tech\s*stack/i, value: (p) => (p.skills.length ? skillNames(p).join(', ') : undefined) },
   { test: /how\s*did\s*you\s*(hear|find)|referral\s*source|source\b/i, value: () => undefined }, // let bank handle it
 ]
 

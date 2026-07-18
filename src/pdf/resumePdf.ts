@@ -3,7 +3,7 @@
 // (parses cleanly in every ATS resume parser).
 
 import { jsPDF } from 'jspdf'
-import { Profile, TailoredResume } from '../lib/types'
+import { Profile, TailoredResume, workPeriodLabel } from '../lib/types'
 
 const PAGE_W = 595.28 // A4 points
 const PAGE_H = 841.89
@@ -118,7 +118,7 @@ export function renderResumePdf(profile: Profile, variant: TailoredResume): stri
     for (const { v, src } of entries) {
       const w = src!
       ensure(30)
-      const dates = `${w.from} — ${w.to || 'Present'}`
+      const dates = workPeriodLabel(w)
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(10.5)
       doc.setTextColor(COLORS.ink)
@@ -141,11 +141,12 @@ export function renderResumePdf(profile: Profile, variant: TailoredResume): stri
     sectionTitle('Education')
     for (const e of edus) {
       ensure(16)
-      const dates = [e!.from, e!.to].filter(Boolean).join(' — ')
+      const dates = [e!.startYear, e!.isCurrent ? 'Present' : e!.endYear].filter(Boolean).join(' — ')
+      const degreeLine = [e!.degree, e!.fieldOfStudy].filter(Boolean).join(', ')
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(10)
       doc.setTextColor(COLORS.ink)
-      doc.text(`${e!.degree} · ${e!.school}`, MARGIN, y)
+      doc.text(`${degreeLine} · ${e!.school}`, MARGIN, y)
       if (dates) {
         doc.setFont('helvetica', 'normal')
         doc.setFontSize(9)
@@ -153,7 +154,28 @@ export function renderResumePdf(profile: Profile, variant: TailoredResume): stri
         doc.text(dates, PAGE_W - MARGIN, y, { align: 'right' })
       }
       y += 15
+      if (e!.description) {
+        text(e!.description, 9, { color: COLORS.soft, gapAfter: 3 })
+      }
     }
+  }
+
+  // ---- Certifications ----
+  if (profile.certifications.length) {
+    sectionTitle('Certifications')
+    for (const c of profile.certifications) {
+      const line = [c.name, c.issuingOrganization, c.year].filter(Boolean).join(' · ')
+      bullet(line, 9.5)
+    }
+  }
+
+  // ---- Languages ----
+  if (profile.languages.length) {
+    sectionTitle('Languages')
+    const line = profile.languages
+      .map((l) => `${l.name} (${l.proficiency.replaceAll('_', ' ')})`)
+      .join('  ·  ')
+    text(line, 9.5, { gapAfter: 2 })
   }
 
   // Return base64 (without the data: prefix) for storage.
@@ -167,8 +189,8 @@ export function masterVariant(profile: Profile): TailoredResume {
     label: 'Master CV',
     headline: profile.headline,
     summary: profile.summary,
-    highlights: [],
-    skills: profile.skills,
+    highlights: profile.highlights,
+    skills: profile.skills.map((s) => s.name),
     work: profile.work.map((w) => ({ sourceId: w.id, bullets: w.highlights })),
     educationIds: profile.education.map((e) => e.id),
   }
