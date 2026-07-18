@@ -3,11 +3,13 @@ import { useStore } from '../hooks'
 import { Section } from '../components'
 import { QueueItem, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
+import { runScoreFit, ScoreFitResult } from '../../ai/run'
 
 export function ApplyTab() {
   const [queue, saveQueue] = useStore('queue')
   const [apps, saveApps] = useStore('applications')
   const [settings] = useStore('settings')
+  const [profile] = useStore('profile')
 
   const [pasteText, setPasteText] = useState('')
   const [finderQuery, setFinderQuery] = useState('')
@@ -127,6 +129,15 @@ export function ApplyTab() {
         <button className="ghost small" onClick={pullFromFinder}>Pull 25 jobs</button>
       </Section>
 
+      <Section title="Check my fit" summary="paste a job, get an honest score">
+        <FitChecker
+          disabled={settings.aiProvider === 'none' || profile.work.length === 0}
+          run={(jobText, onStep) => runScoreFit(settings, profile, jobText, onStep)}
+        />
+        {settings.aiProvider === 'none' && <p className="microhint">Needs AI — set it up in Settings.</p>}
+        {profile.work.length === 0 && <p className="microhint">Fill your profile first.</p>}
+      </Section>
+
       <Section title="Applied" summary={apps.length ? `${apps.length} so far` : 'nothing yet'}>
         {apps.length === 0 && <div className="empty">Submits get logged here automatically.</div>}
         {apps.length > 0 && (
@@ -157,6 +168,86 @@ export function ApplyTab() {
         )}
       </Section>
     </div>
+  )
+}
+
+function FitChecker({
+  disabled,
+  run,
+}: {
+  disabled: boolean
+  run: (jobText: string, onStep: (s: string) => void) => Promise<ScoreFitResult>
+}) {
+  const [jobText, setJobText] = useState('')
+  const [busyStep, setBusyStep] = useState('')
+  const [err, setErr] = useState('')
+  const [result, setResult] = useState<ScoreFitResult | null>(null)
+
+  const go = async () => {
+    setErr('')
+    setResult(null)
+    try {
+      setResult(await run(jobText, setBusyStep))
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusyStep('')
+    }
+  }
+
+  return (
+    <>
+      <textarea
+        rows={4}
+        placeholder="Paste the whole job posting…"
+        value={jobText}
+        onChange={(e) => setJobText(e.target.value)}
+      />
+      <div className="spacer" />
+      <button className="primary small" disabled={disabled || !!busyStep || jobText.trim().length < 80} onClick={go}>
+        {busyStep ? 'Scoring…' : 'Score my fit'}
+      </button>
+      {busyStep && <p className="progress">{busyStep}</p>}
+      {err && <p className="error">{err}</p>}
+      {result && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+            <span style={{ fontSize: 26, fontWeight: 700 }}>{result.fit.overallScore}<span style={{ fontSize: 14, color: 'var(--muted)' }}>/10</span></span>
+            <span style={{ fontSize: 13 }}>{result.fit.verdict}</span>
+          </div>
+          {result.fit.strengths.length > 0 && (
+            <p className="microhint" style={{ margin: '8px 0 4px' }}>
+              Lead with: {result.fit.strengths.join(' · ')}
+            </p>
+          )}
+          <div className="list" style={{ marginTop: 8 }}>
+            {result.fit.criteria.map((c, i) => (
+              <div key={i} className="list-item">
+                <div className="grow">
+                  <div className="title" style={{ fontWeight: 500 }}>{c.requirement}</div>
+                  {!c.notObserved && c.commentary && <div className="sub">{c.commentary}</div>}
+                </div>
+                {c.notObserved ? (
+                  <span className="chip">not shown</span>
+                ) : (
+                  <>
+                    <span className={`chip ${c.relevance === 'direct' ? 'green' : c.relevance === 'transferable' ? 'blue' : 'amber'}`}>
+                      {c.relevance}
+                    </span>
+                    <span className="chip">{c.score}/5</span>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+          {result.fit.gaps.length > 0 && (
+            <p className="microhint" style={{ marginTop: 8 }}>
+              Gaps (be ready for these questions): {result.fit.gaps.join(', ')}
+            </p>
+          )}
+        </div>
+      )}
+    </>
   )
 }
 

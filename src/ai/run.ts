@@ -8,6 +8,9 @@ import * as store from '../lib/store'
 import { clientFromSettings } from './client'
 import { extractProfile } from './capabilities/extract-profile'
 import { TailorCvResult, tailorCv } from './capabilities/tailor-cv'
+import { ScoreFitResult, scoreFit } from './capabilities/score-fit'
+
+export type { ScoreFitResult }
 
 export async function runExtractProfile(settings: Settings, cvText: string): Promise<Profile> {
   if (settings.aiProvider === 'cloud') {
@@ -27,6 +30,31 @@ export async function runTailorCv(
     return cloudCall<TailorCvResult>(settings, '/v1/tailor-cv', { profile, jobText })
   }
   return tailorCv(clientFromSettings(settings), profile, jobText, onStep)
+}
+
+export async function runScoreFit(
+  settings: Settings,
+  profile: Profile,
+  jobText: string,
+  onStep?: (step: string) => void,
+): Promise<ScoreFitResult> {
+  if (settings.aiProvider === 'cloud') {
+    onStep?.('Scoring on Shortlisted Cloud…')
+    return cloudCall<ScoreFitResult>(settings, '/v1/score-fit', { profile, jobText })
+  }
+  return scoreFit(clientFromSettings(settings), profile, jobText, onStep)
+}
+
+// Cloud-only: send the PDF itself so the server can OCR scanned resumes.
+// (Local providers read the text layer only — no OCR wasm in the extension.)
+export async function cloudParseResumePdf(
+  settings: Settings,
+  pdf: ArrayBuffer,
+): Promise<{ profile: Profile; method: 'text' | 'ocr'; quality: string }> {
+  const bytes = new Uint8Array(pdf)
+  let bin = ''
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  return cloudCall(settings, '/v1/parse-resume', { pdfBase64: btoa(bin) })
 }
 
 export interface CloudUsage {

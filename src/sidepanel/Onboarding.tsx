@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useStore } from './hooks'
-import { runExtractProfile } from '../ai/run'
+import { cloudParseResumePdf, runExtractProfile } from '../ai/run'
 import { assessTextQuality, extractPdfTextFromFile } from '../lib/pdfText'
 import { masterVariant, renderResumePdf } from '../pdf/resumePdf'
 import { uid } from '../lib/types'
@@ -26,10 +26,18 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
     setErr('')
     setBusy(true)
     try {
+      // Cloud users: send the PDF itself — the server deep-reads it (OCR for
+      // scanned resumes) and returns the finished profile in one step.
+      if (settings.aiProvider === 'cloud') {
+        const { profile: extracted } = await cloudParseResumePdf(settings, await file.arrayBuffer())
+        saveProfile({ ...extracted, facts: profile.facts })
+        setStep('review')
+        return
+      }
       const text = await extractPdfTextFromFile(file)
       setCvText(text)
       if (assessTextQuality(text) === 'low') {
-        setErr('This PDF reads poorly — possibly a scanned or heavily designed document. Check the text below, or paste it yourself.')
+        setErr('This PDF reads poorly — possibly a scanned or heavily designed document. Check the text below, or paste it yourself. (Shortlisted Cloud can OCR scanned resumes.)')
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))

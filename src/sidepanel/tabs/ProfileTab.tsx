@@ -12,7 +12,7 @@ import {
   ymString,
   workPeriodLabel,
 } from '../../lib/types'
-import { runExtractProfile } from '../../ai/run'
+import { cloudParseResumePdf, runExtractProfile } from '../../ai/run'
 import { extractPdfTextFromFile } from '../../lib/pdfText'
 
 export function ProfileTab() {
@@ -156,6 +156,14 @@ export function ProfileTab() {
       <Section title="Re-import from CV" summary="upload PDF or paste text, AI rebuilds the profile">
         <ImportBox
           disabled={settings.aiProvider === 'none'}
+          cloudPdf={
+            settings.aiProvider === 'cloud'
+              ? async (file) => {
+                  const { profile: extracted } = await cloudParseResumePdf(settings, await file.arrayBuffer())
+                  saveProfile({ ...extracted, facts: p.facts })
+                }
+              : undefined
+          }
           onImport={async (text) => {
             const extracted = await runExtractProfile(settings, text)
             saveProfile({ ...extracted, facts: p.facts })
@@ -269,7 +277,16 @@ function EduRow({ entry, onChange, onRemove }: { entry: EducationEntry; onChange
   )
 }
 
-function ImportBox({ disabled, onImport }: { disabled: boolean; onImport: (text: string) => Promise<void> }) {
+function ImportBox({
+  disabled,
+  onImport,
+  cloudPdf,
+}: {
+  disabled: boolean
+  onImport: (text: string) => Promise<void>
+  // Cloud mode: the server deep-reads the PDF (incl. OCR) and returns the profile.
+  cloudPdf?: (file: File) => Promise<void>
+}) {
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -293,7 +310,12 @@ function ImportBox({ disabled, onImport }: { disabled: boolean; onImport: (text:
           setErr('')
           setBusy(true)
           try {
-            setText(await extractPdfTextFromFile(f))
+            if (cloudPdf) {
+              await cloudPdf(f)
+              setText('')
+            } else {
+              setText(await extractPdfTextFromFile(f))
+            }
           } catch (ex) {
             setErr(ex instanceof Error ? ex.message : String(ex))
           } finally {
