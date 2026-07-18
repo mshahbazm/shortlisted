@@ -3,7 +3,6 @@ import { useStore } from '../hooks'
 import { Section } from '../components'
 import { StorageShape, storageDefaults } from '../../lib/types'
 import { LOCALES, LOCALE_LABELS, isLocale, useContent } from '../../i18n'
-import { CLOUD_URL_DEFAULT } from '../../lib/config'
 import { CloudUsage, cloudUsage, sendLoginCode, verifyLoginCode } from '../../ai/run'
 import { sendMsg } from '../../lib/messaging'
 
@@ -83,22 +82,6 @@ export function SettingsTab() {
         {msg && <p className="microhint">{msg}</p>}
       </Section>
 
-      <Section
-        title={t.cloudServerTitle}
-        summary={s.cloudUrl?.trim() ? s.cloudUrl : t.cloudServerDefault(CLOUD_URL_DEFAULT)}
-      >
-        <label className="f"><span>{t.cloudServerLabel(CLOUD_URL_DEFAULT)}</span>
-          <input
-            type="url"
-            value={s.cloudUrl}
-            placeholder={CLOUD_URL_DEFAULT}
-            onChange={(e) => set({ cloudUrl: e.target.value, cloudToken: undefined })}
-          /></label>
-      </Section>
-
-      <Section title={t.rulesTitle} summary={t.rulesSummary}>
-        <p className="microhint">{t.rulesBody}</p>
-      </Section>
     </div>
   )
 }

@@ -35,13 +35,4 @@ export const settings = {
   importJson: 'Import JSON',
   imported: 'Imported.',
   importFailed: (msg: string) => `Import failed: ${msg}`,
-
-  cloudServerTitle: 'Cloud server',
-  cloudServerDefault: (url: string) => `${url} (default)`,
-  cloudServerLabel: (url: string) => `Custom URL — leave empty for the default (${url})`,
-
-  rulesTitle: 'The rules',
-  rulesSummary: 'no auto-submit, no lies',
-  rulesBody:
-    "You click submit — always. CAPTCHAs are yours. CV tailoring only rearranges what's true — it cannot invent skills or experience.",
 }

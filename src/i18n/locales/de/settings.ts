@@ -35,13 +35,4 @@ export const settings: tLocale['settings'] = {
   importJson: 'JSON importieren',
   imported: 'Importiert.',
   importFailed: (msg: string) => `Import fehlgeschlagen: ${msg}`,
-
-  cloudServerTitle: 'Cloud-Server',
-  cloudServerDefault: (url: string) => `${url} (Standard)`,
-  cloudServerLabel: (url: string) => `Eigene URL — leer lassen für den Standard (${url})`,
-
-  rulesTitle: 'Die Regeln',
-  rulesSummary: 'kein Auto-Absenden, keine Lügen',
-  rulesBody:
-    'Du klickst auf Absenden — immer. CAPTCHAs gehören dir. Die Lebenslauf-Anpassung ordnet nur um, was wahr ist — sie kann keine Fähigkeiten oder Erfahrung erfinden.',
 }

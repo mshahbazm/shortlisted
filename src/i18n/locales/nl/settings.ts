@@ -35,13 +35,4 @@ export const settings: tLocale['settings'] = {
   importJson: 'JSON importeren',
   imported: 'Geïmporteerd.',
   importFailed: (msg: string) => `Importeren mislukt: ${msg}`,
-
-  cloudServerTitle: 'Cloudserver',
-  cloudServerDefault: (url: string) => `${url} (standaard)`,
-  cloudServerLabel: (url: string) => `Eigen URL — laat leeg voor de standaard (${url})`,
-
-  rulesTitle: 'De regels',
-  rulesSummary: 'geen auto-verzenden, geen leugens',
-  rulesBody:
-    'Jij klikt op verzenden — altijd. CAPTCHA’s zijn voor jou. Cv op maat herschikt alleen wat waar is — het kan geen vaardigheden of ervaring verzinnen.',
 }

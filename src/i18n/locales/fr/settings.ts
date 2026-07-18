@@ -35,14 +35,4 @@ export const settings: tLocale['settings'] = {
   importJson: 'Importer un JSON',
   imported: 'Importé.',
   importFailed: (msg: string) => `Échec de l’import : ${msg}`,
-
-  cloudServerTitle: 'Serveur cloud',
-  cloudServerDefault: (url: string) => `${url} (par défaut)`,
-  cloudServerLabel: (url: string) =>
-    `URL personnalisée — laissez vide pour la valeur par défaut (${url})`,
-
-  rulesTitle: 'Les règles',
-  rulesSummary: 'pas d’envoi auto, pas de mensonges',
-  rulesBody:
-    'C’est vous qui cliquez sur envoyer — toujours. Les CAPTCHA sont pour vous. L’adaptation du CV ne fait que réorganiser ce qui est vrai — elle ne peut inventer ni compétences ni expérience.',
 }

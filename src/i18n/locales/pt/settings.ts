@@ -35,13 +35,4 @@ export const settings: tLocale['settings'] = {
   importJson: 'Importar JSON',
   imported: 'Importado.',
   importFailed: (msg: string) => `Falha na importação: ${msg}`,
-
-  cloudServerTitle: 'Servidor cloud',
-  cloudServerDefault: (url: string) => `${url} (padrão)`,
-  cloudServerLabel: (url: string) => `URL personalizado — deixa vazio para o padrão (${url})`,
-
-  rulesTitle: 'As regras',
-  rulesSummary: 'sem envio automático, sem mentiras',
-  rulesBody:
-    'És tu que clicas em enviar — sempre. Os CAPTCHA são contigo. A adaptação do CV apenas reorganiza o que é verdade — não pode inventar competências nem experiência.',
 }

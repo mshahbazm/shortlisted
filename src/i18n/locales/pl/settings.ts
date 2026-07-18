@@ -37,13 +37,4 @@ export const settings: tLocale['settings'] = {
   importJson: 'Importuj JSON',
   imported: 'Zaimportowano.',
   importFailed: (msg: string) => `Import nie powiódł się: ${msg}`,
-
-  cloudServerTitle: 'Serwer Cloud',
-  cloudServerDefault: (url: string) => `${url} (domyślny)`,
-  cloudServerLabel: (url: string) => `Własny URL — zostaw puste dla domyślnego (${url})`,
-
-  rulesTitle: 'Zasady',
-  rulesSummary: 'bez auto-wysyłania, bez kłamstw',
-  rulesBody:
-    'To Ty klikasz „wyślij” — zawsze. CAPTCHA należą do Ciebie. Dopasowywanie CV tylko przestawia to, co prawdziwe — nie wymyśli umiejętności ani doświadczenia.',
 }
