@@ -10,7 +10,8 @@
   --active: #efefec;
   --primary: #18181b;
   --primary-fg: #ffffff;
-  --accent: #2563eb;
+  --accent: #3d11ff; /* brand */
+  --accent-dark: #2e0bd1;
   --green: #16a34a;
   --amber: #b45309;
   --red: #dc2626;
@@ -110,8 +111,8 @@ button.ghost:hover { background: var(--hover); }
 button.danger { background: none; color: var(--red); border-color: transparent; }
 button.danger:hover { background: #fef2f2; }
 button.small { padding: 4px 10px; font-size: 12.5px; }
-button.link { background: none; color: var(--muted); padding: 4px 6px; text-decoration: none; }
-button.link:hover { color: var(--fg); }
+button.link { background: none; color: var(--accent); padding: 4px 6px; text-decoration: none; }
+button.link:hover { color: var(--accent-dark); }
 
 /* ---------- lists ---------- */
 
@@ -132,7 +133,7 @@ button.link:hover { color: var(--fg); }
 }
 .chip.green { background: #f0fdf4; color: var(--green); }
 .chip.amber { background: #fffbeb; color: var(--amber); }
-.chip.blue { background: #eff6ff; color: var(--accent); }
+.chip.blue { background: #efecff; color: var(--accent); }
 
 .empty { color: var(--faint); text-align: center; padding: 30px 12px; font-size: 13px; }
 .spacer { height: 10px; }

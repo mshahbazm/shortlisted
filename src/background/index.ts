@@ -24,7 +24,7 @@ async function refreshBadge() {
   const pending = await store.get('pendingQuestions')
   const n = pending.length
   await chrome.action.setBadgeText({ text: n ? String(n) : '' })
-  await chrome.action.setBadgeBackgroundColor({ color: '#3b82f6' })
+  await chrome.action.setBadgeBackgroundColor({ color: '#3d11ff' })
 }
 
 chrome.runtime.onMessage.addListener((msg: Msg, _sender, sendResponse) => {

@@ -42,7 +42,7 @@ const CSS = `
   .stat { margin: 12px 0 4px; color: #71717a; font-size: 12px; }
   .item { padding: 8px 9px; margin: 6px 0; border-radius: 8px; background: #fafaf9; border: 1px solid #e7e7e4; }
   .item.review { border-color: #f0d9a8; background: #fffdf5; }
-  .item.unknown { border-color: #c7d8f9; background: #f8faff; }
+  .item.unknown { border-color: #d6ccff; background: #f7f5ff; }
   .q { color:#1f1f1f; margin-bottom: 5px; font-weight: 550; }
   .src { color:#a1a1aa; font-size: 11px; }
   textarea { width:100%; min-height: 52px; border-radius:6px; border:1px solid #e7e7e4;
