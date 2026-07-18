@@ -103,6 +103,23 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}) {
         overlay.renderResult(lastResult, state.resumes, attachedLabel)
       }
     },
+
+    onScoreFit: async () => {
+      overlay.renderFitLoading()
+      const res = await sendMsg<
+        { fit?: { overallScore: number; verdict: string; strengths: string[]; gaps: string[] }; error?: string }
+      >({ type: 'scoreFitPage', jobText: jobPageText(), jobUrl: location.href })
+      if (res?.fit) {
+        overlay.renderFitResult({
+          score: res.fit.overallScore,
+          verdict: res.fit.verdict,
+          strengths: res.fit.strengths ?? [],
+          gaps: res.fit.gaps ?? [],
+        })
+      } else {
+        overlay.renderFitResult(null, res?.error ?? 'Scoring failed — try again.')
+      }
+    },
   })
 
   async function attachById(resumeId: string): Promise<boolean> {
@@ -131,6 +148,20 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}) {
       },
     })
   })
+}
+
+// The job description for scoring: prefer the page's main content region,
+// fall back to full body text. Forms/nav noise is tolerable — the model
+// extracts requirements from prose.
+function jobPageText(): string {
+  const main =
+    document.querySelector('main, article, [role=main], #content, .job-description, [class*="description" i]') ??
+    document.body
+  const clone = main.cloneNode(true) as HTMLElement
+  clone.querySelectorAll('script, style, nav, header, footer, form, #shortlisted-overlay-host').forEach((n) => n.remove())
+  const text = (clone.textContent ?? '').replace(/\s+/g, ' ').trim()
+  const fallback = (document.body.textContent ?? '').replace(/\s+/g, ' ').trim()
+  return (text.length > 300 ? text : fallback).slice(0, 16_000)
 }
 
 function guessCompany(): string {

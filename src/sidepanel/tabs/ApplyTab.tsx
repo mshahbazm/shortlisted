@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../hooks'
 import { Section } from '../components'
-import { QueueItem, uid } from '../../lib/types'
+import { QueueItem, jobUrlKey, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
 import { runScoreFit, ScoreFitResult } from '../../ai/run'
 
@@ -10,6 +10,7 @@ export function ApplyTab() {
   const [apps, saveApps] = useStore('applications')
   const [settings] = useStore('settings')
   const [profile] = useStore('profile')
+  const [fitScores] = useStore('fitScores')
 
   const [pasteText, setPasteText] = useState('')
   const [finderQuery, setFinderQuery] = useState('')
@@ -100,6 +101,15 @@ export function ApplyTab() {
                 <div className="sub">
                   {q.company ? `${q.company} · ` : ''}{q.title ? urlLabel(q.url) : ''}
                   {q.tags.map((t) => <span key={t} className="chip blue" style={{ marginLeft: 6 }}>{t}</span>)}
+                  {fitScores[jobUrlKey(q.url)] && (
+                    <span
+                      className={`chip ${fitScores[jobUrlKey(q.url)].score >= 7 ? 'green' : fitScores[jobUrlKey(q.url)].score >= 5 ? 'blue' : 'amber'}`}
+                      style={{ marginLeft: 6 }}
+                      title={fitScores[jobUrlKey(q.url)].verdict}
+                    >
+                      fit {fitScores[jobUrlKey(q.url)].score}/10
+                    </span>
+                  )}
                 </div>
               </div>
               <button className="small ghost" onClick={() => void chrome.tabs.create({ url: q.url })}>Open</button>

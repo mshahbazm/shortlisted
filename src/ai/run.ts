@@ -8,9 +8,9 @@ import * as store from '../lib/store'
 import { clientFromSettings } from './client'
 import { extractProfile } from './capabilities/extract-profile'
 import { TailorCvResult, tailorCv } from './capabilities/tailor-cv'
-import { ScoreFitResult, scoreFit } from './capabilities/score-fit'
+import { QuickScoreResult, ScoreFitResult, quickScoreFit, scoreFit } from './capabilities/score-fit'
 
-export type { ScoreFitResult }
+export type { QuickScoreResult, ScoreFitResult }
 
 export async function runExtractProfile(settings: Settings, cvText: string): Promise<Profile> {
   if (settings.aiProvider === 'cloud') {
@@ -43,6 +43,17 @@ export async function runScoreFit(
     return cloudCall<ScoreFitResult>(settings, '/v1/score-fit', { profile, jobText })
   }
   return scoreFit(clientFromSettings(settings), profile, jobText, onStep)
+}
+
+export async function runQuickScore(
+  settings: Settings,
+  profile: Profile,
+  jobText: string,
+): Promise<QuickScoreResult> {
+  if (settings.aiProvider === 'cloud') {
+    return cloudCall<QuickScoreResult>(settings, '/v1/score-fit', { profile, jobText, quick: true })
+  }
+  return quickScoreFit(clientFromSettings(settings), profile, jobText)
 }
 
 // Cloud-only: send the PDF itself so the server can OCR scanned resumes.

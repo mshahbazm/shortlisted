@@ -37,6 +37,74 @@ const SCORING_PROMPT =
   `BIAS RULES: the profile is anonymized on purpose. Never consider or guess name, gender, age, ` +
   `nationality, or school prestige. Judge evidence only.`
 
+// Quick mode: one pass, one criterion — overall job relevance. This is the
+// on-page "how do I score here?" button: cheaper, faster, still honest.
+// (The full rubric stays for deliberate decisions; relevance is what a
+// candidate scanning jobs actually needs.)
+
+export interface QuickFit {
+  overallScore: number // 1-10
+  verdict: string
+  strengths: string[]
+  gaps: string[]
+}
+
+const quickFitSchema = {
+  type: 'object',
+  required: ['overallScore', 'verdict', 'strengths', 'gaps'],
+  properties: {
+    overallScore: { type: 'integer', minimum: 1, maximum: 10 },
+    verdict: { type: 'string', description: 'one honest sentence: apply or skip, and why' },
+    strengths: { type: 'array', items: { type: 'string' }, maxItems: 3 },
+    gaps: { type: 'array', items: { type: 'string' }, maxItems: 5 },
+  },
+} as const
+
+const QUICK_PROMPT =
+  `You judge how RELEVANT an anonymized candidate profile is to a job posting. One criterion only: ` +
+  `relevance of their real experience to this job's actual requirements. You are honest, not encouraging.\n` +
+  `Rules:\n` +
+  `- Evidence only: generic claims ("fast learner", "team player") count for nothing.\n` +
+  `- Directly relevant experience scores high; transferable-adjacent lands mid; unrelated caps at 4/10 ` +
+  `no matter how impressive the career is.\n` +
+  `- A missing hard requirement (stack, seniority, domain) pulls the score down — strength elsewhere ` +
+  `does not compensate.\n` +
+  `- Ignore and never guess name, gender, age, nationality, school prestige.\n` +
+  `- verdict: one plain sentence. strengths: at most 3 specific selling points for THIS job. ` +
+  `gaps: the requirements they don't show.`
+
+export interface QuickScoreResult {
+  fit: QuickFit
+  usage: { inputTokens: number; outputTokens: number }
+}
+
+export async function quickScoreFit(
+  client: LlmClient,
+  profile: Profile,
+  jobText: string,
+): Promise<QuickScoreResult> {
+  if (profile.work.length === 0) throw new Error('Fill in your work experience first — there is nothing to score yet.')
+  const pass = await runJsonPass<QuickFit>(
+    {
+      client,
+      systemPrompt: QUICK_PROMPT,
+      input: JSON.stringify({
+        jobPosting: jobText.slice(0, 16_000),
+        candidate: redactedProfileForScoring(profile),
+      }),
+      schema: quickFitSchema,
+      schemaName: 'QuickFit',
+      maxTokens: 1500,
+      tier: 'full', // single pass — give it the good model
+    },
+    (f) => (typeof f.overallScore !== 'number' || !f.verdict ? 'overallScore and verdict are required.' : null),
+  )
+  if (!pass.value) throw new Error('Scoring failed after a retry. Try again.')
+  const fit = pass.value
+  fit.overallScore = Math.max(1, Math.min(10, Math.round(fit.overallScore)))
+  return { fit, usage: pass.usage }
+}
+
 export async function scoreFit(
   client: LlmClient,
   profile: Profile,

@@ -25,6 +25,7 @@ export type Msg =
   | { type: 'recordApplication'; record: Omit<ApplicationRecord, 'id' | 'appliedAt' | 'status'> }
   | { type: 'openSidePanel' }
   | { type: 'fillCurrentTab' }
+  | { type: 'scoreFitPage'; jobText: string; jobUrl: string }
 
 export function sendMsg<T = unknown>(msg: Msg): Promise<T> {
   return chrome.runtime.sendMessage(msg)

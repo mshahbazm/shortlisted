@@ -8,6 +8,14 @@ export interface OverlayCallbacks {
   onFill: () => void
   onAnswer: (field: FormField, answer: string) => void
   onPickResume: (resumeId: string) => void
+  onScoreFit: () => void
+}
+
+export interface QuickFitDisplay {
+  score: number
+  verdict: string
+  strengths: string[]
+  gaps: string[]
 }
 
 const CSS = `
@@ -44,6 +52,15 @@ const CSS = `
   select { flex:1; background:#fff; color:#1f1f1f; border:1px solid #e7e7e4; border-radius:6px; padding:5px; }
   .note { color:#71717a; font-size:11.5px; margin-top:10px; }
   .collapsed .body { display:none; }
+  .scoreBtn { width: 100%; margin-top: 8px; padding: 8px 0; border: 1px solid #e7e7e4; border-radius: 8px;
+    background: #fff; color: #1f1f1f; font-weight: 600; font-size: 12.5px; cursor: pointer; }
+  .scoreBtn:hover { background: #f6f6f4; }
+  .scoreBtn:disabled { opacity: 0.5; cursor: default; }
+  .fitRow { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; }
+  .fitRow b { font-size: 22px; }
+  .fitRow small { color: #71717a; }
+  .fitVerdict { font-size: 12.5px; margin-top: 2px; }
+  .fitMeta { color: #71717a; font-size: 11.5px; margin-top: 4px; }
 `
 
 export class Overlay {
@@ -89,10 +106,68 @@ export class Overlay {
     btn.className = 'fillBtn'
     btn.textContent = 'Fill this application'
     btn.onclick = () => this.cb.onFill()
+    this.body.append(btn, this.scoreButton())
     const note = document.createElement('div')
     note.className = 'note'
     note.textContent = 'Fills what it knows, asks about the rest. You review everything and click submit yourself.'
-    this.body.append(btn, note)
+    this.body.append(note)
+  }
+
+  private scoreButton(): HTMLButtonElement {
+    const btn = document.createElement('button')
+    btn.className = 'scoreBtn'
+    btn.textContent = 'How do I score for this job?'
+    btn.onclick = () => this.cb.onScoreFit()
+    return btn
+  }
+
+  renderFitLoading() {
+    this.fitBox()?.remove()
+    const box = document.createElement('div')
+    box.id = 'fitbox'
+    box.className = 'fitMeta'
+    box.textContent = 'Scoring your fit…'
+    this.body.append(box)
+  }
+
+  renderFitResult(fit: QuickFitDisplay | null, error?: string) {
+    this.fitBox()?.remove()
+    const box = document.createElement('div')
+    box.id = 'fitbox'
+    if (!fit) {
+      box.className = 'note'
+      box.textContent = error ?? 'Scoring failed.'
+      this.body.append(box)
+      return
+    }
+    const row = document.createElement('div')
+    row.className = 'fitRow'
+    const score = document.createElement('b')
+    score.textContent = String(fit.score)
+    const denom = document.createElement('small')
+    denom.textContent = '/10 fit'
+    row.append(score, denom)
+    const verdict = document.createElement('div')
+    verdict.className = 'fitVerdict'
+    verdict.textContent = fit.verdict
+    box.append(row, verdict)
+    if (fit.strengths.length) {
+      const s = document.createElement('div')
+      s.className = 'fitMeta'
+      s.textContent = `Lead with: ${fit.strengths.join(' · ')}`
+      box.append(s)
+    }
+    if (fit.gaps.length) {
+      const g = document.createElement('div')
+      g.className = 'fitMeta'
+      g.textContent = `Gaps: ${fit.gaps.join(', ')}`
+      box.append(g)
+    }
+    this.body.append(box)
+  }
+
+  private fitBox(): HTMLElement | null {
+    return this.root.getElementById?.('fitbox') ?? this.body.querySelector('#fitbox')
   }
 
   renderResult(
@@ -106,7 +181,7 @@ export class Overlay {
     again.className = 'fillBtn'
     again.textContent = 'Fill again'
     again.onclick = () => this.cb.onFill()
-    this.body.append(again)
+    this.body.append(again, this.scoreButton())
 
     const stat = document.createElement('div')
     stat.className = 'stat'

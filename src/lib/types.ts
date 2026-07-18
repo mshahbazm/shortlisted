@@ -348,6 +348,23 @@ export const defaultSettings = (): Settings => ({
   finderUrl: 'http://localhost:4322',
 })
 
+// ---------- Fit scores (quick on-page scoring, keyed by normalized job URL) ----------
+
+export interface FitScoreRecord {
+  score: number // 1-10
+  verdict: string
+  at: number
+}
+
+export function jobUrlKey(url: string): string {
+  try {
+    const u = new URL(url)
+    return u.hostname + u.pathname.replace(/\/$/, '')
+  } catch {
+    return url
+  }
+}
+
 // ---------- Storage shape ----------
 
 export interface StorageShape {
@@ -357,6 +374,7 @@ export interface StorageShape {
   resumes: ResumeVariant[]
   applications: ApplicationRecord[]
   queue: QueueItem[]
+  fitScores: Record<string, FitScoreRecord>
   settings: Settings
 }
 
@@ -367,6 +385,7 @@ export const storageDefaults = (): StorageShape => ({
   resumes: [],
   applications: [],
   queue: [],
+  fitScores: {},
   settings: defaultSettings(),
 })
 

@@ -3,8 +3,9 @@
 
 import { Msg } from '../lib/messaging'
 import * as store from '../lib/store'
-import { BankAnswer, PendingQuestion, uid } from '../lib/types'
+import { BankAnswer, PendingQuestion, jobUrlKey, uid } from '../lib/types'
 import { normalizeQuestion, similarity } from '../lib/questions'
+import { runQuickScore } from '../ai/run'
 // CRXJS: gives us the emitted content-script path for scripting.executeScript.
 import contentScriptPath from '../content/index.ts?script'
 
@@ -138,6 +139,22 @@ async function handle(msg: Msg): Promise<unknown> {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
       if (tab?.windowId) await chrome.sidePanel.open({ windowId: tab.windowId })
       return { ok: true }
+    }
+
+    case 'scoreFitPage': {
+      const [settings, profile] = await Promise.all([store.get('settings'), store.get('profile')])
+      if (settings.aiProvider === 'none') return { error: 'Set up AI in the side panel Settings first.' }
+      if (profile.work.length === 0) return { error: 'Fill your profile first (side panel → Profile).' }
+      try {
+        const result = await runQuickScore(settings, profile, msg.jobText)
+        await store.update('fitScores', (scores) => ({
+          ...scores,
+          [jobUrlKey(msg.jobUrl)]: { score: result.fit.overallScore, verdict: result.fit.verdict, at: Date.now() },
+        }))
+        return result
+      } catch (e) {
+        return { error: e instanceof Error ? e.message : String(e) }
+      }
     }
 
     case 'fillCurrentTab': {
