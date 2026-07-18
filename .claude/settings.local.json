@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat /Users/Shared/www/xvelopers/scnz-app/package.json 2>&1)"
+    ]
+  }
+}
