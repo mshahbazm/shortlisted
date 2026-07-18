@@ -1,23 +1,25 @@
-// The one entry point the UI calls for AI work. Routes to:
-//  - Shortlisted Cloud (capability runs server-side; no key on the machine), or
-//  - a local LlmClient (BYOK / Ollama / LM Studio) running the same capability
-//    code right here in the extension.
+// The one entry point the UI calls for AI work. Everything runs on
+// Shortlisted Cloud — capabilities execute server-side against the /v1 API
+// (the capability code itself lives in ./capabilities, shared with the server).
 
-import { Profile, Settings } from '../lib/types'
+import {
+  ApplicationRecord,
+  BankAnswer,
+  FitScoreRecord,
+  Profile,
+  QueueItem,
+  ResumeVariant,
+  Settings,
+} from '../lib/types'
 import { cloudBaseUrl } from '../lib/config'
 import * as store from '../lib/store'
-import { clientFromSettings } from './client'
-import { extractProfile } from './capabilities/extract-profile'
-import { TailorCvResult, tailorCv } from './capabilities/tailor-cv'
-import { QuickScoreResult, ScoreFitResult, quickScoreFit, scoreFit } from './capabilities/score-fit'
+import type { TailorCvResult } from './capabilities/tailor-cv'
+import type { QuickScoreResult, ScoreFitResult } from './capabilities/score-fit'
 
 export type { QuickScoreResult, ScoreFitResult }
 
 export async function runExtractProfile(settings: Settings, cvText: string): Promise<Profile> {
-  if (settings.aiProvider === 'cloud') {
-    return cloudCall<Profile>(settings, '/v1/extract-profile', { cvText })
-  }
-  return extractProfile(clientFromSettings(settings), cvText)
+  return cloudCall<Profile>(settings, '/v1/extract-profile', { cvText })
 }
 
 export async function runTailorCv(
@@ -26,11 +28,8 @@ export async function runTailorCv(
   jobText: string,
   onStep?: (step: string) => void,
 ): Promise<TailorCvResult> {
-  if (settings.aiProvider === 'cloud') {
-    onStep?.('Tailoring on Shortlisted Cloud…')
-    return cloudCall<TailorCvResult>(settings, '/v1/tailor-cv', { profile, jobText })
-  }
-  return tailorCv(clientFromSettings(settings), profile, jobText, onStep)
+  onStep?.('Tailoring on Shortlisted Cloud…')
+  return cloudCall<TailorCvResult>(settings, '/v1/tailor-cv', { profile, jobText })
 }
 
 export async function runScoreFit(
@@ -39,11 +38,8 @@ export async function runScoreFit(
   jobText: string,
   onStep?: (step: string) => void,
 ): Promise<ScoreFitResult> {
-  if (settings.aiProvider === 'cloud') {
-    onStep?.('Scoring on Shortlisted Cloud…')
-    return cloudCall<ScoreFitResult>(settings, '/v1/score-fit', { profile, jobText })
-  }
-  return scoreFit(clientFromSettings(settings), profile, jobText, onStep)
+  onStep?.('Scoring on Shortlisted Cloud…')
+  return cloudCall<ScoreFitResult>(settings, '/v1/score-fit', { profile, jobText })
 }
 
 export async function runQuickScore(
@@ -51,14 +47,10 @@ export async function runQuickScore(
   profile: Profile,
   jobText: string,
 ): Promise<QuickScoreResult> {
-  if (settings.aiProvider === 'cloud') {
-    return cloudCall<QuickScoreResult>(settings, '/v1/score-fit', { profile, jobText, quick: true })
-  }
-  return quickScoreFit(clientFromSettings(settings), profile, jobText)
+  return cloudCall<QuickScoreResult>(settings, '/v1/score-fit', { profile, jobText, quick: true })
 }
 
-// Cloud-only: send the PDF itself so the server can OCR scanned resumes.
-// (Local providers read the text layer only — no OCR wasm in the extension.)
+// Send the PDF itself so the server can OCR scanned resumes.
 export async function cloudParseResumePdf(
   settings: Settings,
   pdf: ArrayBuffer,
@@ -73,14 +65,44 @@ export interface CloudUsage {
   plan: 'free' | 'pro'
   creditsUsed: number
   creditsLimit: number
+  verified: boolean
+  email: string | null
 }
 
 export async function cloudUsage(settings: Settings): Promise<CloudUsage> {
   return cloudCall<CloudUsage>(settings, '/v1/me', undefined, 'GET')
 }
 
-export async function activateLicense(settings: Settings, key: string): Promise<CloudUsage> {
-  return cloudCall<CloudUsage>(settings, '/v1/license', { key })
+// ---- account (email OTP; links this device to the user) ----
+
+export async function sendLoginCode(settings: Settings, email: string): Promise<void> {
+  await cloudCall(settings, '/v1/auth/send-code', { email })
+}
+
+export async function verifyLoginCode(settings: Settings, email: string, otp: string): Promise<CloudUsage> {
+  const res = await cloudCall<CloudUsage>(settings, '/v1/auth/verify', { email, otp })
+  await store.update('settings', (s) => ({ ...s, accountEmail: res.email ?? email }))
+  return res
+}
+
+// ---- account data (server holds the source of truth; see background mirror) ----
+
+export interface CloudData {
+  profile: Profile | null
+  visibility: string
+  resumes: ResumeVariant[]
+  applications: ApplicationRecord[]
+  savedJobs: QueueItem[]
+  answers: BankAnswer[]
+  fitScores: Record<string, FitScoreRecord>
+}
+
+export async function fetchCloudData(settings: Settings): Promise<CloudData> {
+  return cloudCall<CloudData>(settings, '/v1/data', undefined, 'GET')
+}
+
+export async function pushCloudData(settings: Settings, patch: Record<string, unknown>): Promise<void> {
+  await cloudCall(settings, '/v1/data', patch, 'PUT')
 }
 
 // ---- plumbing ----
@@ -89,7 +111,7 @@ async function cloudCall<T>(
   settings: Settings,
   path: string,
   body?: unknown,
-  method: 'GET' | 'POST' = body === undefined ? 'GET' : 'POST',
+  method: 'GET' | 'POST' | 'PUT' = body === undefined ? 'GET' : 'POST',
 ): Promise<T> {
   const token = await ensureDeviceToken(settings)
   const res = await cloudFetch(settings, path, {

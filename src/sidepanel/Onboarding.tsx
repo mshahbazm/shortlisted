@@ -1,14 +1,13 @@
 import { useRef, useState } from 'react'
 import { useStore } from './hooks'
 import { cloudParseResumePdf, runExtractProfile } from '../ai/run'
-import { assessTextQuality, extractPdfTextFromFile } from '../lib/pdfText'
 import { masterVariant, renderResumePdf } from '../pdf/resumePdf'
 import { uid } from '../lib/types'
 
 // One question per screen. The user hands us everything up front;
 // the app reveals itself afterwards.
 
-type Step = 'welcome' | 'key' | 'paste' | 'review' | 'answers' | 'done'
+type Step = 'welcome' | 'paste' | 'review' | 'answers' | 'done'
 
 export function Onboarding({ onDone }: { onDone: () => void }) {
   const [profile, saveProfile] = useStore('profile')
@@ -19,26 +18,17 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
   const [cvText, setCvText] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
-  const [key, setKey] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
   const onPdf = async (file: File) => {
     setErr('')
     setBusy(true)
     try {
-      // Cloud users: send the PDF itself — the server deep-reads it (OCR for
-      // scanned resumes) and returns the finished profile in one step.
-      if (settings.aiProvider === 'cloud') {
-        const { profile: extracted } = await cloudParseResumePdf(settings, await file.arrayBuffer())
-        saveProfile({ ...extracted, facts: profile.facts })
-        setStep('review')
-        return
-      }
-      const text = await extractPdfTextFromFile(file)
-      setCvText(text)
-      if (assessTextQuality(text) === 'low') {
-        setErr('This PDF reads poorly — possibly a scanned or heavily designed document. Check the text below, or paste it yourself. (Shortlisted Cloud can OCR scanned resumes.)')
-      }
+      // Send the PDF itself — the server deep-reads it (OCR for scanned
+      // resumes) and returns the finished profile in one step.
+      const { profile: extracted } = await cloudParseResumePdf(settings, await file.arrayBuffer())
+      saveProfile({ ...extracted, facts: profile.facts })
+      setStep('review')
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
     } finally {
@@ -46,7 +36,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
     }
   }
 
-  const STEPS: Step[] = ['welcome', 'key', 'paste', 'review', 'answers', 'done']
+  const STEPS: Step[] = ['welcome', 'paste', 'review', 'answers', 'done']
   const idx = STEPS.indexOf(step)
 
   const finish = () => {
@@ -58,11 +48,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
     setErr('')
     setBusy(true)
     try {
-      const s = key.trim()
-        ? { ...settings, aiProvider: 'anthropic' as const, anthropicKey: key.trim() }
-        : settings
-      if (key.trim()) saveSettings({ ...s, onboarded: false })
-      const extracted = await runExtractProfile(s, cvText)
+      const extracted = await runExtractProfile(settings, cvText)
       saveProfile({ ...extracted, facts: profile.facts })
       setStep('review')
     } catch (e) {
@@ -70,11 +56,6 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
     } finally {
       setBusy(false)
     }
-  }
-
-  const chooseCloud = () => {
-    saveSettings({ ...settings, aiProvider: 'cloud', onboarded: false })
-    setStep('paste')
   }
 
   const generateCv = () => {
@@ -104,7 +85,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
   return (
     <div className="wizard">
       <div className="steps">
-        {STEPS.slice(0, 5).map((s, i) => <i key={s} className={i <= idx ? 'on' : ''} />)}
+        {STEPS.slice(0, 4).map((s, i) => <i key={s} className={i <= idx ? 'on' : ''} />)}
       </div>
 
       {step === 'welcome' && (
@@ -114,9 +95,9 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
             Tell me about yourself once. Then every job application fills itself —
             you just review and hit submit.
           </p>
-          <button className="bigchoice" onClick={() => setStep(settings.aiProvider === 'none' ? 'key' : 'paste')}>
+          <button className="bigchoice" onClick={() => setStep('paste')}>
             <div className="bt">Import my CV</div>
-            <div className="bs">Paste your resume text — AI turns it into your profile. ~1 minute.</div>
+            <div className="bs">Upload or paste your resume — AI turns it into your profile. ~1 minute.</div>
           </button>
           <button className="bigchoice" onClick={() => setStep('answers')}>
             <div className="bt">Start blank</div>
@@ -128,38 +109,13 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
         </>
       )}
 
-      {step === 'key' && (
-        <>
-          <h1>Pick your AI.</h1>
-          <p className="lead">
-            Reading your CV and tailoring it per job needs AI. Two honest options:
-          </p>
-          <button className="bigchoice" onClick={chooseCloud}>
-            <div className="bt">Shortlisted Cloud — no key, just works</div>
-            <div className="bs">
-              10 free AI credits. Your CV text is processed only to do the task —
-              never stored, never sold, never used for training.
-            </div>
-          </button>
-          <label className="f" style={{ marginTop: 6 }}><span>…or bring your own key (Anthropic; more providers in Settings)</span>
-            <input
-              type="password" placeholder="sk-ant-…" value={key}
-              onChange={(e) => setKey(e.target.value)}
-            /></label>
-          <div className="actions">
-            <button className="primary" disabled={!key.trim()} onClick={() => setStep('paste')}>Use my key</button>
-            <button className="link" onClick={() => setStep('answers')}>I'll do it manually</button>
-          </div>
-        </>
-      )}
-
       {step === 'paste' && (
         <>
           <h1>Your CV, please.</h1>
-          <p className="lead">Upload the PDF — I read it right here on your computer. Or paste the text.</p>
+          <p className="lead">Upload the PDF, or paste the text.</p>
           <button className="bigchoice" onClick={() => fileRef.current?.click()}>
             <div className="bt">{cvText ? 'Got it ✓ — pick a different PDF' : 'Upload PDF'}</div>
-            <div className="bs">{cvText ? `${cvText.length.toLocaleString()} characters read` : 'Parsed locally, never uploaded anywhere.'}</div>
+            <div className="bs">{cvText ? `${cvText.length.toLocaleString()} characters read` : 'AI reads it and builds your profile.'}</div>
           </button>
           <input
             ref={fileRef} type="file" accept="application/pdf" style={{ display: 'none' }}

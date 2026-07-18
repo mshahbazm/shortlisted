@@ -26,6 +26,7 @@ export type Msg =
   | { type: 'openSidePanel' }
   | { type: 'fillCurrentTab' }
   | { type: 'scoreFitPage'; jobText: string; jobUrl: string }
+  | { type: 'cloudPull' }
 
 export function sendMsg<T = unknown>(msg: Msg): Promise<T> {
   return chrome.runtime.sendMessage(msg)

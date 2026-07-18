@@ -314,40 +314,19 @@ export interface QueueItem {
 }
 
 // ---------- Settings ----------
-
-export type AiProvider = 'none' | 'cloud' | 'anthropic' | 'openai' | 'ollama' | 'custom'
+// AI always runs on Shortlisted Cloud — there is no provider choice.
 
 export interface Settings {
-  aiProvider: AiProvider
-  anthropicKey?: string
-  anthropicModel: string
-  openaiKey?: string
-  openaiModel: string
-  ollamaEndpoint: string
-  ollamaModel: string
-  // Any OpenAI-compatible server: LM Studio, Jan, LocalAI, vLLM, OpenRouter…
-  customEndpoint: string
-  customModel: string
-  customKey?: string
-  // Shortlisted Cloud (hosted AI — no key needed). Empty = the build-time
-  // default from lib/config.ts (dev → localhost, prod → hosted origin);
-  // set only as an advanced override.
+  // Empty cloudUrl = the build-time default from lib/config.ts
+  // (dev → localhost, prod → hosted origin); set only as an advanced override.
   cloudUrl: string
   cloudToken?: string // device token, auto-provisioned on first use
-  finderUrl: string // the local job-finder app
+  accountEmail?: string // set once the email OTP verifies; account = data saved server-side
   onboarded?: boolean
 }
 
 export const defaultSettings = (): Settings => ({
-  aiProvider: 'none',
-  anthropicModel: 'claude-sonnet-5',
-  openaiModel: 'gpt-4o-mini',
-  ollamaEndpoint: 'http://localhost:11434',
-  ollamaModel: 'llama3.1',
-  customEndpoint: 'http://localhost:1234/v1', // LM Studio's default
-  customModel: '',
   cloudUrl: '', // empty = build-time default (see lib/config.ts)
-  finderUrl: 'http://localhost:4322',
 })
 
 // Cloud URLs that were once shipped as *defaults* and may linger in saved
@@ -356,8 +335,18 @@ export const defaultSettings = (): Settings => ({
 // typed that isn't in this list is a real override and is left alone.
 const STALE_CLOUD_URLS = ['http://localhost:8788', 'http://localhost:3001', 'http://localhost:3000']
 
+// Settings keys from removed features (BYOK providers, provider toggle, job
+// finder); stripped on read.
+const LEGACY_SETTINGS_KEYS = [
+  'aiProvider', 'finderUrl',
+  'anthropicKey', 'anthropicModel', 'openaiKey', 'openaiModel',
+  'ollamaEndpoint', 'ollamaModel', 'customEndpoint', 'customModel', 'customKey',
+]
+
 export function normalizeSettings(raw: unknown): Settings {
-  const s = { ...defaultSettings(), ...(raw && typeof raw === 'object' ? (raw as object) : {}) } as Settings
+  const s = { ...defaultSettings(), ...(raw && typeof raw === 'object' ? (raw as object) : {}) } as Settings &
+    Record<string, unknown>
+  for (const k of LEGACY_SETTINGS_KEYS) delete s[k]
   if (s.cloudUrl && STALE_CLOUD_URLS.includes(s.cloudUrl.trim().replace(/\/$/, ''))) {
     // The old default pointed at a server that no longer exists there — the
     // device token minted by it is dead too.

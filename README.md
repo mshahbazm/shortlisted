@@ -36,12 +36,11 @@ makes the next one faster.
   about. Built to be honest, not encouraging — unrelated experience is capped,
   and generic claims count for nothing.
 
-- **Keeps your data on your machine.** Your profile, answers, and CVs live in
-  local browser storage — filling and the answer bank are free and work without
-  signing up for anything. A free account unlocks the online side when you want
-  it (like your public profile page). AI features run where you choose:
-  [Shortlisted Cloud](https://shortlist.id) (zero setup; free trial, then Pro),
-  your own API key, or a local model via Ollama / LM Studio. Switchable any time.
+- **Free where it counts.** Filling and the answer bank are free and work
+  without signing up for anything. A free account unlocks the online side
+  (like your public profile page). AI features — CV import, tailoring, fit
+  scores — run on [Shortlisted Cloud](https://shortlist.id): zero setup,
+  free trial, then Pro.
 
 ## Why it works when auto-apply tools don't
 
@@ -62,13 +61,8 @@ makes the next one faster.
   That's also why it sails past the bot-detection that breaks auto-appliers:
   there's no bot to detect. A human is right there, clicking submit.
 
-- **Your data works for you, not on you.** Profile, answers, and CVs live on
-  your machine. Turn on an AI provider and the text needed for that task is
-  sent, used for the task, and that's it — Shortlisted Cloud stores nothing,
-  sells nothing, trains on nothing.
-
 All of this is open source, so you don't have to take our word for any of it —
-read the code, build it yourself, watch the network tab.
+read the code, build it yourself.
 
 <!-- TODO before launch: screenshots — wizard, on-page fill panel, fit score -->
 
@@ -91,23 +85,16 @@ Then open `chrome://extensions`, enable **Developer mode**, click
 
 Click the Shortlisted icon and the setup wizard walks you through it:
 
-1. **Upload your CV** (PDF, read locally) — AI turns it into a structured
+1. **Upload your CV** (PDF) — AI turns it into a structured
    profile you can edit any time.
 2. **Answer the three questions every job asks** — salary, notice period,
    work authorization. Once, forever.
 3. **Open any job posting** and hit **Fill this application** in the panel
    that appears. Review, answer anything new, submit.
 
-AI options (Settings → AI):
-
-| Option | Needs | Cost |
-|---|---|---|
-| Shortlisted Cloud | nothing — just works | 10 free credits, then Pro |
-| Anthropic / OpenAI | your API key | your usage |
-| Ollama / LM Studio | a local model | free |
-
-Filling and the answer bank work with **no AI at all** — AI powers CV import,
-tailoring, and fit scores.
+AI runs on Shortlisted Cloud (Settings → AI): nothing to configure — 10 free
+credits, then Pro. Filling and the answer bank work with **no AI at all** —
+AI powers CV import, tailoring, and fit scores.
 
 ## Contributing
 

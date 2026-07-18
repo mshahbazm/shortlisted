@@ -123,7 +123,6 @@ export function ResumesTab() {
           {busyStep ? 'Working…' : 'Tailor my CV'}
         </button>
         {busyStep && <p className="progress">{busyStep}</p>}
-        {settings.aiProvider === 'none' && <p className="microhint">Needs an AI key — Settings.</p>}
         {!hasProfile && <p className="microhint">Fill your profile first — the CV is built only from what's really there.</p>}
         {err && <p className="error">{err}</p>}
         {gaps.length > 0 && (

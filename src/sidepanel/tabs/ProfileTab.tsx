@@ -13,7 +13,6 @@ import {
   workPeriodLabel,
 } from '../../lib/types'
 import { cloudParseResumePdf, runExtractProfile } from '../../ai/run'
-import { extractPdfTextFromFile } from '../../lib/pdfText'
 
 export function ProfileTab() {
   const [profile, saveProfile, loaded] = useStore('profile')
@@ -155,15 +154,10 @@ export function ProfileTab() {
 
       <Section title="Re-import from CV" summary="upload PDF or paste text, AI rebuilds the profile">
         <ImportBox
-          disabled={settings.aiProvider === 'none'}
-          cloudPdf={
-            settings.aiProvider === 'cloud'
-              ? async (file) => {
-                  const { profile: extracted } = await cloudParseResumePdf(settings, await file.arrayBuffer())
-                  saveProfile({ ...extracted, facts: p.facts })
-                }
-              : undefined
-          }
+          cloudPdf={async (file) => {
+            const { profile: extracted } = await cloudParseResumePdf(settings, await file.arrayBuffer())
+            saveProfile({ ...extracted, facts: p.facts })
+          }}
           onImport={async (text) => {
             const extracted = await runExtractProfile(settings, text)
             saveProfile({ ...extracted, facts: p.facts })
@@ -278,14 +272,12 @@ function EduRow({ entry, onChange, onRemove }: { entry: EducationEntry; onChange
 }
 
 function ImportBox({
-  disabled,
   onImport,
   cloudPdf,
 }: {
-  disabled: boolean
   onImport: (text: string) => Promise<void>
-  // Cloud mode: the server deep-reads the PDF (incl. OCR) and returns the profile.
-  cloudPdf?: (file: File) => Promise<void>
+  // The server deep-reads the PDF (incl. OCR) and returns the profile.
+  cloudPdf: (file: File) => Promise<void>
 }) {
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
@@ -299,7 +291,7 @@ function ImportBox({
         onClick={() => fileRef.current?.click()}
         style={{ marginBottom: 8 }}
       >
-        {busy ? 'Reading PDF…' : 'Upload PDF (read locally)'}
+        {busy ? 'Reading PDF…' : 'Upload PDF'}
       </button>
       <input
         ref={fileRef} type="file" accept="application/pdf" style={{ display: 'none' }}
@@ -310,12 +302,8 @@ function ImportBox({
           setErr('')
           setBusy(true)
           try {
-            if (cloudPdf) {
-              await cloudPdf(f)
-              setText('')
-            } else {
-              setText(await extractPdfTextFromFile(f))
-            }
+            await cloudPdf(f)
+            setText('')
           } catch (ex) {
             setErr(ex instanceof Error ? ex.message : String(ex))
           } finally {
@@ -327,7 +315,7 @@ function ImportBox({
       <div className="spacer" />
       <button
         className="ghost small"
-        disabled={disabled || busy || text.trim().length < 50}
+        disabled={busy || text.trim().length < 50}
         onClick={async () => {
           setErr('')
           setBusy(true)
@@ -343,7 +331,6 @@ function ImportBox({
       >
         {busy ? 'Reading…' : 'Rebuild profile'}
       </button>
-      {disabled && <p className="microhint">Needs an AI key — Settings.</p>}
       {err && <p className="error">{err}</p>}
     </>
   )

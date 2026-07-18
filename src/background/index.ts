@@ -6,6 +6,7 @@ import * as store from '../lib/store'
 import { BankAnswer, PendingQuestion, jobUrlKey, uid } from '../lib/types'
 import { normalizeQuestion, similarity } from '../lib/questions'
 import { runQuickScore } from '../ai/run'
+import { pullFromCloud, startCloudMirror } from './cloudMirror'
 // CRXJS: gives us the emitted content-script path for scripting.executeScript.
 import contentScriptPath from '../content/index.ts?script'
 
@@ -13,6 +14,11 @@ chrome.runtime.onInstalled.addListener(() => {
   void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
   void refreshBadge()
 })
+
+// Mirror local data to the signed-in account; load the account's data
+// whenever the worker wakes.
+startCloudMirror()
+void pullFromCloud().catch((e) => console.error('[shortlisted] cloud load failed:', e))
 
 async function refreshBadge() {
   const pending = await store.get('pendingQuestions')
@@ -143,7 +149,6 @@ async function handle(msg: Msg): Promise<unknown> {
 
     case 'scoreFitPage': {
       const [settings, profile] = await Promise.all([store.get('settings'), store.get('profile')])
-      if (settings.aiProvider === 'none') return { error: 'Set up AI in the side panel Settings first.' }
       if (profile.work.length === 0) return { error: 'Fill your profile first (side panel → Profile).' }
       try {
         const result = await runQuickScore(settings, profile, msg.jobText)
@@ -169,6 +174,15 @@ async function handle(msg: Msg): Promise<unknown> {
         return { ok: true }
       } catch (e) {
         return { error: `Could not inject: ${String(e)}` }
+      }
+    }
+
+    case 'cloudPull': {
+      try {
+        await pullFromCloud()
+        return { ok: true }
+      } catch (e) {
+        return { error: e instanceof Error ? e.message : String(e) }
       }
     }
   }
