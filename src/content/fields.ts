@@ -48,6 +48,25 @@ export function labelFor(el: Fillable): string {
       if (cand && !cand.contains(el)) push(cand.textContent)
     }
   }
+  if (texts.length === 0) {
+    // Nearest preceding text block: at each ancestor level, scan the previous
+    // siblings of the branch we came up through for an element with real text
+    // and no form controls. This is how most ATS custom questions are built —
+    // e.g. Lever's <div class="application-label">Question?</div> right above
+    // the input's wrapper.
+    let child: HTMLElement | null = el
+    for (let depth = 0; child && depth < 4 && texts.length === 0; depth++) {
+      let sib = child.previousElementSibling as HTMLElement | null
+      while (sib && texts.length === 0) {
+        if (!sib.querySelector('input,textarea,select')) {
+          const t = sib.textContent?.replace(/\s+/g, ' ').trim() ?? ''
+          if (t.length > 2 && t.length < 400) push(t)
+        }
+        sib = sib.previousElementSibling as HTMLElement | null
+      }
+      child = child.parentElement
+    }
+  }
   if (texts.length === 0) push((el as HTMLInputElement).placeholder)
   if (texts.length === 0) push(el.getAttribute('name')?.replace(/[_\-\[\]]/g, ' '))
 
