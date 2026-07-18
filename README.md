@@ -37,9 +37,10 @@ makes the next one faster.
   and generic claims count for nothing.
 
 - **Keeps your data on your machine.** Your profile, answers, and CVs live in
-  local browser storage. No account required. AI features run on
-  [Shortlisted Cloud](https://shortlist.id) (opt-in), your own API key, or a
-  local model via Ollama / LM Studio — your choice, switchable any time.
+  local browser storage. No account required — filling and the answer bank are
+  free forever. AI features are optional and run where you choose:
+  [Shortlisted Cloud](https://shortlist.id) (zero setup; free trial, then Pro),
+  your own API key, or a local model via Ollama / LM Studio. Switchable any time.
 
 ## Why it works when auto-apply tools don't
 
