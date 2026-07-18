@@ -60,10 +60,18 @@ const CSS = `
   .scoreBtn:hover { background: #f6f6f4; }
   .scoreBtn:disabled { opacity: 0.5; cursor: default; }
   .fitRow { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; }
-  .fitRow b { font-size: 22px; }
+  .fitRow b { font-size: 26px; }
   .fitRow small { color: #71717a; }
   .fitVerdict { font-size: 12.5px; margin-top: 2px; }
   .fitMeta { color: #71717a; font-size: 11.5px; margin-top: 4px; }
+  .scoring { text-align: center; padding: 22px 0 16px; }
+  .scoring .label { font-weight: 600; font-size: 13.5px; }
+  .spinner {
+    width: 24px; height: 24px; margin: 0 auto 12px; border-radius: 50%;
+    border: 3px solid #e7e7e4; border-top-color: #3d11ff;
+    animation: sl-spin 0.7s linear infinite;
+  }
+  @keyframes sl-spin { to { transform: rotate(360deg); } }
 `
 
 export class Overlay {
@@ -126,20 +134,34 @@ export class Overlay {
     return btn
   }
 
+  // Scoring takes over the whole panel: one spinner, one label — the buttons
+  // come back with the result.
   renderFitLoading() {
-    this.fitBox()?.remove()
-    const box = document.createElement('div')
-    box.id = 'fitbox'
-    box.className = 'fitMeta'
-    box.textContent = this.t.scoringFit
-    this.body.append(box)
+    this.body.replaceChildren()
+    const wrap = document.createElement('div')
+    wrap.className = 'scoring'
+    const spin = document.createElement('div')
+    spin.className = 'spinner'
+    const label = document.createElement('div')
+    label.className = 'label'
+    label.textContent = this.t.scoringFit
+    wrap.append(spin, label)
+    this.body.append(wrap)
   }
 
   renderFitResult(fit: QuickFitDisplay | null, error?: string) {
-    this.fitBox()?.remove()
+    // Rebuild the panel: actions on top, then the score (or the error).
+    this.body.replaceChildren()
+    const fill = document.createElement('button')
+    fill.className = 'fillBtn'
+    fill.textContent = this.t.fillApplication
+    fill.onclick = () => this.cb.onFill()
+    this.body.append(fill)
+
     const box = document.createElement('div')
     box.id = 'fitbox'
     if (!fit) {
+      this.body.append(this.scoreButton())
       box.className = 'note'
       box.textContent = error ?? this.t.scoringFailed
       this.body.append(box)
