@@ -344,7 +344,7 @@ export const defaultSettings = (): Settings => ({
   ollamaModel: 'llama3.1',
   customEndpoint: 'http://localhost:1234/v1', // LM Studio's default
   customModel: '',
-  cloudUrl: 'http://localhost:3001', // dev; becomes the hosted API origin later
+  cloudUrl: 'http://localhost:3000', // dev (the app serves /v1 too); hosted origin later
   finderUrl: 'http://localhost:4322',
 })
 
