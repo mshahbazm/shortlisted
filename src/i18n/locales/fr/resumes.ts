@@ -17,6 +17,8 @@ export const resumes: tLocale['resumes'] = {
   gapsIntro:
     'Cette offre demande des choses que votre profil ne montre pas (laissées HORS du CV — l’honnêteté fait partie du produit) :',
 
+  tailorNotePlaceholder: "Quelque chose à ajouter ou à mettre en avant ? p. ex. J’ai aussi de l’expérience Webflow — sites clients chez Agence X.",
+  tailorNoteHint: 'Facultatif. Les nouveaux faits énoncés ici sont aussi enregistrés dans votre profil.',
   addTitle: 'Ajouter un CV',
   addSummary: 'importez un PDF, ou générez depuis le profil',
   uploadPdf: 'Importer un PDF',

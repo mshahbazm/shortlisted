@@ -15,7 +15,7 @@ export type Msg =
   | { type: 'getResumeData'; resumeId: string }
   | { type: 'saveResume'; base64: string; fileName: string }
   | { type: 'intakeResume'; resumeId: string }
-  | { type: 'tailorAttach'; jobText: string; templateId: string }
+  | { type: 'tailorAttach'; jobText: string; templateId: string; note?: string }
   | {
       type: 'saveAnswer'
       questionRaw: string

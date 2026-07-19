@@ -15,6 +15,8 @@ export const resumes = {
   fillProfileHint: "Fill your profile first — the CV is built only from what's really there.",
   gapsIntro: "This job asks for things your profile doesn't show (kept OFF the CV — honesty is the feature):",
 
+  tailorNotePlaceholder: "Anything to add or emphasize? e.g. I also have Webflow experience — built client sites at Agency X.",
+  tailorNoteHint: 'Optional. New facts you state here are also saved to your profile.',
   addTitle: 'Add a CV',
   addSummary: 'upload a PDF, or generate from profile',
   uploadPdf: 'Upload PDF',

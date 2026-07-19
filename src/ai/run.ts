@@ -48,14 +48,18 @@ export async function runExtractProfile(settings: Settings, cvText: string): Pro
   return cloudCall<Profile>(settings, '/v1/extract-profile', { cvText })
 }
 
+/** TailorCvResult plus any note-stated facts the server folded in. */
+export type CloudTailorResult = TailorCvResult & { newFacts?: IntakeNewFacts }
+
 export async function runTailorCv(
   settings: Settings,
   profile: Profile,
   jobText: string,
   onStep?: (step: string) => void,
-): Promise<TailorCvResult> {
+  userNote?: string,
+): Promise<CloudTailorResult> {
   onStep?.('Tailoring on Shortlisted Cloud…')
-  return cloudCall<TailorCvResult>(settings, '/v1/tailor-cv', { profile, jobText })
+  return cloudCall<CloudTailorResult>(settings, '/v1/tailor-cv', { profile, jobText, userNote: userNote || undefined })
 }
 
 export async function runScoreFit(

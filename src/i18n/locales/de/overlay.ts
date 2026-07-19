@@ -36,6 +36,7 @@ export const overlay: tLocale['overlay'] = {
   uploadCv: 'Lebenslauf hochladen (PDF)',
   defaultMark: 'Standard',
   tailorNew: 'Neuen Lebenslauf für diese Stelle erstellen…',
+  tailorNotePlaceholder: 'Etwas zu ergänzen oder zu betonen? (optional)',
   tailorGo: 'Erstellen & anhängen',
   tailoringCv: 'Lebenslauf wird für diese Stelle zugeschnitten…',
   tailoringFailed: 'Zuschneiden fehlgeschlagen — bitte erneut versuchen.',

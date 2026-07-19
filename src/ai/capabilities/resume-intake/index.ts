@@ -59,8 +59,9 @@ const intakeSchema = {
 } as const
 
 const INTAKE_PROMPT =
-  `You label an uploaded CV so it can be matched to the right job applications later, and you ` +
-  `spot facts the CV contains that the candidate's stored profile is missing.\n\n` +
+  `You process candidate-provided text — an uploaded CV, or a short note the candidate wrote ` +
+  `about their experience. You label it so it can be matched to the right job applications ` +
+  `later, and you spot facts it contains that the candidate's stored profile is missing.\n\n` +
   `Return:\n` +
   `- tags: 2-4 short lowercase English role/field labels this CV is aimed at ` +
   `(examples: "frontend", "backend", "full-stack", "data", "devops", "marketing", "sales", ` +

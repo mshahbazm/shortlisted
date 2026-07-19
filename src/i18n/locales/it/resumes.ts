@@ -15,6 +15,8 @@ export const resumes: tLocale['resumes'] = {
   fillProfileHint: 'Prima compila il tuo profilo — il CV nasce solo da ciò che c’è davvero.',
   gapsIntro: 'Questa offerta chiede cose che il tuo profilo non mostra (tenute FUORI dal CV — l’onestà è il punto di forza):',
 
+  tailorNotePlaceholder: "Qualcosa da aggiungere o evidenziare? es. Ho anche esperienza con Webflow — siti per clienti presso Agenzia X.",
+  tailorNoteHint: 'Facoltativo. I nuovi fatti che dichiari qui vengono salvati anche nel tuo profilo.',
   addTitle: 'Aggiungi un CV',
   addSummary: 'carica un PDF, o generalo dal profilo',
   uploadPdf: 'Carica PDF',

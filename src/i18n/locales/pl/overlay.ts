@@ -41,6 +41,7 @@ export const overlay: tLocale['overlay'] = {
   uploadCv: 'Prześlij CV (PDF)',
   defaultMark: 'domyślne',
   tailorNew: 'Dopasuj nowe CV do tej oferty…',
+  tailorNotePlaceholder: 'Coś dodać lub podkreślić? (opcjonalnie)',
   tailorGo: 'Dopasuj i załącz',
   tailoringCv: 'Dopasowywanie CV do tej oferty…',
   tailoringFailed: 'Dopasowanie nie powiodło się — spróbuj ponownie.',

@@ -214,13 +214,14 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
       }
     },
 
-    onTailor: async (templateId: string) => {
+    onTailor: async (templateId: string, note: string) => {
       // Full-panel spinner — tailoring takes seconds and must LOOK alive.
       overlay.showSpinner(t.tailoringCv)
       const res = await sendMsg<{ id?: string; label?: string; error?: string }>({
         type: 'tailorAttach',
         jobText: jobPageText(),
         templateId,
+        note: note || undefined,
       })
       if (!res?.id) {
         // Put the panel back the way it was, then surface the error.

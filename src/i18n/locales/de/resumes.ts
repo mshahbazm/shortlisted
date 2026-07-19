@@ -17,6 +17,8 @@ export const resumes: tLocale['resumes'] = {
   gapsIntro:
     'Dieser Job verlangt Dinge, die dein Profil nicht zeigt (bleiben aus dem Lebenslauf RAUS — Ehrlichkeit ist das Feature):',
 
+  tailorNotePlaceholder: "Etwas zu ergänzen oder zu betonen? z. B. Ich habe auch Webflow-Erfahrung — Kundenseiten bei Agentur X gebaut.",
+  tailorNoteHint: 'Optional. Neue Fakten, die du hier nennst, werden auch in deinem Profil gespeichert.',
   addTitle: 'Lebenslauf hinzufügen',
   addSummary: 'PDF hochladen oder aus dem Profil generieren',
   uploadPdf: 'PDF hochladen',

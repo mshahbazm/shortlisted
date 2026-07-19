@@ -16,6 +16,8 @@ export const resumes: tLocale['resumes'] = {
   gapsIntro:
     'Deze vacature vraagt om dingen die je profiel niet laat zien (bewust NIET op het cv gezet — eerlijkheid is de feature):',
 
+  tailorNotePlaceholder: "Iets toe te voegen of te benadrukken? bijv. Ik heb ook Webflow-ervaring — klantsites gebouwd bij Bureau X.",
+  tailorNoteHint: 'Optioneel. Nieuwe feiten die je hier noemt, worden ook in je profiel opgeslagen.',
   addTitle: 'Cv toevoegen',
   addSummary: 'upload een PDF, of genereer uit je profiel',
   uploadPdf: 'PDF uploaden',

@@ -5,6 +5,7 @@ import { Section } from '../components'
 import { Profile, ResumeVariant, base64ToBytes, bytesToBase64, roleCompanyLabel, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
+import { applyIntakeFacts } from '../../lib/profileMerge'
 import { renderPdfPages, renderPdfThumbnail } from '../../lib/pdfText'
 import { masterVariant, renderResumePdf } from '../../pdf/resumePdf'
 import { ALL_TAGS, ResumeTemplate, TEMPLATES, TemplateTag } from '../../pdf/templates'
@@ -38,6 +39,7 @@ export function ResumesTab() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   const [jobText, setJobText] = useState('')
+  const [tailorNote, setTailorNote] = useState('')
   const [busyStep, setBusyStep] = useState('')
   const [err, setErr] = useState('')
   const [gaps, setGaps] = useState<string[]>([])
@@ -100,7 +102,12 @@ export function ResumesTab() {
     setErr('')
     setGaps([])
     try {
-      const result = await runTailorCv(settings, profile, jobText, setBusyStep)
+      const result = await runTailorCv(settings, profile, jobText, setBusyStep, tailorNote.trim() || undefined)
+      // Facts stated in the note become permanent profile facts (additive).
+      if (result.newFacts) {
+        const facts = result.newFacts
+        await store.update('profile', (p) => applyIntakeFacts(p, facts))
+      }
       const base64 = renderResumePdf(profile, result.resume, templateId)
       const safe = result.resume.label.replace(/[^\w\- ]/g, '').replace(/\s+/g, '-').slice(0, 40)
       await addResume((list) => ({
@@ -114,6 +121,7 @@ export function ResumesTab() {
       showToast(t.cvReady)
       setGaps(result.gaps)
       setJobText('')
+      setTailorNote('')
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
     } finally {
@@ -187,6 +195,14 @@ export function ResumesTab() {
           value={jobText}
           onChange={(e) => setJobText(e.target.value)}
         />
+        <div className="spacer" />
+        <textarea
+          rows={2}
+          placeholder={t.tailorNotePlaceholder}
+          value={tailorNote}
+          onChange={(e) => setTailorNote(e.target.value)}
+        />
+        <p className="microhint" style={{ margin: '4px 0 0' }}>{t.tailorNoteHint}</p>
         <div className="spacer" />
         <button
           className="primary small"

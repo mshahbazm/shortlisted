@@ -17,7 +17,7 @@ export interface OverlayCallbacks {
   /** Caret next to the fill button — the CV choice menu. */
   onFillMenu: () => void
   onPickCv: (resumeId: string) => void
-  onTailor: (templateId: string) => void
+  onTailor: (templateId: string, note: string) => void
 }
 
 export interface QuickFitDisplay {
@@ -61,7 +61,11 @@ const CSS = `
   .fillMenu .mi .mark { color: #a1a1aa; font-size: 11px; margin-left: auto; padding-left: 8px; }
   .fillMenu .mi.tailor { color: #3d11ff; font-weight: 600; }
   .fillMenu .sep { height: 1px; background: #e7e7e4; margin: 4px 5px; }
-  .tailorRow { display: flex; gap: 6px; padding: 4px 9px 8px; align-items: center; }
+  .tailorWrap { display: flex; flex-direction: column; gap: 6px; padding: 4px 9px 8px; }
+  .tailorWrap input[type='text'] { width: 100%; border: 1px solid #e7e7e4; border-radius: 6px;
+    padding: 6px 8px; font-size: 12px; font-family: inherit; }
+  .tailorWrap input[type='text']:focus { outline: none; border-color: #18181b; }
+  .tailorRow { display: flex; gap: 6px; align-items: center; }
   .tailorRow select { flex: 1; min-width: 0; }
   .tailorRow .go { flex: none; border: none; border-radius: 6px; background: #3d11ff; color: #fff;
     font-weight: 600; font-size: 12px; padding: 6px 10px; cursor: pointer; font-family: inherit; }
@@ -245,7 +249,12 @@ export class Overlay {
     tailor.className = 'mi tailor'
     tailor.textContent = this.t.tailorNew
     tailor.onclick = () => {
-      if (menu.querySelector('.tailorRow')) return
+      if (menu.querySelector('.tailorWrap')) return
+      const wrap = document.createElement('div')
+      wrap.className = 'tailorWrap'
+      const note = document.createElement('input')
+      note.type = 'text'
+      note.placeholder = this.t.tailorNotePlaceholder
       const row = document.createElement('div')
       row.className = 'tailorRow'
       const sel = document.createElement('select')
@@ -259,11 +268,14 @@ export class Overlay {
       go.className = 'go'
       go.textContent = this.t.tailorGo
       go.onclick = () => {
+        const noteText = note.value.trim()
         this.closeFillMenu()
-        this.cb.onTailor(sel.value)
+        this.cb.onTailor(sel.value, noteText)
       }
       row.append(sel, go)
-      menu.append(row)
+      wrap.append(note, row)
+      menu.append(wrap)
+      note.focus()
     }
     menu.append(tailor)
     // Expand in flow directly under the fill row — attached, never floating.

@@ -28,6 +28,10 @@ export async function tailorCv(
   profile: Profile,
   jobText: string,
   onStep?: (step: string) => void,
+  // Free-form candidate note: emphasis wishes and extra facts in their own
+  // words. Callers fold its facts into the profile BEFORE calling (intake),
+  // so the truth validators below need no exceptions.
+  userNote?: string,
 ): Promise<TailorCvResult> {
   if (profile.work.length === 0) throw new Error('Fill in your work experience first — the CV is built only from your real profile.')
   const usage = { inputTokens: 0, outputTokens: 0 }
@@ -58,7 +62,7 @@ export async function tailorCv(
     {
       client,
       systemPrompt: matchProfilePrompt(),
-      input: matchProfileInput(job, profile),
+      input: matchProfileInput(job, profile, userNote),
       schema: profileMatchSchema,
       schemaName: 'ProfileMatch',
       tier: 'mini',
@@ -86,7 +90,7 @@ export async function tailorCv(
     {
       client,
       systemPrompt: tailorPrompt(),
-      input: tailorInput(job, match, profile),
+      input: tailorInput(job, match, profile, userNote),
       schema: tailorOutputSchema,
       schemaName: 'TailoredCv',
       maxTokens: 6000,

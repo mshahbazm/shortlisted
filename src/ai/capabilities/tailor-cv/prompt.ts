@@ -13,6 +13,8 @@ export const matchProfilePrompt = () =>
   `candidate's existing skills to emphasize, one sentence on how to angle the ` +
   `candidate, and list requirement gaps the profile does NOT cover. ` +
   `Gaps are for the candidate's eyes only — they never go on the CV. ` +
+  `If a candidateNote is present, it was written by the candidate: treat its ` +
+  `wishes (what to emphasize or leave out) as high-priority guidance. ` +
   `Never invent experience the profile doesn't contain.`
 
 export const tailorPrompt = () =>
@@ -25,14 +27,22 @@ export const tailorPrompt = () =>
   `3. skills must be a subset of the profile's skills (reordering is the tailoring).\n` +
   `4. Plain, confident, concrete language. No buzzword soup, no first person.\n` +
   `Tailoring = choosing WHICH true things to lead with for THIS job, and phrasing them ` +
-  `in the job's own vocabulary where honest.`
+  `in the job's own vocabulary where honest.\n` +
+  `If a candidateNote is present it was written by the candidate themselves: follow its ` +
+  `emphasis wishes, and you may use facts it states (they are the candidate's own words) — ` +
+  `but rules 2 and 3 still hold for structure.`
 
-export function matchProfileInput(job: JobExtract, profile: Profile): string {
-  return JSON.stringify({ job, profile: profileForPrompt(profile) })
+export function matchProfileInput(job: JobExtract, profile: Profile, userNote?: string): string {
+  return JSON.stringify({ job, profile: profileForPrompt(profile), candidateNote: userNote || undefined })
 }
 
-export function tailorInput(job: JobExtract, match: ProfileMatch, profile: Profile): string {
-  return JSON.stringify({ job, positioning: match, masterProfile: profileForPrompt(profile) })
+export function tailorInput(job: JobExtract, match: ProfileMatch, profile: Profile, userNote?: string): string {
+  return JSON.stringify({
+    job,
+    positioning: match,
+    masterProfile: profileForPrompt(profile),
+    candidateNote: userNote || undefined,
+  })
 }
 
 function profileForPrompt(p: Profile) {

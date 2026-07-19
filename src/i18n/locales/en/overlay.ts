@@ -34,6 +34,7 @@ export const overlay = {
   uploadCv: 'Upload CV (PDF)',
   defaultMark: 'default',
   tailorNew: 'Tailor a new CV for this job…',
+  tailorNotePlaceholder: 'Anything to add or emphasize? (optional)',
   tailorGo: 'Tailor & attach',
   tailoringCv: 'Tailoring your CV for this job…',
   tailoringFailed: 'Tailoring failed — try again.',
