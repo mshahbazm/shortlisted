@@ -156,11 +156,12 @@ function DevCosts() {
   const [err, setErr] = useState('')
 
   const refresh = () => {
+    if (!settings.accountEmail) return // settings still loading, or signed out
     cloudUsageStats(settings)
       .then((r) => { setRows(r); setErr('') })
       .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
   }
-  useEffect(refresh, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(refresh, [settings.accountEmail]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const total = rows.reduce((s, r) => s + r.costUsd, 0)
   const totalTokens = rows.reduce((s, r) => s + r.inputTokens + r.outputTokens, 0)
