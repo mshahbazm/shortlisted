@@ -10,6 +10,7 @@ import {
   QueueItem,
   ResumeVariant,
   Settings,
+  bytesToBase64,
 } from '../lib/types'
 import { cloudBaseUrl } from '../lib/config'
 import * as store from '../lib/store'
@@ -66,12 +67,6 @@ export async function runQuickScore(
   return cloudCall<QuickScoreResult>(settings, '/v1/score-fit', { profile, jobText, quick: true })
 }
 
-function pdfBase64(pdf: ArrayBuffer): string {
-  const bytes = new Uint8Array(pdf)
-  let bin = ''
-  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
-  return btoa(bin)
-}
 
 /**
  * PDF → plain text on the server (OCR fallback for scanned resumes). No LLM
@@ -82,7 +77,7 @@ export async function cloudPdfText(
   settings: Settings,
   pdf: ArrayBuffer,
 ): Promise<{ text: string; method: 'text' | 'ocr'; quality: string }> {
-  return cloudCall(settings, '/v1/pdf-text', { pdfBase64: pdfBase64(pdf) })
+  return cloudCall(settings, '/v1/pdf-text', { pdfBase64: bytesToBase64(pdf) })
 }
 
 // Send the PDF itself so the server can OCR scanned resumes. Account required.
@@ -90,7 +85,7 @@ export async function cloudParseResumePdf(
   settings: Settings,
   pdf: ArrayBuffer,
 ): Promise<{ profile: Profile; method: 'text' | 'ocr'; quality: string }> {
-  return cloudCall(settings, '/v1/parse-resume', { pdfBase64: pdfBase64(pdf) })
+  return cloudCall(settings, '/v1/parse-resume', { pdfBase64: bytesToBase64(pdf) })
 }
 
 export interface CloudUsage {

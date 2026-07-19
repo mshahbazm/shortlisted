@@ -3,7 +3,7 @@
 
 import { Msg } from '../lib/messaging'
 import * as store from '../lib/store'
-import { BankAnswer, PendingQuestion, jobUrlKey, uid } from '../lib/types'
+import { BankAnswer, PendingQuestion, ResumeVariant, jobUrlKey, uid } from '../lib/types'
 import { normalizeQuestion, similarity } from '../lib/questions'
 import { cloudFillAssist, polishAnswer, runQuickScore } from '../ai/run'
 import { pullFromCloud, startCloudMirror } from './cloudMirror'
@@ -55,6 +55,31 @@ async function handle(msg: Msg): Promise<unknown> {
       const resumes = await store.get('resumes')
       const r = resumes.find((x) => x.id === msg.resumeId)
       return r ? { base64: r.dataBase64, fileName: r.fileName } : null
+    }
+
+    // A CV uploaded straight from the on-page panel (the form asked for one
+    // and the bank was empty). First CV in becomes the default.
+    case 'saveResume': {
+      const entry: ResumeVariant = {
+        id: uid(),
+        label: msg.fileName.replace(/\.pdf$/i, ''),
+        fileName: msg.fileName,
+        tags: [],
+        isDefault: false,
+        createdAt: Date.now(),
+        source: 'uploaded',
+        dataBase64: msg.base64,
+      }
+      let list: ResumeVariant[] = []
+      await store.update('resumes', (resumes) => {
+        entry.isDefault = resumes.length === 0
+        list = [...resumes, entry]
+        return list
+      })
+      return {
+        id: entry.id,
+        resumes: list.map(({ id, label, fileName, isDefault, tags }) => ({ id, label, fileName, isDefault, tags })),
+      }
     }
 
     case 'saveAnswer': {

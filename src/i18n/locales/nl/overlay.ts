@@ -30,6 +30,8 @@ export const overlay: tLocale['overlay'] = {
   allDone: 'Alles wat bekend is, staat erin. Bekijk de pagina en verstuur wanneer je klaar bent.',
   answerPlaceholder: 'Jouw antwoord… (opgeslagen in je bank)',
   pickOne: 'Kies er één…',
+  cvMissing: 'Deze vacature vraagt om een cv, maar er is er nog geen opgeslagen. Voeg het één keer toe — het wordt bij elke sollicitatie bijgevoegd.',
+  uploadCv: 'Cv uploaden (PDF)',
   saveAndFill: 'Opslaan & invullen',
   saved: 'Opgeslagen ✓',
 }

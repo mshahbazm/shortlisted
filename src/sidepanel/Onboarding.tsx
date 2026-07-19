@@ -4,6 +4,7 @@ import { LOCALES, LOCALE_LABELS, isLocale, useContent } from '../i18n'
 import { cloudPdfText, runExtractProfile, sendLoginCode, verifyLoginCode } from '../ai/run'
 import { assessTextQuality, extractPdfTextFromFile } from '../lib/pdfText'
 import { sendMsg } from '../lib/messaging'
+import { bytesToBase64, uid } from '../lib/types'
 import * as store from '../lib/store'
 
 // One question per screen. The user hands us everything up front;
@@ -29,6 +30,9 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
   // only sent for structuring once the account exists).
   const [signedUp, setSignedUp] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  // The resume created from the wizard upload — re-uploading replaces it
+  // instead of stacking copies.
+  const wizardResumeId = useRef<string | null>(null)
 
   // The account screen opens with the email the CV parse found — the user has
   // already seen it on the review step, so prefilling reads as consistent, not
@@ -41,6 +45,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
     setErr('')
     setPdfBusy(true)
     try {
+      const buf = await file.arrayBuffer()
       // No AI before sign-up: read the text layer locally; if it reads poorly
       // (scanned or heavily designed PDFs), the server OCRs it — still no LLM,
       // no credit. The text is structured only after the account exists.
@@ -48,9 +53,30 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
       if (local && assessTextQuality(local) !== 'low') {
         setCvText(local)
       } else {
-        const { text } = await cloudPdfText(settings, await file.arrayBuffer())
+        const { text } = await cloudPdfText(settings, buf)
         setCvText(text)
       }
+      // Keep the file itself: it becomes the user's first resume, so their
+      // real CV is ready to attach on the very first application.
+      const base64 = bytesToBase64(buf)
+      await store.update('resumes', (resumes) => {
+        const rest = resumes.filter((r) => r.id !== wizardResumeId.current)
+        const id = uid()
+        wizardResumeId.current = id
+        return [
+          ...rest,
+          {
+            id,
+            label: file.name.replace(/\.pdf$/i, ''),
+            fileName: file.name,
+            tags: [],
+            isDefault: rest.length === 0 || rest.every((r) => !r.isDefault),
+            createdAt: Date.now(),
+            source: 'uploaded',
+            dataBase64: base64,
+          },
+        ]
+      })
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
     } finally {

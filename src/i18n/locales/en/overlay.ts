@@ -28,6 +28,8 @@ export const overlay = {
   allDone: 'Everything known is in. Review the page, then submit when ready.',
   answerPlaceholder: 'Your answer… (saved to your bank)',
   pickOne: 'Pick one…',
+  cvMissing: 'This job asks for a CV, but none is saved yet. Add it once — it attaches on every application.',
+  uploadCv: 'Upload CV (PDF)',
   saveAndFill: 'Save & fill',
   saved: 'Saved ✓',
 }

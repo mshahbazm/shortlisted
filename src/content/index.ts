@@ -6,6 +6,7 @@ import * as store from '../lib/store'
 import { getContent, type tOverlayContent } from './i18n-bridge'
 import { GENERIC_ADAPTER, detectAdapter } from './adapters'
 import { attachResume, fieldContext, fillForm, watchSubmit, applyValue, FillResult } from './engine'
+import { bytesToBase64 } from '../lib/types'
 import { FormField, labelFor, optionsOf } from './fields'
 import { Overlay } from './overlay'
 import type { AssistField, AssistResultItem, CorrectionItem, VerifyField } from '../ai/capabilities/fill-assist'
@@ -146,6 +147,23 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
     onAnswer: (field: FormField, answer: string) => {
       saveAnswer(field, answer)
       applyValue(field, answer)
+    },
+
+    onUploadResume: async (file: File) => {
+      const base64 = bytesToBase64(await file.arrayBuffer())
+      const res = await sendMsg<{ id: string; resumes: FillState['resumes'] } | null>({
+        type: 'saveResume',
+        base64,
+        fileName: file.name,
+      })
+      if (!res || !state || !lastResult) return
+      state.resumes = res.resumes
+      let ok = false
+      for (const f of lastResult.resumeFields) {
+        if (attachResume(f, base64, file.name)) ok = true
+      }
+      attachedLabel = ok ? (res.resumes.find((r) => r.id === res.id)?.label ?? null) : null
+      overlay.renderResult(lastResult, state.resumes, attachedLabel)
     },
 
     onPickResume: async (resumeId: string) => {

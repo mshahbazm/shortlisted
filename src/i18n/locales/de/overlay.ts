@@ -30,6 +30,8 @@ export const overlay: tLocale['overlay'] = {
   allDone: 'Alles Bekannte ist drin. Prüf die Seite und schick ab, wenn du bereit bist.',
   answerPlaceholder: 'Deine Antwort… (wird in deiner Bank gespeichert)',
   pickOne: 'Bitte auswählen…',
+  cvMissing: 'Diese Stelle verlangt einen Lebenslauf, aber es ist noch keiner gespeichert. Einmal hinzufügen — er wird bei jeder Bewerbung angehängt.',
+  uploadCv: 'Lebenslauf hochladen (PDF)',
   saveAndFill: 'Speichern & ausfüllen',
   saved: 'Gespeichert ✓',
 }

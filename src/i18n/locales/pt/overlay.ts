@@ -31,6 +31,8 @@ export const overlay: tLocale['overlay'] = {
   allDone: 'Tudo o que é conhecido já está lá. Revê a página e envia quando estiveres pronto.',
   answerPlaceholder: 'A tua resposta… (fica guardada no teu banco)',
   pickOne: 'Escolhe uma opção…',
+  cvMissing: 'Esta vaga pede um CV, mas ainda não há nenhum guardado. Adiciona-o uma vez — será anexado em cada candidatura.',
+  uploadCv: 'Carregar CV (PDF)',
   saveAndFill: 'Guardar e preencher',
   saved: 'Guardado ✓',
 }

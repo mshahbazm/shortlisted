@@ -35,6 +35,8 @@ export const overlay: tLocale['overlay'] = {
   allDone: 'Wszystko, co znane, już wpisane. Przejrzyj stronę i wyślij, kiedy zechcesz.',
   answerPlaceholder: 'Twoja odpowiedź… (zapisze się w Twoim banku)',
   pickOne: 'Wybierz…',
+  cvMissing: 'Ta oferta wymaga CV, ale żadne nie jest jeszcze zapisane. Dodaj je raz — będzie dołączane do każdej aplikacji.',
+  uploadCv: 'Prześlij CV (PDF)',
   saveAndFill: 'Zapisz i wypełnij',
   saved: 'Zapisano ✓',
 }

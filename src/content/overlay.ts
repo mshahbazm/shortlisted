@@ -12,6 +12,7 @@ export interface OverlayCallbacks {
   onFill: () => void
   onAnswer: (field: FormField, answer: string) => void
   onPickResume: (resumeId: string) => void
+  onUploadResume: (file: File) => void
   onScoreFit: () => void
 }
 
@@ -288,6 +289,32 @@ export class Overlay {
     stat.className = 'stat'
     stat.textContent = this.t.filledFields(result.filled.length)
     this.body.append(stat)
+
+    // The form wants a CV but none is saved: ask for it right here, like any
+    // other unanswered question. Upload saves it to the bank AND attaches it.
+    if (result.resumeFields.length > 0 && resumes.length === 0) {
+      const wrap = document.createElement('div')
+      wrap.className = 'item review'
+      const q = document.createElement('div')
+      q.className = 'q'
+      q.textContent = this.t.cvMissing
+      const pick = document.createElement('button')
+      pick.className = 'save'
+      pick.textContent = this.t.uploadCv
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = 'application/pdf'
+      input.style.display = 'none'
+      pick.onclick = () => input.click()
+      input.onchange = () => {
+        const file = input.files?.[0]
+        if (!file) return
+        pick.disabled = true
+        this.cb.onUploadResume(file)
+      }
+      wrap.append(q, pick, input)
+      this.body.append(wrap)
+    }
 
     if (result.resumeFields.length > 0 && resumes.length > 0) {
       const wrap = document.createElement('div')

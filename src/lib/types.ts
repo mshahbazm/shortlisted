@@ -401,3 +401,10 @@ export const storageDefaults = (): StorageShape => ({
 })
 
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
+
+export function bytesToBase64(data: ArrayBuffer): string {
+  const bytes = new Uint8Array(data)
+  let bin = ''
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  return btoa(bin)
+}

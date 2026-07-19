@@ -13,6 +13,7 @@ export interface FillState {
 export type Msg =
   | { type: 'getFillState' }
   | { type: 'getResumeData'; resumeId: string }
+  | { type: 'saveResume'; base64: string; fileName: string }
   | {
       type: 'saveAnswer'
       questionRaw: string

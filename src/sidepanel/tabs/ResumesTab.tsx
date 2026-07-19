@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { Section } from '../components'
-import { ResumeVariant, uid } from '../../lib/types'
+import { ResumeVariant, bytesToBase64, uid } from '../../lib/types'
 import { masterVariant, renderResumePdf } from '../../pdf/resumePdf'
 import { runTailorCv } from '../../ai/run'
 
@@ -24,14 +24,10 @@ export function ResumesTab() {
   }
 
   const onUpload = async (file: File) => {
-    const buf = await file.arrayBuffer()
-    const bytes = new Uint8Array(buf)
-    let bin = ''
-    for (let i = 0; i < bytes.length; i += 0x8000)
-      bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
     addResume({
       id: uid(), label: file.name.replace(/\.pdf$/i, ''), fileName: file.name, tags: [],
-      isDefault: resumes.length === 0, createdAt: Date.now(), source: 'uploaded', dataBase64: btoa(bin),
+      isDefault: resumes.length === 0, createdAt: Date.now(), source: 'uploaded',
+      dataBase64: bytesToBase64(await file.arrayBuffer()),
     })
   }
 
