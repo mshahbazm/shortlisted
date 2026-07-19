@@ -330,8 +330,9 @@ export interface Settings {
   locale?: string
   /**
    * Watch every site for job application forms, not just the ATS platforms we
-   * ship adapters for. Off by default: turning it on needs the "all sites"
-   * host permission, so it has to be the user's explicit choice.
+   * ship adapters for. UNSET MEANS ON — recognising applications anywhere is
+   * the product doing its job, so it needs no opt-in. Only an explicit `false`
+   * (the Settings switch) narrows us back to the known job boards.
    */
   detectEverywhere?: boolean
 }

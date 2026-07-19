@@ -37,10 +37,9 @@ export const settings: tLocale['settings'] = {
   importFailed: (msg: string) => `Import fallito: ${msg}`,
 
   detectTitle: 'Rilevamento offerte',
-  detectOn: 'tutti i siti',
-  detectOff: 'solo portali noti',
+  detectOn: 'attivo — tutti i siti',
+  detectOff: 'disattivo — solo portali noti',
   detectHint:
-    'Di norma il pannello compare solo sui portali di lavoro che conosciamo. Attiva questa opzione e Shortlisted cerca moduli di candidatura anche su altri siti, comparendo quando è sicuro. Le pagine vengono analizzate sul tuo computer: non viene inviato nulla.',
-  detectToggle: 'Cercare moduli di candidatura su tutti i siti',
-  detectDeclined: 'Non attivato: Chrome richiede l’accesso a tutti i siti.',
+    'Shortlisted cerca moduli di candidatura su tutti i siti e compare quando ne riconosce uno. Le pagine vengono analizzate sul tuo computer e non viene inviato nulla. Disattivalo per limitarlo ai portali che supportiamo direttamente.',
+  detectToggle: 'Riconoscere i moduli di candidatura su qualsiasi sito',
 }

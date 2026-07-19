@@ -37,10 +37,9 @@ export const settings: tLocale['settings'] = {
   importFailed: (msg: string) => `Importeren mislukt: ${msg}`,
 
   detectTitle: 'Vacaturedetectie',
-  detectOn: 'alle sites',
-  detectOff: 'alleen bekende vacaturesites',
+  detectOn: 'aan — alle sites',
+  detectOff: 'uit — alleen bekende vacaturesites',
   detectHint:
-    'Standaard verschijnt het paneel alleen op vacaturesites die we kennen. Zet dit aan en Shortlisted kijkt ook op andere sites naar een sollicitatieformulier, en verschijnt als het zeker is. Pagina’s worden op je eigen computer bekeken — er wordt niets verstuurd.',
-  detectToggle: 'Op alle sites naar sollicitatieformulieren zoeken',
-  detectDeclined: 'Niet aangezet — Chrome heeft hiervoor toegang tot alle sites nodig.',
+    'Shortlisted let op alle sites op sollicitatieformulieren en verschijnt zodra het er een herkent. Pagina’s worden op je eigen computer bekeken en er wordt niets verstuurd. Zet dit uit om het te beperken tot de vacaturesites die we direct ondersteunen.',
+  detectToggle: 'Sollicitatieformulieren op elke site herkennen',
 }

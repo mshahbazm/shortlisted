@@ -112,22 +112,32 @@ const JOB_SECTION_WORDS = [
   'obowiazki', 'wymagania', 'oferujemy', 'twoj profil', 'opis stanowiska', 'zakres obowiazkow',
 ]
 
-// Questions that essentially only get asked on an application form.
-const JOB_FIELD_WORDS = [
-  'cover letter', 'linkedin', 'portfolio', 'github', 'personal website',
-  'work authorization', 'work authorisation', 'right to work', 'visa', 'sponsorship',
-  'notice period', 'salary expectation', 'expected salary', 'desired salary',
-  'years of experience', 'how did you hear', 'earliest start date', 'available to start',
-  'willing to relocate', 'relocation', 'current employer', 'current job title',
-  'gehaltsvorstellung', 'kundigungsfrist', 'fruhester eintrittstermin', 'verfugbarkeit',
-  'arbeitserlaubnis', 'umziehen',
-  'pretention salariale', 'pretentions salariales', 'preavis', 'disponibilite',
-  'autorisation de travail',
-  'expectativa salarial', 'pretension salarial', 'disponibilidad', 'permiso de trabajo',
-  'preaviso', 'pretensao salarial',
-  'salarisindicatie', 'opzegtermijn', 'beschikbaarheid', 'werkvergunning',
-  'retribuzione', 'preavviso', 'disponibilita', 'permesso di lavoro',
-  'oczekiwania finansowe', 'okres wypowiedzenia', 'dyspozycyjnosc', 'pozwolenie na prace',
+// Questions that are close to exclusive to hiring. Nobody asks about your
+// notice period or right to work unless they are considering employing you.
+const JOB_FIELD_STRONG_WORDS = [
+  'cover letter', 'work authorization', 'work authorisation', 'right to work',
+  'require sponsorship', 'sponsorship', 'notice period', 'salary expectation',
+  'expected salary', 'desired salary', 'salary requirement', 'willing to relocate',
+  'earliest start date', 'available to start', 'why do you want to work',
+  'gehaltsvorstellung', 'kundigungsfrist', 'fruhester eintrittstermin', 'arbeitserlaubnis',
+  'pretention salariale', 'pretentions salariales', 'preavis', 'autorisation de travail',
+  'expectativa salarial', 'pretension salarial', 'permiso de trabajo', 'preaviso',
+  'pretensao salarial', 'aviso previo',
+  'salarisindicatie', 'opzegtermijn', 'werkvergunning',
+  'retribuzione', 'preavviso', 'permesso di lavoro',
+  'oczekiwania finansowe', 'okres wypowiedzenia', 'pozwolenie na prace',
+]
+
+// Questions that FEEL like hiring but are just as common on lead-capture,
+// survey and signup forms. On their own these must not carry a page — a
+// "request a demo" form asking your employer and years of experience is not
+// an application, and treating it as one is exactly the false positive that
+// would put our panel where it does not belong.
+const JOB_FIELD_WEAK_WORDS = [
+  'linkedin', 'portfolio', 'github', 'personal website', 'years of experience',
+  'how did you hear', 'current employer', 'current job title', 'relocation', 'visa',
+  'availability', 'verfugbarkeit', 'umziehen', 'disponibilite', 'disponibilidad',
+  'beschikbaarheid', 'disponibilita', 'dyspozycyjnosc',
 ]
 
 // Career-site words in a hostname, subdomain or path.
@@ -204,7 +214,8 @@ const APPLY_STRONG_RX = rx(APPLY_STRONG_WORDS)
 const SUBMIT_GENERIC_RX = rx(SUBMIT_GENERIC_WORDS)
 const APPLY_HEADING_RX = rx(APPLY_HEADING_WORDS)
 const JOB_SECTION_RX = rx(JOB_SECTION_WORDS)
-const JOB_FIELD_RX = rx(JOB_FIELD_WORDS)
+const JOB_FIELD_STRONG_RX = rx(JOB_FIELD_STRONG_WORDS)
+const JOB_FIELD_WEAK_RX = rx(JOB_FIELD_WEAK_WORDS)
 const URL_RX = rx(URL_WORDS)
 const GIVEN_RX = rx(GIVEN_NAME_WORDS)
 const FAMILY_RX = rx(FAMILY_NAME_WORDS)
@@ -249,6 +260,11 @@ export function detectJobForm(doc: Document = document, href: string = location.
       return type !== 'hidden' && visible(el)
     })
 
+  // Nothing to fill — a job ad with no form is not an application page. This
+  // check comes before the labels below because it clears the large majority
+  // of pages on the web, and label resolution is by far the costliest step.
+  if (fields.length < 2) return { score: 0, confident: false, signals, veto: 'no-form' }
+
   // Label text for every visible field, computed once — labelFor walks the DOM
   // and is the most expensive thing we do here.
   const labels = fields.map((el) => norm([el.name, el.id, el.getAttribute('autocomplete') ?? '', labelFor(el)].join(' ')))
@@ -256,9 +272,6 @@ export function detectJobForm(doc: Document = document, href: string = location.
   if (fields.some((el, i) => PAYMENT_RX.test(labels[i]) || /^cc-/.test(el.getAttribute('autocomplete') ?? ''))) {
     return { score: 0, confident: false, signals, veto: 'payment-field' }
   }
-
-  // Nothing to fill — a job ad with no form is not an application page.
-  if (fields.length < 2) return { score: 0, confident: false, signals, veto: 'no-form' }
 
   // --- Structural signals -------------------------------------------------
   let structural = 0
@@ -304,14 +317,20 @@ export function detectJobForm(doc: Document = document, href: string = location.
     structural++
   }
 
-  // Application-only questions. One could be a coincidence; two is a form.
-  const jobFieldHits = labels.filter((l) => JOB_FIELD_RX.test(l)).length
-  if (jobFieldHits >= 2) {
+  // Hiring-only questions. Two is conclusive, one still counts as structure —
+  // a form asking for a cover letter or a notice period is an application.
+  const strongHits = labels.filter((l) => JOB_FIELD_STRONG_RX.test(l)).length
+  if (strongHits >= 2) {
     add('application-questions', 3)
     structural++
-  } else if (jobFieldHits === 1) {
-    add('application-question', 1)
+  } else if (strongHits === 1) {
+    add('application-question', 2)
+    structural++
   }
+
+  // Hiring-flavoured questions that are common elsewhere: worth a nudge, never
+  // structure, and capped so a form full of them can't add up to a verdict.
+  if (labels.filter((l) => JOB_FIELD_WEAK_RX.test(l)).length >= 2) add('profile-questions', 1)
 
   // --- Supporting signals -------------------------------------------------
   const buttons = [...doc.querySelectorAll('button, input[type="submit"], [role="button"], a.button, a[class*="btn" i]')]

@@ -39,10 +39,9 @@ export const settings: tLocale['settings'] = {
   importFailed: (msg: string) => `Import nie powiódł się: ${msg}`,
 
   detectTitle: 'Wykrywanie ofert',
-  detectOn: 'wszystkie strony',
-  detectOff: 'tylko znane portale',
+  detectOn: 'włączone — wszystkie strony',
+  detectOff: 'wyłączone — tylko znane portale',
   detectHint:
-    'Domyślnie panel pojawia się tylko na znanych nam portalach z ofertami pracy. Po włączeniu tej opcji Shortlisted sprawdza też inne strony pod kątem formularza aplikacyjnego i pojawia się, gdy ma pewność. Strony są sprawdzane na Twoim komputerze — nic nie jest wysyłane.',
-  detectToggle: 'Szukaj formularzy aplikacyjnych na wszystkich stronach',
-  detectDeclined: 'Nie włączono — Chrome wymaga dostępu do wszystkich stron.',
+    'Shortlisted wypatruje formularzy aplikacyjnych na wszystkich stronach i pojawia się, gdy rozpozna taki formularz. Strony są sprawdzane na Twoim komputerze i nic nie jest wysyłane. Wyłącz, aby ograniczyć działanie do bezpośrednio obsługiwanych portali.',
+  detectToggle: 'Rozpoznawaj formularze aplikacyjne na każdej stronie',
 }

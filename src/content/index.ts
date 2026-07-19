@@ -1,5 +1,7 @@
-// Content script entry. Runs on known ATS pages automatically, and on any
-// other page when injected on demand ("Fill this page" in the side panel).
+// Content script entry. Runs on every page: known ATS sites mount straight
+// away, everywhere else content/detect.ts scores the page and the overlay
+// appears only on a confident score. "Fill current tab" in the side panel
+// forces it open regardless.
 
 import { FillState, Msg, sendMsg } from '../lib/messaging'
 import * as store from '../lib/store'

@@ -37,10 +37,9 @@ export const settings = {
   importFailed: (msg: string) => `Import failed: ${msg}`,
 
   detectTitle: 'Job detection',
-  detectOn: 'every site',
-  detectOff: 'known job boards only',
+  detectOn: 'on — every site',
+  detectOff: 'off — known job boards only',
   detectHint:
-    'By default the panel appears only on job boards we know. Turn this on and Shortlisted also checks other sites for a job application form, and appears when it is sure. Pages are checked on your computer — nothing about them is sent anywhere.',
-  detectToggle: 'Look for application forms on every site',
-  detectDeclined: 'Not turned on — Chrome needs access to all sites for this.',
+    'Shortlisted watches for job application forms on every site and appears when it recognises one. Pages are checked on your computer and nothing about them is sent anywhere. Turn this off to limit it to the job boards we support directly.',
+  detectToggle: 'Recognise application forms on any site',
 }

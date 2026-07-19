@@ -1,7 +1,8 @@
 import { defineManifest } from '@crxjs/vite-plugin'
 
-// ATS domains we ship precise adapters for. Everything else is covered by the
-// generic engine, injected on demand after the user grants permission.
+// ATS domains we ship precise adapters for — exact form roots, submit
+// selectors and quirks. Every other site is handled by the generic engine,
+// which the detector (content/detect.ts) points at the right pages.
 export const ATS_MATCHES = [
   'https://boards.greenhouse.io/*',
   'https://job-boards.greenhouse.io/*',
@@ -30,28 +31,26 @@ export default defineManifest({
   side_panel: {
     default_path: 'src/sidepanel/index.html',
   },
+  // The content script runs on every page so it can RECOGNISE a job
+  // application anywhere, not only on the platforms we ship adapters for.
+  // Recognising is all it does uninvited: content/detect.ts scores the page
+  // locally and the overlay mounts only on a confident score. No page content
+  // leaves the browser unless the user asks us to act on it.
   content_scripts: [
     {
-      matches: ATS_MATCHES,
+      matches: ['http://*/*', 'https://*/*'],
       js: ['src/content/index.ts'],
       run_at: 'document_idle',
       all_frames: true,
     },
   ],
-  permissions: ['storage', 'unlimitedStorage', 'sidePanel', 'notifications', 'scripting', 'tabs'],
-  host_permissions: [
-    ...ATS_MATCHES,
-    // BYOK AI calls go straight from the extension to the provider.
-    'https://api.anthropic.com/*',
-    'https://api.openai.com/*',
-    // Shortlisted Cloud (production origin; dev uses localhost below).
-    'https://shortlist.id/*',
-    // Ollama + the local job-finder app (match patterns ignore ports).
-    'http://localhost/*',
-    'http://127.0.0.1/*',
-  ],
-  // "Fill this page" on any other career site asks for this at click time.
-  optional_host_permissions: ['<all_urls>'],
+  // No 'notifications' — nothing uses chrome.notifications, and every
+  // permission listed here costs a line in the install dialog.
+  permissions: ['storage', 'unlimitedStorage', 'sidePanel', 'scripting', 'tabs'],
+  // Covers every page above plus the API origins we call. Needed as a
+  // permission, not just a content-script match, so the service worker can
+  // inject into a tab that was already open when the extension loaded.
+  host_permissions: ['<all_urls>'],
   icons: {
     '16': 'icons/icon16.png',
     '48': 'icons/icon48.png',

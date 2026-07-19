@@ -13,6 +13,33 @@ export interface FormField {
 
 const SKIP_TYPES = new Set(['hidden', 'submit', 'button', 'reset', 'image', 'password', 'search'])
 
+// Secrets we refuse to touch. Chrome gives an extension with host access the
+// same reach over a password box as over any other input — nothing in the
+// browser stops us reading one. So the line has to be drawn here, and drawn at
+// COLLECTION: a field that never enters the field list can't be filled, can't
+// be written to the answer bank, can't be mirrored to the account, and can't
+// be sent to the model, no matter what any later code does.
+//
+// This deliberately costs us a little filling. Some applications really do ask
+// for a national ID or bank details for payroll; the user types those in
+// themselves. Holding someone's passport number is not worth saving them a
+// keystroke.
+const SENSITIVE_AUTOCOMPLETE = /^(cc-|new-password|current-password|one-time-code)/
+const SENSITIVE_LABEL =
+  /\b(password|passcode|pin\b|cvv|cvc|card\s*number|credit\s*card|debit\s*card|security\s*code|iban|sort\s*code|routing\s*number|account\s*number|social\s*security|\bssn\b|passport\s*number|national\s*insurance|\bnino\b|tax\s*id|verification\s*code|one[\s-]?time)/i
+
+/**
+ * True for anything that looks like a credential, a payment detail or a
+ * government identifier. Checked against the field's own attributes AND its
+ * visible label, because plenty of forms carry no useful attributes at all.
+ */
+export function isSensitiveField(el: Fillable): boolean {
+  const autocomplete = (el.getAttribute('autocomplete') ?? '').toLowerCase()
+  if (SENSITIVE_AUTOCOMPLETE.test(autocomplete)) return true
+  if ((el as HTMLInputElement).type === 'password') return true
+  return SENSITIVE_LABEL.test(`${el.name} ${el.id} ${labelFor(el)}`)
+}
+
 export function labelFor(el: Fillable): string {
   const texts: string[] = []
   const push = (t: string | null | undefined) => {
@@ -98,6 +125,7 @@ export function collectFields(root: ParentNode): FormField[] {
   for (const el of els) {
     if (!(el instanceof HTMLElement)) continue
     if (el instanceof HTMLInputElement && SKIP_TYPES.has(el.type)) continue
+    if (isSensitiveField(el)) continue
     if (el.disabled) continue
     if ((el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) && el.readOnly) continue
     const style = el.ownerDocument.defaultView?.getComputedStyle(el)

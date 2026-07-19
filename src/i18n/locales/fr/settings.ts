@@ -37,10 +37,9 @@ export const settings: tLocale['settings'] = {
   importFailed: (msg: string) => `Échec de l’import : ${msg}`,
 
   detectTitle: 'Détection d’offres',
-  detectOn: 'tous les sites',
-  detectOff: 'sites d’emploi connus uniquement',
+  detectOn: 'activé — tous les sites',
+  detectOff: 'désactivé — sites d’emploi connus uniquement',
   detectHint:
-    'Par défaut, le panneau n’apparaît que sur les sites d’emploi que nous connaissons. Activez ceci et Shortlisted cherche aussi des formulaires de candidature ailleurs, et apparaît quand il en est sûr. L’analyse se fait sur votre ordinateur : rien n’est envoyé.',
-  detectToggle: 'Chercher des formulaires de candidature sur tous les sites',
-  detectDeclined: 'Non activé : Chrome demande l’accès à tous les sites.',
+    'Shortlisted repère les formulaires de candidature sur tous les sites et apparaît quand il en reconnaît un. L’analyse se fait sur votre ordinateur et rien n’est envoyé. Désactivez pour le limiter aux sites d’emploi que nous gérons directement.',
+  detectToggle: 'Reconnaître les formulaires de candidature sur tout site',
 }

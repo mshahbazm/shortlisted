@@ -37,10 +37,9 @@ export const settings: tLocale['settings'] = {
   importFailed: (msg: string) => `Import fehlgeschlagen: ${msg}`,
 
   detectTitle: 'Stellenerkennung',
-  detectOn: 'alle Websites',
-  detectOff: 'nur bekannte Jobbörsen',
+  detectOn: 'an — alle Websites',
+  detectOff: 'aus — nur bekannte Jobbörsen',
   detectHint:
-    'Standardmäßig erscheint das Panel nur auf Jobbörsen, die wir kennen. Mit dieser Option prüft Shortlisted auch andere Websites auf ein Bewerbungsformular und erscheint, wenn es sicher ist. Die Prüfung läuft auf Ihrem Rechner — nichts wird gesendet.',
-  detectToggle: 'Auf allen Websites nach Bewerbungsformularen suchen',
-  detectDeclined: 'Nicht aktiviert — Chrome benötigt dafür Zugriff auf alle Websites.',
+    'Shortlisted achtet auf allen Websites auf Bewerbungsformulare und erscheint, sobald es eines erkennt. Die Prüfung läuft auf Ihrem Rechner, nichts davon wird gesendet. Schalten Sie es aus, um es auf die direkt unterstützten Jobbörsen zu begrenzen.',
+  detectToggle: 'Bewerbungsformulare auf jeder Website erkennen',
 }

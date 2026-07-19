@@ -294,6 +294,56 @@ describe('stays quiet on everything else', () => {
     expect(d.confident).toBe(false)
   })
 
+  // The shape most likely to fool us now that we run on every page: a form
+  // with the full first/last/email/phone cluster that has nothing to do with
+  // hiring. The cluster alone must never be enough.
+  test('hotel booking form', () => {
+    const d = page(
+      `<h1>Complete your booking</h1>
+       <form>
+         <label for="fn">First name</label><input id="fn" autocomplete="given-name">
+         <label for="ln">Last name</label><input id="ln" autocomplete="family-name">
+         <label for="e">Email</label><input id="e" type="email">
+         <label for="p">Phone</label><input id="p" type="tel">
+         <label for="req">Special requests</label><textarea id="req"></textarea>
+         <button type="submit">Book now</button>
+       </form>`,
+      { url: 'https://hotels.example.com/checkout/guest-details', title: 'Booking' },
+    )
+    expect(d.confident).toBe(false)
+  })
+
+  test('conference registration form', () => {
+    const d = page(
+      `<h1>Registration</h1>
+       <form>
+         <label for="fn">First name</label><input id="fn" autocomplete="given-name">
+         <label for="ln">Last name</label><input id="ln" autocomplete="family-name">
+         <label for="e">Email</label><input id="e" type="email">
+         <label for="c">Company</label><input id="c">
+         <label for="jt">Job title</label><input id="jt">
+         <button type="submit">Submit</button>
+       </form>`,
+      { url: 'https://conf.example.com/register', title: 'Register' },
+    )
+    expect(d.confident).toBe(false)
+  })
+
+  test('B2B lead form asking about experience', () => {
+    const d = page(
+      `<h1>Request a demo</h1>
+       <form>
+         <label for="n">Full name</label><input id="n" autocomplete="name">
+         <label for="e">Work email</label><input id="e" type="email">
+         <label for="y">Years of experience</label><select id="y"><option>1-3</option></select>
+         <label for="emp">Current employer</label><input id="emp">
+         <button type="submit">Send</button>
+       </form>`,
+      { url: 'https://saas.example.com/demo' },
+    )
+    expect(d.confident).toBe(false)
+  })
+
   test('page with no fillable fields', () => {
     const d = page(`<h1>About us</h1><p>We are a company.</p>`)
     expect(d.veto).toBe('no-form')
