@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { Section } from '../components'
 import { QueueItem, jobUrlKey, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
-import { runScoreFit, ScoreFitResult } from '../../ai/run'
+import { cloudUsageStats, runScoreFit, ScoreFitResult, UsageStatsRow } from '../../ai/run'
 
 export function ApplyTab() {
   const t = useContent('apply')
@@ -142,7 +142,50 @@ export function ApplyTab() {
           </div>
         )}
       </Section>
+
+      <DevCosts />
     </div>
+  )
+}
+
+// DEV ONLY — real money each AI action has cost us, straight from the server's
+// ledger. Deliberately not translated; remove before launch.
+function DevCosts() {
+  const [settings] = useStore('settings')
+  const [rows, setRows] = useState<UsageStatsRow[]>([])
+  const [err, setErr] = useState('')
+
+  const refresh = () => {
+    cloudUsageStats(settings)
+      .then((r) => { setRows(r); setErr('') })
+      .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
+  }
+  useEffect(refresh, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const total = rows.reduce((s, r) => s + r.costUsd, 0)
+  const totalTokens = rows.reduce((s, r) => s + r.inputTokens + r.outputTokens, 0)
+
+  return (
+    <Section
+      title="⚙ Dev: real cost"
+      summary={`$${total.toFixed(4)} · ${(totalTokens / 1000).toFixed(1)}k tok`}
+    >
+      <p className="microhint">What your account has actually cost us so far (provider prices). Dev build only.</p>
+      {err && <p className="error">{err}</p>}
+      <div className="list">
+        {[...rows].sort((a, b) => b.costUsd - a.costUsd).map((r) => (
+          <div key={`${r.kind}:${r.endpoint}`} className="list-item">
+            <div className="grow">
+              <div className="title">{r.endpoint}{r.kind !== 'llm' ? ` (${r.kind})` : ''}</div>
+              <div className="sub">{r.calls}× · {r.inputTokens.toLocaleString()} in / {r.outputTokens.toLocaleString()} out</div>
+            </div>
+            <span className="chip">${r.costUsd.toFixed(4)}</span>
+          </div>
+        ))}
+      </div>
+      <div className="spacer" />
+      <button className="ghost small" onClick={refresh}>Refresh</button>
+    </Section>
   )
 }
 

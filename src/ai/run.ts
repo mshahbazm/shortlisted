@@ -110,6 +110,21 @@ export async function polishAnswer(settings: Settings, question: string, answer:
   return polished
 }
 
+// DEV TOOLING — real-cost breakdown while we calibrate pricing (remove pre-launch).
+export interface UsageStatsRow {
+  endpoint: string
+  kind: string
+  calls: number
+  inputTokens: number
+  outputTokens: number
+  costUsd: number
+}
+
+export async function cloudUsageStats(settings: Settings): Promise<UsageStatsRow[]> {
+  const { stats } = await cloudCall<{ stats: UsageStatsRow[] }>(settings, '/v1/usage-stats', undefined, 'GET')
+  return stats
+}
+
 // ---- account (email OTP; links this device to the user) ----
 
 export async function sendLoginCode(settings: Settings, email: string): Promise<void> {
