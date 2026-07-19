@@ -27,6 +27,7 @@ export const overlay: tLocale['overlay'] = {
     `${n === 1 ? '1 domanda demografica/di sondaggio lasciata' : `${n} domande demografiche/di sondaggio lasciate`} a te — quelle spettano a te, a mano.`,
   allDone: 'Tutto ciò che sa è inserito. Controlla la pagina, poi invia quando sei pronto.',
   answerPlaceholder: 'La tua risposta… (salvata nel tuo archivio)',
+  pickOne: 'Scegli un’opzione…',
   saveAndFill: 'Salva e compila',
   saved: 'Salvato ✓',
 }

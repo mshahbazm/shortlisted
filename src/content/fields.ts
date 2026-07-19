@@ -73,6 +73,23 @@ export function labelFor(el: Fillable): string {
   return (texts[0] ?? '').slice(0, 300)
 }
 
+const PLACEHOLDER_OPTION = /^(select|choose|please select|pick one|--)/i
+
+/** The real answer choices of a select/radio field; undefined for free-text fields. */
+export function optionsOf(f: FormField): string[] | undefined {
+  if (f.el instanceof HTMLSelectElement) {
+    return Array.from(f.el.options)
+      .filter((o) => o.value !== '' && !PLACEHOLDER_OPTION.test(o.textContent?.trim() ?? ''))
+      .map((o) => o.textContent?.trim() ?? '')
+      .filter(Boolean)
+      .slice(0, 80)
+  }
+  if (f.radioGroup) {
+    return f.radioGroup.map((r) => labelFor(r) || r.value).filter(Boolean).slice(0, 80)
+  }
+  return undefined
+}
+
 export function collectFields(root: ParentNode): FormField[] {
   const els = Array.from(root.querySelectorAll<Fillable>('input, textarea, select'))
   const fields: FormField[] = []

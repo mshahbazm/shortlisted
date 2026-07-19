@@ -29,6 +29,7 @@ export const overlay: tLocale['overlay'] = {
       : `${n} demografische/enquêtevragen voor jou overgelaten — die beantwoord je zelf.`,
   allDone: 'Alles wat het weet, staat erin. Bekijk de pagina en verstuur wanneer je klaar bent.',
   answerPlaceholder: 'Jouw antwoord… (opgeslagen in je bank)',
+  pickOne: 'Kies er één…',
   saveAndFill: 'Opslaan & invullen',
   saved: 'Opgeslagen ✓',
 }

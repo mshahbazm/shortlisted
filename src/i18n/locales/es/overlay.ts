@@ -27,6 +27,7 @@ export const overlay: tLocale['overlay'] = {
     `Te quedan ${n} pregunta(s) demográficas o de encuesta — esas se responden a mano.`,
   allDone: 'Todo lo que sabe ya está puesto. Revisa la página y envía cuando estés listo.',
   answerPlaceholder: 'Tu respuesta… (se guarda en tu banco)',
+  pickOne: 'Elige una opción…',
   saveAndFill: 'Guardar y rellenar',
   saved: 'Guardado ✓',
 }

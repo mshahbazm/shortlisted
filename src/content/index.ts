@@ -6,7 +6,7 @@ import * as store from '../lib/store'
 import { getContent, type tOverlayContent } from './i18n-bridge'
 import { GENERIC_ADAPTER, detectAdapter } from './adapters'
 import { attachResume, fieldContext, fillForm, watchSubmit, applyValue, FillResult } from './engine'
-import { FormField, labelFor } from './fields'
+import { FormField, labelFor, optionsOf } from './fields'
 import { Overlay } from './overlay'
 import type { AssistField, AssistResultItem, CorrectionItem, VerifyField } from '../ai/capabilities/fill-assist'
 
@@ -188,13 +188,6 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
     }
     return ok
   }
-
-  const optionsOf = (f: FormField): string[] | undefined =>
-    f.el instanceof HTMLSelectElement
-      ? Array.from(f.el.options).map((o) => o.textContent?.trim() ?? '').filter(Boolean).slice(0, 80)
-      : f.radioGroup
-        ? f.radioGroup.map((r) => labelFor(r) || r.value).filter(Boolean).slice(0, 80)
-        : undefined
 
   // The reasoning layer, ONE batched call covering two lists:
   //  - fields the deterministic pass couldn't answer (filled from the

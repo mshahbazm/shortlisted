@@ -34,6 +34,7 @@ export const overlay: tLocale['overlay'] = {
     )} — na te odpowiadasz ręcznie.`,
   allDone: 'Wszystko, co wie, już wpisane. Przejrzyj stronę i wyślij, kiedy zechcesz.',
   answerPlaceholder: 'Twoja odpowiedź… (zapisze się w Twoim banku)',
+  pickOne: 'Wybierz…',
   saveAndFill: 'Zapisz i wypełnij',
   saved: 'Zapisano ✓',
 }

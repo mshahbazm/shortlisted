@@ -29,6 +29,7 @@ export const overlay: tLocale['overlay'] = {
     `${n} Demografie-/Umfrage-Frage(n) bleiben dir — die beantwortest du selbst von Hand.`,
   allDone: 'Alles Bekannte ist drin. Prüf die Seite und schick ab, wenn du bereit bist.',
   answerPlaceholder: 'Deine Antwort… (wird in deiner Bank gespeichert)',
+  pickOne: 'Bitte auswählen…',
   saveAndFill: 'Speichern & ausfüllen',
   saved: 'Gespeichert ✓',
 }

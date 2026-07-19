@@ -1,7 +1,7 @@
 // On-page panel: fill button, results, inline answering of unknown questions.
 // Rendered in a shadow root so host-page CSS can't touch it.
 
-import { FormField, flashField } from './fields'
+import { FormField, flashField, optionsOf } from './fields'
 import { FillResult } from './engine'
 import { FIT_COLORS, FitBand, fitBand, fitPercent } from '../lib/fitBands'
 import type { tMerged } from '../i18n/content'
@@ -57,6 +57,8 @@ const CSS = `
   .save:disabled { opacity: 0.5; }
   .resumeRow { display:flex; gap:6px; align-items:center; margin-top:6px; }
   select { flex:1; background:#fff; color:#1f1f1f; border:1px solid #e7e7e4; border-radius:6px; padding:5px; }
+  .item select { width:100%; font-size:12.5px; padding:6px 8px; }
+  .item select:focus { outline:none; border-color:#18181b; }
   .note { color:#71717a; font-size:11.5px; margin-top:10px; }
   .collapsed .body, .collapsed .actions, .collapsed .langnote { display:none; }
   .scoreBtn { width: 100%; margin-top: 8px; padding: 8px 0; border: 1px solid #e7e7e4; border-radius: 8px;
@@ -102,7 +104,10 @@ export class Overlay {
   private cb: OverlayCallbacks
   private t: tOverlayContent
   private langNote!: HTMLDivElement
-  private unknownRefs = new Map<FormField, { item: HTMLElement; ta: HTMLTextAreaElement; save: HTMLButtonElement }>()
+  private unknownRefs = new Map<
+    FormField,
+    { item: HTMLElement; input: HTMLTextAreaElement | HTMLSelectElement; save: HTMLButtonElement }
+  >()
 
   constructor(t: tOverlayContent, cb: OverlayCallbacks) {
     this.cb = cb
@@ -369,21 +374,43 @@ export class Overlay {
       field.el.scrollIntoView({ behavior: 'smooth', block: 'center' })
       flashField(field.el)
     }
-    const ta = document.createElement('textarea')
-    ta.placeholder = this.t.answerPlaceholder
+    // Fields with fixed choices get the page's real options — free text could
+    // never be applied to them. Everything else gets a textarea.
+    const opts = optionsOf(field)
+    let input: HTMLTextAreaElement | HTMLSelectElement
+    if (opts && opts.length > 0) {
+      const sel = document.createElement('select')
+      const ph = document.createElement('option')
+      ph.value = ''
+      ph.textContent = this.t.pickOne
+      ph.disabled = true
+      ph.selected = true
+      sel.append(ph)
+      for (const o of opts) {
+        const opt = document.createElement('option')
+        opt.value = o
+        opt.textContent = o
+        sel.append(opt)
+      }
+      input = sel
+    } else {
+      const ta = document.createElement('textarea')
+      ta.placeholder = this.t.answerPlaceholder
+      input = ta
+    }
     const save = document.createElement('button')
     save.className = 'save'
     save.textContent = this.t.saveAndFill
     save.onclick = () => {
-      const answer = ta.value.trim()
+      const answer = input.value.trim()
       if (!answer) return
       this.cb.onAnswer(field, answer)
       item.style.opacity = '0.55'
       save.textContent = this.t.saved
       save.disabled = true
     }
-    item.append(q, ta, save)
-    this.unknownRefs.set(field, { item, ta, save })
+    item.append(q, input, save)
+    this.unknownRefs.set(field, { item, input, save })
     return item
   }
 
@@ -391,7 +418,7 @@ export class Overlay {
   markAnsweredFromForm(field: FormField, value: string) {
     const r = this.unknownRefs.get(field)
     if (!r) return
-    r.ta.value = value
+    r.input.value = value
     r.item.style.opacity = '0.55'
     r.save.textContent = this.t.saved
     r.save.disabled = true
@@ -401,13 +428,13 @@ export class Overlay {
   markAiFilled(field: FormField, value: string) {
     const r = this.unknownRefs.get(field)
     if (!r) return
-    r.ta.value = value
+    r.input.value = value
     r.item.style.borderColor = '#3d11ff'
     if (!r.item.querySelector('.ai-src')) {
       const note = document.createElement('div')
       note.className = 'src ai-src'
       note.textContent = this.t.aiFilled
-      r.item.insertBefore(note, r.ta)
+      r.item.insertBefore(note, r.input)
     }
   }
 
