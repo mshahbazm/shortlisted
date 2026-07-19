@@ -215,17 +215,20 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
     },
 
     onTailor: async (templateId: string) => {
-      overlay.aiNote(t.tailoringCv)
+      // Full-panel spinner — tailoring takes seconds and must LOOK alive.
+      overlay.showSpinner(t.tailoringCv)
       const res = await sendMsg<{ id?: string; label?: string; error?: string }>({
         type: 'tailorAttach',
         jobText: jobPageText(),
         templateId,
       })
       if (!res?.id) {
+        // Put the panel back the way it was, then surface the error.
+        if (lastResult && state) overlay.renderResult(lastResult, state.resumes, attachedLabel)
+        else overlay.renderIdle()
         overlay.aiNote(res?.error ?? t.tailoringFailed)
         return
       }
-      overlay.aiNote('')
       preferredResumeId = res.id
       if (lastResult) {
         state = await sendMsg<FillState>({ type: 'getFillState' })

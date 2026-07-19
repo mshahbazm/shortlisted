@@ -282,9 +282,8 @@ export class Overlay {
     return btn
   }
 
-  // Scoring takes over the whole panel: one spinner, one label — the buttons
-  // come back with the result.
-  renderFitLoading() {
+  /** Busy takeover: one spinner, one label — callers re-render when done. */
+  showSpinner(label: string) {
     this.actions.replaceChildren()
     this.menu = null
     this.body.replaceChildren()
@@ -292,11 +291,15 @@ export class Overlay {
     wrap.className = 'scoring'
     const spin = document.createElement('div')
     spin.className = 'spinner'
-    const label = document.createElement('div')
-    label.className = 'label'
-    label.textContent = this.t.scoringFit
-    wrap.append(spin, label)
+    const text = document.createElement('div')
+    text.className = 'label'
+    text.textContent = label
+    wrap.append(spin, text)
     this.body.append(wrap)
+  }
+
+  renderFitLoading() {
+    this.showSpinner(this.t.scoringFit)
   }
 
   renderFitResult(fit: QuickFitDisplay | null, error?: string) {
