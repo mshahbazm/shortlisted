@@ -20,6 +20,7 @@ export const overlay: tLocale['overlay'] = {
   filledFields: (n: number) => `Compilat${n === 1 ? 'o 1 campo' : `i ${n} campi`}.`,
   cvAttached: (label: string) => `CV allegato: ${label}`,
   attachWhichCv: 'Quale CV allego?',
+  previewCv: 'Anteprima di questo CV',
   swap: 'Cambia',
   attach: 'Allega',
   fromBankHeader: 'Compilate dal tuo archivio risposte — ricontrollale:',

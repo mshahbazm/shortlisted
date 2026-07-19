@@ -20,6 +20,7 @@ export const overlay: tLocale['overlay'] = {
   filledFields: (n: number) => `Rellené ${n} campo${n === 1 ? '' : 's'}.`,
   cvAttached: (label: string) => `CV adjunto: ${label}`,
   attachWhichCv: '¿Qué CV adjuntar?',
+  previewCv: 'Ver este CV',
   swap: 'Cambiar',
   attach: 'Adjuntar',
   fromBankHeader: 'Rellenado desde tu banco de respuestas — revisa esto:',

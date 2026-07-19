@@ -21,6 +21,7 @@ export const overlay: tLocale['overlay'] = {
     n === 1 ? 'Preenchi 1 campo.' : `Preenchi ${n} campos.`,
   cvAttached: (label: string) => `CV anexado: ${label}`,
   attachWhichCv: 'Anexar qual CV?',
+  previewCv: 'Pré-visualizar este CV',
   swap: 'Trocar',
   attach: 'Anexar',
   fromBankHeader: 'Preenchido do teu banco de respostas — confirma estas:',

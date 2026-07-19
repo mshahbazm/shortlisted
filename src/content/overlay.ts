@@ -20,6 +20,8 @@ export interface OverlayCallbacks {
   onTailor: (templateId: string, note: string) => void
   /** "Update profile" on the fit report → side panel, Profile tab, note box. */
   onUpdateProfile: () => void
+  /** Open the currently attached CV in a new tab. */
+  onPreviewCv: () => void
 }
 
 export interface QuickFitDisplay {
@@ -89,6 +91,9 @@ const CSS = `
     background:#18181b; color:#fff; font-weight:600; cursor:pointer; font-size:12px; }
   .save:disabled { opacity: 0.5; }
   .resumeRow { display:flex; gap:6px; align-items:center; margin-top:6px; }
+  .pvLink { border:none; background:none; color:#3d11ff; font-size:12px; font-weight:600;
+    cursor:pointer; padding:6px 2px 0; font-family:inherit; }
+  .pvLink:hover { color:#2e0bd1; }
   select { flex:1; background:#fff; color:#1f1f1f; border:1px solid #e7e7e4; border-radius:6px; padding:5px; }
   .item select { width:100%; font-size:12.5px; padding:6px 8px; }
   .item select:focus { outline:none; border-color:#18181b; }
@@ -180,6 +185,14 @@ export class Overlay {
     this.root.appendChild(this.panel)
     document.documentElement.appendChild(this.host)
     this.renderIdle()
+  }
+
+  /**
+   * Un-minimize. "Fill current tab" has to end with a panel the user can see —
+   * filling silently behind a collapsed header looks like nothing happened.
+   */
+  show() {
+    this.panel.classList.remove('collapsed')
   }
 
   renderIdle() {
@@ -473,6 +486,15 @@ export class Overlay {
       attach.onclick = () => this.cb.onPickResume(sel.value)
       row.append(sel, attach)
       wrap.append(q, row)
+      // See exactly what's going with this application — opens the attached
+      // PDF in a new tab.
+      if (attachedResumeLabel) {
+        const pv = document.createElement('button')
+        pv.className = 'pvLink'
+        pv.textContent = this.t.previewCv
+        pv.onclick = () => this.cb.onPreviewCv()
+        wrap.append(pv)
+      }
       this.body.append(wrap)
     }
 

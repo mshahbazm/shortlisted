@@ -7,7 +7,7 @@ import { getContent, type tOverlayContent } from './i18n-bridge'
 import { GENERIC_ADAPTER, detectAdapter } from './adapters'
 import { detectJobForm } from './detect'
 import { attachResume, fieldContext, fillForm, watchSubmit, applyValue, FillResult } from './engine'
-import { bytesToBase64 } from '../lib/types'
+import { base64ToBytes, bytesToBase64 } from '../lib/types'
 import { TEMPLATES } from '../pdf/templates'
 import { FormField, labelFor, optionsOf } from './fields'
 import { Overlay } from './overlay'
@@ -48,30 +48,51 @@ function main() {
   // Mount by ourselves only where we're sure: a known ATS, or a page the
   // detector is confident about. Everywhere else stays untouched until the
   // user asks for us via "Fill current tab".
-  const shouldMount = (): boolean => {
+  const shouldMount = async (): Promise<boolean> => {
     if (inIframe && !hasForm()) return false
     if (known) return true
+    // Unset means on. Detection is the product working as intended, not an
+    // extra; the switch exists only for someone who wants it off.
+    const s = await store.get('settings')
+    if (s.detectEverywhere === false) return false
     return detectJobForm().confident
   }
 
+  // Field count at the last scoring pass. Re-scoring is only worth it when
+  // the DOM gained or lost fields — this script now runs on every page in the
+  // browser, and most mutations are animations and ads, not forms appearing.
+  let scoredFieldCount = -1
+  const fieldCount = () => document.querySelectorAll('input,textarea,select').length
+
   const start = () => {
     if (document.getElementById('shortlisted-overlay-host')) return
-    if (shouldMount()) void ensureBooted()
+    const n = fieldCount()
+    if (n === scoredFieldCount) return
+    scoredFieldCount = n
+    void shouldMount().then((yes) => {
+      if (yes) void ensureBooted()
+    })
   }
 
   if (document.readyState === 'complete' || document.readyState === 'interactive') start()
   else document.addEventListener('DOMContentLoaded', start)
 
   // The side panel's "Fill current tab": mount even where the detector said
-  // no, then fill straight away. Frames with no form stay silent so the frame
-  // that DOES have one wins the response race (Greenhouse-style embeds).
+  // no, then fill straight away. Only frames that actually hold fields answer,
+  // so on an embedded ATS the iframe responds rather than the empty page around
+  // it — and if nothing anywhere has fields, no frame replies and the side
+  // panel can say so honestly. Fields outside a <form> count: React forms
+  // frequently have none.
+  const hasFillable = () => !!document.querySelector('input:not([type=hidden]), textarea, select')
+
   chrome.runtime.onMessage.addListener((msg: Msg, _sender, sendResponse) => {
     if (msg.type !== 'triggerFill') return
-    if (inIframe && !hasForm()) return
+    if (!hasFillable()) return
     void (async () => {
       const h = await ensureBooted()
+      h?.show()
       h?.fill()
-      sendResponse({ handled: true })
+      sendResponse({ handled: !!h })
     })()
     return true // async sendResponse
   })
@@ -95,6 +116,7 @@ function main() {
 
 /** What main() keeps hold of after boot, so a later message can drive the UI. */
 interface BootHandle {
+  show: () => void
   fill: () => void
 }
 
@@ -102,6 +124,7 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
   let state: FillState | null = null
   let lastResult: FillResult | null = null
   let attachedLabel: string | null = null
+  let attachedResumeId: string | null = null
   // Last answer saved per field — stops the form listeners from re-saving what
   // the panel just applied (applyValue fires the same change/blur events).
   const lastSaved = new WeakMap<FormField, string>()
@@ -291,6 +314,19 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
       void sendMsg({ type: 'openProfileNote' })
     },
 
+    // Open the attached CV in a new tab — Chrome's own PDF viewer, straight
+    // from the stored bytes. What you preview is exactly what's attached.
+    onPreviewCv: async () => {
+      if (!attachedResumeId) return
+      const data = await sendMsg<{ base64: string; fileName: string } | null>({
+        type: 'getResumeData',
+        resumeId: attachedResumeId,
+      })
+      if (!data) return
+      const blob = new Blob([base64ToBytes(data.base64) as BlobPart], { type: 'application/pdf' })
+      window.open(URL.createObjectURL(blob), '_blank')
+    },
+
     onScoreFit: async () => {
       overlay.renderFitLoading()
       const res = await sendMsg<
@@ -320,6 +356,7 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
     for (const f of lastResult.resumeFields) {
       if (attachResume(f, data.base64, data.fileName)) ok = true
     }
+    if (ok) attachedResumeId = resumeId
     return ok
   }
 
@@ -416,7 +453,7 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
     })
   })
 
-  return { fill: () => void doFill() }
+  return { show: () => overlay.show(), fill: () => void doFill() }
 }
 
 /** Best-effort page language: the declared <html lang>, else Chrome's local detector. */

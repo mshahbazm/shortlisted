@@ -21,6 +21,7 @@ export const overlay: tLocale['overlay'] = {
   filledFields: (n: number) => `${n} champ${n > 1 ? 's' : ''} rempli${n > 1 ? 's' : ''}.`,
   cvAttached: (label: string) => `CV joint : ${label}`,
   attachWhichCv: 'Quel CV joindre ?',
+  previewCv: 'Aperçu de ce CV',
   swap: 'Changer',
   attach: 'Joindre',
   fromBankHeader: 'Rempli depuis votre banque de réponses — vérifiez bien ceci :',

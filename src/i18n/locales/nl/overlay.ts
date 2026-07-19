@@ -20,6 +20,7 @@ export const overlay: tLocale['overlay'] = {
   filledFields: (n: number) => (n === 1 ? '1 veld ingevuld.' : `${n} velden ingevuld.`),
   cvAttached: (label: string) => `Cv bijgevoegd: ${label}`,
   attachWhichCv: 'Welk cv bijvoegen?',
+  previewCv: 'Bekijk dit cv',
   swap: 'Wisselen',
   attach: 'Bijvoegen',
   fromBankHeader: 'Ingevuld uit je antwoordenbank — check deze even:',

@@ -22,6 +22,7 @@ export const overlay: tLocale['overlay'] = {
   filledFields: (n: number) => `Wypełniono ${n} ${plural(n, 'pole', 'pola', 'pól')}.`,
   cvAttached: (label: string) => `Dołączono CV: ${label}`,
   attachWhichCv: 'Które CV dołączyć?',
+  previewCv: 'Podejrzyj to CV',
   swap: 'Zmień',
   attach: 'Dołącz',
   fromBankHeader: 'Wypełnione z Twojego banku odpowiedzi — sprawdź je:',

@@ -20,6 +20,7 @@ export const overlay = {
   filledFields: (n: number) => `Filled ${n} field${n === 1 ? '' : 's'}.`,
   cvAttached: (label: string) => `CV attached: ${label}`,
   attachWhichCv: 'Attach which CV?',
+  previewCv: 'Preview this CV',
   swap: 'Swap',
   attach: 'Attach',
   fromBankHeader: 'Filled from your answer bank — double-check these:',
