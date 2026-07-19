@@ -8,6 +8,7 @@ import { GENERIC_ADAPTER, detectAdapter } from './adapters'
 import { attachResume, fieldContext, fillForm, watchSubmit, applyValue, FillResult } from './engine'
 import { FormField, labelFor } from './fields'
 import { Overlay } from './overlay'
+import type { AssistField, AssistResultItem } from '../ai/capabilities/fill-assist'
 
 declare global {
   interface Window {
@@ -134,6 +135,7 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
 
       overlay.renderResult(lastResult, state.resumes, attachedLabel)
       watchUnknownFields(lastResult.unknown)
+      void runFillAssist(lastResult.unknown)
     },
 
     onAnswer: (field: FormField, answer: string) => {
@@ -180,6 +182,47 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
       if (attachResume(f, data.base64, data.fileName)) ok = true
     }
     return ok
+  }
+
+  // The reasoning layer: fields the deterministic pass couldn't answer go to
+  // the server as one batched call (answered from the account's stored
+  // profile + answer bank). AI values are applied but NOT banked — they land
+  // in the panel for review; confirming or editing is what banks them.
+  const runFillAssist = async (unknown: FormField[]) => {
+    if (unknown.length === 0) return
+    overlay.aiNote(t.aiWorking(unknown.length))
+    const fields: AssistField[] = unknown.map((f, i) => ({
+      id: i,
+      question: f.label,
+      kind: f.kind,
+      required: f.required || undefined,
+      options:
+        f.el instanceof HTMLSelectElement
+          ? Array.from(f.el.options).map((o) => o.textContent?.trim() ?? '').filter(Boolean).slice(0, 80)
+          : f.radioGroup
+            ? f.radioGroup.map((r) => labelFor(r) || r.value).filter(Boolean).slice(0, 80)
+            : undefined,
+    }))
+    const res = await sendMsg<{ results?: AssistResultItem[]; error?: string }>({ type: 'fillAssist', fields })
+    if (!res?.results) {
+      overlay.aiNote('')
+      return
+    }
+    let filled = 0
+    for (const r of res.results) {
+      if (r.value == null) continue
+      const field = unknown[r.id]
+      if (!field) continue
+      lastSaved.set(field, r.value) // keep the form listeners from banking AI output
+      if (applyValue(field, r.value)) {
+        filled++
+        overlay.markAiFilled(field, r.value)
+        if (r.fromSavedQuestion) {
+          void sendMsg({ type: 'addPhrasing', savedQuestion: r.fromSavedQuestion, phrasing: field.label })
+        }
+      }
+    }
+    overlay.aiNote(filled > 0 ? t.aiFilledNote(filled) : '')
   }
 
   // Flag jobs written in a language the profile doesn't list. Detection is

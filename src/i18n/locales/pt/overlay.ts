@@ -13,6 +13,9 @@ export const overlay: tLocale['overlay'] = {
   leadWithHeader: 'Destaca isto',
   gapsHeader: 'Prepara-te para perguntas sobre',
   languageNotice: (lang: string) => `Esta vaga parece estar em ${lang} — um idioma que não está no teu perfil. Mesmo assim consigo preencher o formulário.`,
+  aiWorking: (n: number) => `A IA está a responder a ${n} pergunta${n === 1 ? '' : 's'}…`,
+  aiFilledNote: (n: number) => `A IA preencheu ${n} — revê antes de enviar.`,
+  aiFilled: 'Preenchido pela IA com os teus dados — confere. Guarda para memorizar.',
   filledFields: (n: number) =>
     n === 1 ? 'Preenchi 1 campo.' : `Preenchi ${n} campos.`,
   cvAttached: (label: string) => `CV anexado: ${label}`,

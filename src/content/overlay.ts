@@ -371,6 +371,36 @@ export class Overlay {
     r.save.disabled = true
   }
 
+  /** AI answered this field: show the value for review; Save banks it. */
+  markAiFilled(field: FormField, value: string) {
+    const r = this.unknownRefs.get(field)
+    if (!r) return
+    r.ta.value = value
+    r.item.style.borderColor = '#3d11ff'
+    if (!r.item.querySelector('.ai-src')) {
+      const note = document.createElement('div')
+      note.className = 'src ai-src'
+      note.textContent = this.t.aiFilled
+      r.item.insertBefore(note, r.ta)
+    }
+  }
+
+  /** Transient status line for the assist pass; empty message hides it. */
+  aiNote(message: string) {
+    let n = this.body.querySelector('#ainote') as HTMLElement | null
+    if (!message) {
+      n?.remove()
+      return
+    }
+    if (!n) {
+      n = document.createElement('div')
+      n.id = 'ainote'
+      n.className = 'note'
+      this.body.append(n)
+    }
+    n.textContent = message
+  }
+
   /** Amber strip under the header: "this job is in a language you don't list". */
   showLanguageNotice(message: string) {
     this.langNote.textContent = message

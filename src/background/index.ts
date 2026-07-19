@@ -5,7 +5,7 @@ import { Msg } from '../lib/messaging'
 import * as store from '../lib/store'
 import { BankAnswer, PendingQuestion, jobUrlKey, uid } from '../lib/types'
 import { normalizeQuestion, similarity } from '../lib/questions'
-import { polishAnswer, runQuickScore } from '../ai/run'
+import { cloudFillAssist, polishAnswer, runQuickScore } from '../ai/run'
 import { pullFromCloud, startCloudMirror } from './cloudMirror'
 // CRXJS: gives us the emitted content-script path for scripting.executeScript.
 import contentScriptPath from '../content/index.ts?script'
@@ -187,6 +187,31 @@ async function handle(msg: Msg): Promise<unknown> {
       } catch (e) {
         return { error: e instanceof Error ? e.message : String(e) }
       }
+    }
+
+    case 'fillAssist': {
+      const settings = await store.get('settings')
+      if (!settings.accountEmail || msg.fields.length === 0) return { results: [] }
+      try {
+        return { results: await cloudFillAssist(settings, msg.fields) }
+      } catch (e) {
+        return { error: e instanceof Error ? e.message : String(e) }
+      }
+    }
+
+    case 'addPhrasing': {
+      // The AI recognized a field as a rephrasing of a known answer — record
+      // the phrasing so the free deterministic matcher hits it next time.
+      const norm = normalizeQuestion(msg.savedQuestion)
+      await store.update('answerBank', (bank) =>
+        bank.map((a) =>
+          (a.questionNorm === norm || a.questionRaw.includes(msg.savedQuestion)) &&
+          !a.questionRaw.includes(msg.phrasing)
+            ? { ...a, questionRaw: [...a.questionRaw, msg.phrasing] }
+            : a,
+        ),
+      )
+      return { ok: true }
     }
   }
 }

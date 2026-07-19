@@ -15,8 +15,20 @@ import { cloudBaseUrl } from '../lib/config'
 import * as store from '../lib/store'
 import type { TailorCvResult } from './capabilities/tailor-cv'
 import type { QuickScoreResult, ScoreFitResult } from './capabilities/score-fit'
+import type { AssistField, AssistResultItem } from './capabilities/fill-assist'
 
 export type { QuickScoreResult, ScoreFitResult }
+export type { AssistField, AssistResultItem }
+
+/**
+ * The reasoning layer for form filling: one batched call for the fields the
+ * deterministic filler couldn't handle. The server answers from the account's
+ * stored profile + answer bank — the extension only sends the fields.
+ */
+export async function cloudFillAssist(settings: Settings, fields: AssistField[]): Promise<AssistResultItem[]> {
+  const { results } = await cloudCall<{ results: AssistResultItem[] }>(settings, '/v1/fill-assist', { fields })
+  return results
+}
 
 export async function runExtractProfile(settings: Settings, cvText: string): Promise<Profile> {
   return cloudCall<Profile>(settings, '/v1/extract-profile', { cvText })

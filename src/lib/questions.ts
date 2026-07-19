@@ -57,10 +57,16 @@ export function matchQuestion(raw: string, bank: BankAnswer[]): BankMatch | null
   if (!norm) return null
   let best: BankMatch | null = null
   for (const a of bank) {
-    if (a.questionNorm === norm) return { answer: a, score: 1, exact: true }
-    const score = similarity(norm, a.questionNorm)
-    if (score >= MATCH_THRESHOLD && (!best || score > best.score)) {
-      best = { answer: a, score, exact: false }
+    // Every recorded phrasing counts — fill-assist appends the phrasings it
+    // recognizes, so the free matcher keeps learning from the AI's matches.
+    const norms = new Set([a.questionNorm, ...a.questionRaw.map(normalizeQuestion)])
+    for (const n of norms) {
+      if (!n) continue
+      if (n === norm) return { answer: a, score: 1, exact: true }
+      const score = similarity(norm, n)
+      if (score >= MATCH_THRESHOLD && (!best || score > best.score)) {
+        best = { answer: a, score, exact: false }
+      }
     }
   }
   return best
