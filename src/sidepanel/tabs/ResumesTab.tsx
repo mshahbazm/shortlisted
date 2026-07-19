@@ -311,7 +311,7 @@ function PdfThumb({
     void (async () => {
       try {
         const b64 = renderResumePdf(profile, masterVariant(profile), tpl.id)
-        const url = await renderPdfThumbnail(base64ToBytes(b64), 320)
+        const url = await renderPdfThumbnail(base64ToBytes(b64), 560)
         if (!alive) return
         cache.set(tpl.id, url)
         setSrc(url)

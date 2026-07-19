@@ -230,7 +230,7 @@ select.langswitch:hover { color: var(--fg); }
 .tpl-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 12px; }
 .tpl-tags .chip { cursor: pointer; border: none; font: inherit; font-size: 11px; }
 .tpl-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  display: grid; grid-template-columns: repeat(2, 1fr);
   gap: 10px; margin-bottom: 12px;
 }
 .tpl-card {

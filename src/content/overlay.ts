@@ -46,23 +46,25 @@ const CSS = `
   .fillRow { display: flex; gap: 6px; }
   .fillRow .fillBtn { flex: 1; }
   .caretBtn { flex: none; width: 36px; border: none; border-radius: 8px; background: #18181b;
-    color: #fff; font-size: 11px; cursor: pointer; }
+    color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .caretBtn:hover { background: #333336; }
+  .caretBtn svg { transition: transform 0.15s ease; }
+  .caretBtn.open svg { transform: rotate(180deg); }
   .fillMenu {
-    position: absolute; left: 12px; right: 12px; top: calc(100% - 6px); z-index: 3;
-    background: #fff; border: 1px solid #e7e7e4; border-radius: 10px;
-    box-shadow: 0 10px 28px rgba(0,0,0,.14); padding: 5px; max-height: 260px; overflow-y: auto;
+    margin-top: 8px; background: #fff; border: 1px solid #e7e7e4; border-radius: 10px;
+    padding: 4px; max-height: 260px; overflow-y: auto;
   }
-  .fillMenu .mi { display: block; width: 100%; text-align: left; border: none; background: none;
-    padding: 8px 9px; border-radius: 7px; font-size: 12.5px; color: #1f1f1f; cursor: pointer; }
+  .fillMenu .mi { display: flex; align-items: baseline; width: 100%; text-align: left; border: none;
+    background: none; padding: 8px 9px; border-radius: 7px; font-size: 12.5px; color: #1f1f1f;
+    cursor: pointer; font-family: inherit; }
   .fillMenu .mi:hover { background: #f6f6f4; }
-  .fillMenu .mi .mark { color: #a1a1aa; font-size: 11px; margin-left: 5px; }
-  .fillMenu .mi.tailor { border-top: 1px solid #e7e7e4; border-radius: 0 0 7px 7px; margin-top: 3px;
-    padding-top: 10px; color: #3d11ff; font-weight: 600; }
-  .tailorRow { display: flex; gap: 6px; padding: 6px 9px 8px; align-items: center; }
-  .tailorRow select { flex: 1; }
+  .fillMenu .mi .mark { color: #a1a1aa; font-size: 11px; margin-left: auto; padding-left: 8px; }
+  .fillMenu .mi.tailor { color: #3d11ff; font-weight: 600; }
+  .fillMenu .sep { height: 1px; background: #e7e7e4; margin: 4px 5px; }
+  .tailorRow { display: flex; gap: 6px; padding: 4px 9px 8px; align-items: center; }
+  .tailorRow select { flex: 1; min-width: 0; }
   .tailorRow .go { flex: none; border: none; border-radius: 6px; background: #3d11ff; color: #fff;
-    font-weight: 600; font-size: 12px; padding: 6px 10px; cursor: pointer; }
+    font-weight: 600; font-size: 12px; padding: 6px 10px; cursor: pointer; font-family: inherit; }
   .body { padding: 12px; overflow-y: auto; min-height: 0; }
   .body > :first-child { margin-top: 0; }
   .fillBtn { width: 100%; padding: 9px 0; border: none; border-radius: 8px;
@@ -130,6 +132,7 @@ export class Overlay {
   private t: tOverlayContent
   private langNote!: HTMLDivElement
   private menu: HTMLDivElement | null = null
+  private caretEl: HTMLButtonElement | null = null
   private unknownRefs = new Map<
     FormField,
     { item: HTMLElement; input: HTMLTextAreaElement | HTMLSelectElement; save: HTMLButtonElement }
@@ -183,7 +186,7 @@ export class Overlay {
     this.body.append(note)
   }
 
-  /** The split fill button: main action + caret opening the CV menu. */
+  /** The split fill button: main action + chevron opening the CV menu. */
   private fillRow(label: string): HTMLElement {
     const row = document.createElement('div')
     row.className = 'fillRow'
@@ -193,8 +196,11 @@ export class Overlay {
     btn.onclick = () => this.cb.onFill()
     const caret = document.createElement('button')
     caret.className = 'caretBtn'
-    caret.textContent = '▾'
+    caret.innerHTML =
+      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+      'stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>'
     caret.onclick = () => this.cb.onFillMenu()
+    this.caretEl = caret
     row.append(btn, caret)
     return row
   }
@@ -202,6 +208,7 @@ export class Overlay {
   closeFillMenu() {
     this.menu?.remove()
     this.menu = null
+    this.caretEl?.classList.remove('open')
   }
 
   /** CV choice dropdown: saved CVs to attach, or tailor a fresh one. */
@@ -228,6 +235,11 @@ export class Overlay {
       }
       menu.append(b)
     }
+    if (resumes.length > 0) {
+      const sep = document.createElement('div')
+      sep.className = 'sep'
+      menu.append(sep)
+    }
     const tailor = document.createElement('button')
     tailor.className = 'mi tailor'
     tailor.textContent = this.t.tailorNew
@@ -253,8 +265,12 @@ export class Overlay {
       menu.append(row)
     }
     menu.append(tailor)
-    this.actions.append(menu)
+    // Expand in flow directly under the fill row — attached, never floating.
+    const fillRow = this.actions.querySelector('.fillRow')
+    if (fillRow?.nextSibling) this.actions.insertBefore(menu, fillRow.nextSibling)
+    else this.actions.append(menu)
     this.menu = menu
+    this.caretEl?.classList.add('open')
   }
 
   private scoreButton(): HTMLButtonElement {
