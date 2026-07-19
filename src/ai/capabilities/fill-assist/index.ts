@@ -32,14 +32,30 @@ export interface AssistResultItem {
   fromSavedQuestion?: string
 }
 
+/** An already-filled field whose value carries doubt (fuzzy match, option pick). */
+export interface VerifyField {
+  id: number
+  question: string
+  kind: string
+  options?: string[]
+  currentValue: string
+}
+
+export interface CorrectionItem {
+  id: number
+  /** The right value per the facts (options fields: one of the options). */
+  value: string
+}
+
 export interface FillAssistResult {
   results: AssistResultItem[]
+  corrections: CorrectionItem[]
   usage: { inputTokens: number; outputTokens: number }
 }
 
 const assistSchema = {
   type: 'object',
-  required: ['results'],
+  required: ['results', 'corrections'],
   properties: {
     results: {
       type: 'array',
@@ -50,6 +66,17 @@ const assistSchema = {
           id: { type: 'integer' },
           value: { type: ['string', 'null'] },
           fromSavedQuestion: { type: 'string' },
+        },
+      },
+    },
+    corrections: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: ['id', 'value'],
+        properties: {
+          id: { type: 'integer' },
+          value: { type: 'string' },
         },
       },
     },
@@ -73,19 +100,27 @@ const ASSIST_PROMPT =
   `- If the facts do not answer the field, value = null. A null is ALWAYS better than a guess — ` +
   `a wrong answer on an application harms the candidate.\n` +
   `- Never answer demographic/EEO survey questions (race, gender, veteran status, disability): ` +
-  `those are null, they belong to the human.`
+  `those are null, they belong to the human.\n\n` +
+  `The "verifyFilled" list contains fields that were ALREADY auto-filled with "currentValue". ` +
+  `Review each against the facts: if the current value is right or defensible, do NOT mention it. ` +
+  `Only when it is clearly wrong (mismatched meaning, wrong option picked) add {id, value} to ` +
+  `"corrections" with the correct value — same rules as above. If you cannot derive the correct ` +
+  `value, leave the field alone: corrections are only for confident fixes.`
 
 export async function fillAssist(
   client: LlmClient,
   fields: AssistField[],
+  verify: VerifyField[],
   profile: Profile | null,
   answers: AssistAnswer[],
 ): Promise<FillAssistResult> {
-  const input = JSON.stringify({ fields, profile: profile ?? undefined, savedAnswers: answers })
+  const input = JSON.stringify({ fields, verifyFilled: verify, profile: profile ?? undefined, savedAnswers: answers })
   const ids = new Set(fields.map((f) => f.id))
   const byId = new Map(fields.map((f) => [f.id, f]))
+  const verifyIds = new Set(verify.map((f) => f.id))
+  const verifyById = new Map(verify.map((f) => [f.id, f]))
 
-  const { value, usage } = await runJsonPass<{ results: AssistResultItem[] }>(
+  const { value, usage } = await runJsonPass<{ results: AssistResultItem[]; corrections: CorrectionItem[] }>(
     {
       client,
       systemPrompt: ASSIST_PROMPT,
@@ -104,9 +139,17 @@ export async function fillAssist(
           return `field ${r.id}: value must be exactly one of the given options or null`
         }
       }
+      if (!Array.isArray(v.corrections)) return 'corrections must be an array'
+      for (const cor of v.corrections) {
+        if (!verifyIds.has(cor.id)) return `unknown verify id ${cor.id}`
+        const opts = verifyById.get(cor.id)?.options
+        if (typeof cor.value !== 'string' || (opts?.length && !opts.includes(cor.value))) {
+          return `correction ${cor.id}: value must be exactly one of the given options`
+        }
+      }
       return null
     },
   )
 
-  return { results: value?.results ?? [], usage }
+  return { results: value?.results ?? [], corrections: value?.corrections ?? [], usage }
 }

@@ -191,9 +191,11 @@ async function handle(msg: Msg): Promise<unknown> {
 
     case 'fillAssist': {
       const settings = await store.get('settings')
-      if (!settings.accountEmail || msg.fields.length === 0) return { results: [] }
+      if (!settings.accountEmail || msg.fields.length + msg.verify.length === 0) {
+        return { results: [], corrections: [] }
+      }
       try {
-        return { results: await cloudFillAssist(settings, msg.fields) }
+        return await cloudFillAssist(settings, msg.fields, msg.verify)
       } catch (e) {
         return { error: e instanceof Error ? e.message : String(e) }
       }

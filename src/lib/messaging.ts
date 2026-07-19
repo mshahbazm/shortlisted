@@ -1,5 +1,5 @@
 import { AnswerType, ApplicationRecord, BankAnswer, PendingQuestion, Profile, ResumeVariant, Settings } from './types'
-import type { AssistField } from '../ai/capabilities/fill-assist'
+import type { AssistField, VerifyField } from '../ai/capabilities/fill-assist'
 
 // Content script <-> background messages.
 
@@ -28,7 +28,7 @@ export type Msg =
   | { type: 'fillCurrentTab' }
   | { type: 'scoreFitPage'; jobText: string; jobUrl: string }
   | { type: 'cloudPull' }
-  | { type: 'fillAssist'; fields: AssistField[] }
+  | { type: 'fillAssist'; fields: AssistField[]; verify: VerifyField[] }
   | { type: 'addPhrasing'; savedQuestion: string; phrasing: string }
 
 export function sendMsg<T = unknown>(msg: Msg): Promise<T> {

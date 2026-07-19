@@ -8,7 +8,7 @@ import { GENERIC_ADAPTER, detectAdapter } from './adapters'
 import { attachResume, fieldContext, fillForm, watchSubmit, applyValue, FillResult } from './engine'
 import { FormField, labelFor } from './fields'
 import { Overlay } from './overlay'
-import type { AssistField, AssistResultItem } from '../ai/capabilities/fill-assist'
+import type { AssistField, AssistResultItem, CorrectionItem, VerifyField } from '../ai/capabilities/fill-assist'
 
 declare global {
   interface Window {
@@ -140,7 +140,7 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
 
       overlay.renderResult(lastResult, state.resumes, attachedLabel)
       watchUnknownFields(lastResult.unknown)
-      void runFillAssist(lastResult.unknown)
+      void runFillAssist(lastResult)
     },
 
     onAnswer: (field: FormField, answer: string) => {
@@ -189,45 +189,71 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
     return ok
   }
 
-  // The reasoning layer: fields the deterministic pass couldn't answer go to
-  // the server as one batched call (answered from the account's stored
-  // profile + answer bank). AI values are applied but NOT banked — they land
-  // in the panel for review; confirming or editing is what banks them.
-  const runFillAssist = async (unknown: FormField[]) => {
-    if (unknown.length === 0) return
-    overlay.aiNote(t.aiWorking(unknown.length))
+  const optionsOf = (f: FormField): string[] | undefined =>
+    f.el instanceof HTMLSelectElement
+      ? Array.from(f.el.options).map((o) => o.textContent?.trim() ?? '').filter(Boolean).slice(0, 80)
+      : f.radioGroup
+        ? f.radioGroup.map((r) => labelFor(r) || r.value).filter(Boolean).slice(0, 80)
+        : undefined
+
+  // The reasoning layer, ONE batched call covering two lists:
+  //  - fields the deterministic pass couldn't answer (filled from the
+  //    account's stored profile + answer bank), and
+  //  - uncertain fills it wants double-checked: fuzzy bank matches and
+  //    option picks (selects/radios), where text matching can be subtly off.
+  // Exact profile fills (email, phone…) are never sent — they can't be wrong.
+  // AI values are applied but NOT banked; confirming or editing banks them.
+  const runFillAssist = async (result: FillResult) => {
+    const unknown = result.unknown
+    const uncertain = result.filled.filter(
+      (f) => f.source === 'bank-fuzzy' || f.field.kind === 'select' || f.field.kind === 'radio',
+    )
+    if (unknown.length + uncertain.length === 0) return
+    overlay.aiNote(t.aiWorking(unknown.length + uncertain.length))
     const fields: AssistField[] = unknown.map((f, i) => ({
       id: i,
       question: f.label,
       kind: f.kind,
       required: f.required || undefined,
-      options:
-        f.el instanceof HTMLSelectElement
-          ? Array.from(f.el.options).map((o) => o.textContent?.trim() ?? '').filter(Boolean).slice(0, 80)
-          : f.radioGroup
-            ? f.radioGroup.map((r) => labelFor(r) || r.value).filter(Boolean).slice(0, 80)
-            : undefined,
+      options: optionsOf(f),
     }))
-    const res = await sendMsg<{ results?: AssistResultItem[]; error?: string }>({ type: 'fillAssist', fields })
+    const verify: VerifyField[] = uncertain.map((f, i) => ({
+      id: i,
+      question: f.field.label,
+      kind: f.field.kind,
+      options: optionsOf(f.field),
+      currentValue: f.value,
+    }))
+    const res = await sendMsg<{ results?: AssistResultItem[]; corrections?: CorrectionItem[]; error?: string }>({
+      type: 'fillAssist',
+      fields,
+      verify,
+    })
     if (!res?.results) {
       overlay.aiNote('')
       return
     }
-    let filled = 0
+    let touched = 0
     for (const r of res.results) {
       if (r.value == null) continue
       const field = unknown[r.id]
       if (!field) continue
       lastSaved.set(field, r.value) // keep the form listeners from banking AI output
       if (applyValue(field, r.value)) {
-        filled++
+        touched++
         overlay.markAiFilled(field, r.value)
         if (r.fromSavedQuestion) {
           void sendMsg({ type: 'addPhrasing', savedQuestion: r.fromSavedQuestion, phrasing: field.label })
         }
       }
     }
-    overlay.aiNote(filled > 0 ? t.aiFilledNote(filled) : '')
+    for (const cor of res.corrections ?? []) {
+      const field = uncertain[cor.id]?.field
+      if (!field) continue
+      lastSaved.set(field, cor.value)
+      if (applyValue(field, cor.value)) touched++
+    }
+    overlay.aiNote(touched > 0 ? t.aiFilledNote(touched) : '')
   }
 
   // Flag jobs written in a language the profile doesn't list. Detection is
