@@ -51,11 +51,11 @@ export function fillForm(adapter: Adapter, state: FillState): FillResult {
 
     // 2) Answer bank (exact then fuzzy).
     const match = label.length > 4 ? matchQuestion(label, state.answerBank) : null
-    if (match && applyValue(field, match.answer.answer)) {
+    if (match && applyValue(field, match.answer.polished ?? match.answer.answer)) {
       result.filled.push({
         field,
         source: match.exact ? 'bank' : 'bank-fuzzy',
-        value: match.answer.answer,
+        value: match.answer.polished ?? match.answer.answer,
         bankAnswerId: match.answer.id,
       })
       continue

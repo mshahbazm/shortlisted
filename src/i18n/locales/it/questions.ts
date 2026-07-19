@@ -1,8 +1,10 @@
 import type { tLocale } from '../en'
 
 export const questions: tLocale['questions'] = {
-  title: 'Risposte',
-  hint: 'Rispondi una volta, riusata in ogni candidatura che la chiede — comunque sia formulata.',
+  title: 'Cosa so di te',
+  hint:
+    'Tutto ciò che mi hai insegnato — riusato in ogni candidatura che lo chiede, con qualsiasi formulazione. Sistemo la forma; i fatti restano i tuoi.',
+  askedAs: (q: string) => `Chiesto come: “${q}”`,
   fromThisJob: 'da questa offerta',
   yourAnswerPlaceholder: 'La tua risposta…',
   emptyState: 'Compila una candidatura — ogni domanda a cui non so rispondere finisce qui, una volta sola.',

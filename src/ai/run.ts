@@ -89,6 +89,15 @@ export async function cloudUsage(settings: Settings): Promise<CloudUsage> {
   return cloudCall<CloudUsage>(settings, '/v1/me', undefined, 'GET')
 }
 
+/**
+ * One clean sentence out of a raw bank answer ("two weeks" → "I can start two
+ * weeks after accepting an offer."). Free micro-call; same facts, nothing added.
+ */
+export async function polishAnswer(settings: Settings, question: string, answer: string): Promise<string> {
+  const { polished } = await cloudCall<{ polished: string }>(settings, '/v1/polish-answer', { question, answer })
+  return polished
+}
+
 // ---- account (email OTP; links this device to the user) ----
 
 export async function sendLoginCode(settings: Settings, email: string): Promise<void> {

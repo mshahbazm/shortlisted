@@ -5,7 +5,7 @@ import { Msg } from '../lib/messaging'
 import * as store from '../lib/store'
 import { BankAnswer, PendingQuestion, jobUrlKey, uid } from '../lib/types'
 import { normalizeQuestion, similarity } from '../lib/questions'
-import { runQuickScore } from '../ai/run'
+import { polishAnswer, runQuickScore } from '../ai/run'
 import { pullFromCloud, startCloudMirror } from './cloudMirror'
 // CRXJS: gives us the emitted content-script path for scripting.executeScript.
 import contentScriptPath from '../content/index.ts?script'
@@ -62,6 +62,7 @@ async function handle(msg: Msg): Promise<unknown> {
       await store.update('answerBank', (bank) => {
         const existing = bank.find((a) => a.questionNorm === norm || similarity(a.questionNorm, norm) >= 0.92)
         if (existing) {
+          if (existing.answer !== msg.answer) existing.polished = undefined // stale polish dies with the old answer
           existing.answer = msg.answer
           existing.answerType = msg.answerType
           if (!existing.questionRaw.includes(msg.questionRaw)) existing.questionRaw.push(msg.questionRaw)
@@ -82,6 +83,8 @@ async function handle(msg: Msg): Promise<unknown> {
         }
         return [...bank, fresh]
       })
+      // Free-text answers get an AI polish in the background (fire and forget).
+      if (msg.answerType === 'text') void polishInBackground(norm, msg.questionRaw, msg.answer)
       return { ok: true }
     }
 
@@ -185,6 +188,30 @@ async function handle(msg: Msg): Promise<unknown> {
         return { error: e instanceof Error ? e.message : String(e) }
       }
     }
+  }
+}
+
+/**
+ * Rewrite a just-saved answer into a clean sentence via the cloud (mini model,
+ * free). Only stores the polish if the raw answer hasn't changed meanwhile;
+ * options/booleans are never polished (their value must match the form).
+ */
+async function polishInBackground(questionNorm: string, questionRaw: string, answer: string): Promise<void> {
+  try {
+    const settings = await store.get('settings')
+    if (!settings.accountEmail) return
+    const bank = await store.get('answerBank')
+    // Same match rule as saveAnswer (exact or fuzzy) — the entry's own norm
+    // may differ from this phrasing's.
+    const entry = bank.find((a) => a.questionNorm === questionNorm || similarity(a.questionNorm, questionNorm) >= 0.92)
+    if (!entry || entry.answer !== answer || entry.polished) return
+    const polished = await polishAnswer(settings, questionRaw, answer)
+    if (!polished) return
+    await store.update('answerBank', (b) =>
+      b.map((a) => (a.id === entry.id && a.answer === answer ? { ...a, polished } : a)),
+    )
+  } catch (e) {
+    console.error('[shortlisted] polish failed (answer kept as written):', e)
   }
 }
 

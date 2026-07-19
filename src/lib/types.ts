@@ -244,7 +244,9 @@ export interface BankAnswer {
   id: string
   questionNorm: string // normalized text used for matching
   questionRaw: string[] // every phrasing seen
-  answer: string
+  answer: string // exactly what the user wrote — the truth source
+  /** AI-polished phrasing of `answer` (same facts, clean sentence); filling prefers it. */
+  polished?: string
   answerType: AnswerType
   timesUsed: number
   lastUsedAt: number
