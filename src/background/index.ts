@@ -7,6 +7,7 @@ import { BankAnswer, PendingQuestion, Profile, ResumeVariant, jobUrlKey, uid } f
 import { normalizeQuestion, similarity } from '../lib/questions'
 import { cloudFillAssist, cloudResumeIntake, polishAnswer, runQuickScore, runTailorCv } from '../ai/run'
 import { renderResumePdf } from '../pdf/resumePdf'
+import { getTemplate } from '../pdf/templates'
 import { pullFromCloud, startCloudMirror } from './cloudMirror'
 // CRXJS: gives us the emitted content-script path for scripting.executeScript.
 import contentScriptPath from '../content/index.ts?script'
@@ -102,7 +103,7 @@ async function handle(msg: Msg): Promise<unknown> {
         const safe = result.resume.label.replace(/[^\w\- ]/g, '').replace(/\s+/g, '-').slice(0, 40)
         const entry: ResumeVariant = {
           id: uid(),
-          label: result.resume.label,
+          label: `${result.resume.label} · ${getTemplate(msg.templateId).name}`,
           fileName: `${profile.identity.firstName}-${profile.identity.lastName}-${safe}.pdf`.replace(/\s+/g, '-'),
           tags: [result.job.role, result.job.company].filter(Boolean),
           isDefault: false,

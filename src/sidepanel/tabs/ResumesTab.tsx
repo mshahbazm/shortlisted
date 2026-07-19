@@ -6,8 +6,17 @@ import { Profile, ResumeVariant, base64ToBytes, bytesToBase64, uid } from '../..
 import { sendMsg } from '../../lib/messaging'
 import { renderPdfThumbnail } from '../../lib/pdfText'
 import { masterVariant, renderResumePdf } from '../../pdf/resumePdf'
-import { ALL_TAGS, ResumeTemplate, TEMPLATES, TemplateTag } from '../../pdf/templates'
+import { ALL_TAGS, ResumeTemplate, TEMPLATES, TemplateTag, getTemplate } from '../../pdf/templates'
 import { runTailorCv } from '../../ai/run'
+import { showToast } from '../toast'
+
+/** "Master CV · Atlas" → "Master CV · Atlas (2)" when the name is taken. */
+function uniqueLabel(base: string, existing: { label: string }[]): string {
+  if (!existing.some((r) => r.label === base)) return base
+  let n = 2
+  while (existing.some((r) => r.label === `${base} (${n})`)) n++
+  return `${base} (${n})`
+}
 
 export function ResumesTab() {
   const t = useContent('resumes')
@@ -40,20 +49,28 @@ export function ResumesTab() {
     void sendMsg({ type: 'intakeResume', resumeId: id })
   }
 
-  const generateMaster = (templateId: string) => {
+  const generateMaster = async (templateId: string) => {
     setErr('')
+    setBusyStep(t.working)
+    // Let the busy state paint before the CPU-bound PDF render blocks.
+    await new Promise((r) => setTimeout(r, 30))
     try {
       const variant = masterVariant(profile)
       const base64 = renderResumePdf(profile, variant, templateId)
-      const name = `${profile.identity.firstName}-${profile.identity.lastName}-CV.pdf`.replace(/\s+/g, '-')
+      const name = `${profile.identity.firstName}-${profile.identity.lastName}-CV-${templateId}.pdf`.replace(/\s+/g, '-')
       addResume({
-        id: uid(), label: t.masterCvLabel, fileName: name,
+        id: uid(),
+        label: uniqueLabel(`${t.masterCvLabel} · ${getTemplate(templateId).name}`, resumes),
+        fileName: name,
         tags: ['master', ...(profile.headline ? [profile.headline] : [])],
         isDefault: resumes.length === 0, createdAt: Date.now(), source: 'generated',
         templateId, dataBase64: base64, content: variant,
       })
+      showToast(t.cvReady)
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusyStep('')
     }
   }
 
@@ -65,7 +82,8 @@ export function ResumesTab() {
       const base64 = renderResumePdf(profile, result.resume, templateId)
       const safe = result.resume.label.replace(/[^\w\- ]/g, '').replace(/\s+/g, '-').slice(0, 40)
       addResume({
-        id: uid(), label: result.resume.label,
+        id: uid(),
+        label: uniqueLabel(`${result.resume.label} · ${getTemplate(templateId).name}`, resumes),
         fileName: `${profile.identity.firstName}-${profile.identity.lastName}-${safe}.pdf`.replace(/\s+/g, '-'),
         tags: [result.job.role, result.job.company].filter(Boolean),
         isDefault: false, createdAt: Date.now(), source: 'generated',
@@ -83,7 +101,7 @@ export function ResumesTab() {
   const onPickTemplate = (templateId: string) => {
     const action = picking
     setPicking(null)
-    if (action === 'master') generateMaster(templateId)
+    if (action === 'master') void generateMaster(templateId)
     if (action === 'tailor') void runTailor(templateId)
   }
 
@@ -156,11 +174,12 @@ export function ResumesTab() {
 
       <Section title={t.addTitle} summary={t.addSummary}>
         <div className="row">
-          <button className="ghost small" onClick={() => fileRef.current?.click()}>{t.uploadPdf}</button>
-          <button className="ghost small" onClick={() => setPicking('master')} disabled={!hasProfile}>
-            {t.generateFromProfile}
+          <button className="ghost small" onClick={() => fileRef.current?.click()} disabled={!!busyStep}>{t.uploadPdf}</button>
+          <button className="ghost small" onClick={() => setPicking('master')} disabled={!hasProfile || !!busyStep}>
+            {busyStep ? t.working : t.generateFromProfile}
           </button>
         </div>
+        {busyStep && <p className="progress">{busyStep}</p>}
         <input
           ref={fileRef} type="file" accept="application/pdf" style={{ display: 'none' }}
           onChange={(e) => {

@@ -21,6 +21,7 @@ export const resumes = {
   generateFromProfile: 'Generate from profile',
   masterCvLabel: 'Master CV',
 
+  cvReady: 'CV created ✓',
   pickStyleTitle: 'Pick a style',
   pickStyleHint: 'Every style is ATS-safe — real text, standard fonts, parses cleanly. Pick the look that fits the job.',
   allStyles: 'All',
