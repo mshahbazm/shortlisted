@@ -179,14 +179,27 @@ export function flashField(el: HTMLElement): void {
   }, 2200)
 }
 
-// Set a value the way a user would, so React/Vue state updates too.
+// React instruments the value property per-node and swallows updates whose
+// value matches its tracker — resetting the tracker forces it to see ours.
+type Tracked = { _valueTracker?: { setValue(v: string): void } }
+
+// Set a value the way a user would: real focus, a keystroke lifecycle with a
+// proper InputEvent, real blur. Validation layers variously watch keyup,
+// beforeinput/input, change, or blur — feed them all so the value registers
+// no matter which one the form listens to.
 export function setNativeValue(el: HTMLInputElement | HTMLTextAreaElement, value: string): void {
   const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype
   const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set
+  const keyInit = { bubbles: true, cancelable: true, key: value.slice(-1) || 'a' }
+  el.focus({ preventScroll: true })
+  el.dispatchEvent(new KeyboardEvent('keydown', keyInit))
   setter?.call(el, value)
-  el.dispatchEvent(new Event('input', { bubbles: true }))
+  ;(el as unknown as Tracked)._valueTracker?.setValue('')
+  el.dispatchEvent(new InputEvent('beforeinput', { bubbles: true, cancelable: true, inputType: 'insertText', data: value }))
+  el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: value }))
+  el.dispatchEvent(new KeyboardEvent('keyup', keyInit))
   el.dispatchEvent(new Event('change', { bubbles: true }))
-  el.dispatchEvent(new Event('blur', { bubbles: true }))
+  el.blur()
 }
 
 export function setSelectValue(el: HTMLSelectElement, wanted: string): boolean {
@@ -203,9 +216,12 @@ export function setSelectValue(el: HTMLSelectElement, wanted: string): boolean {
   }
   if (!chosen) return false
   const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set
+  el.focus({ preventScroll: true })
   setter?.call(el, chosen.value)
+  ;(el as unknown as Tracked)._valueTracker?.setValue('')
   el.dispatchEvent(new Event('input', { bubbles: true }))
   el.dispatchEvent(new Event('change', { bubbles: true }))
+  el.blur()
   return true
 }
 
