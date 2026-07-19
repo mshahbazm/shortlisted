@@ -13,6 +13,7 @@ export const overlay: tLocale['overlay'] = {
   fitDenominator: '/10 Fit',
   leadWithHeader: 'Damit punktest du',
   gapsHeader: 'Rechne mit Fragen zu',
+  languageNotice: (lang: string) => `Diese Stelle scheint auf ${lang} zu sein — laut Profil keine deiner Sprachen. Ausfüllen kann ich trotzdem.`,
   filledFields: (n: number) => `${n} ${n === 1 ? 'Feld' : 'Felder'} ausgefüllt.`,
   cvAttached: (label: string) => `Lebenslauf angehängt: ${label}`,
   attachWhichCv: 'Welchen Lebenslauf anhängen?',

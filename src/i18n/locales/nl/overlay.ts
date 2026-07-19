@@ -12,6 +12,7 @@ export const overlay: tLocale['overlay'] = {
   fitDenominator: '/10 match',
   leadWithHeader: 'Zet dit voorop',
   gapsHeader: 'Reken op vragen over',
+  languageNotice: (lang: string) => `Deze vacature lijkt in het ${lang} te zijn — die taal staat niet in je profiel. Invullen kan ik nog steeds.`,
   filledFields: (n: number) => (n === 1 ? '1 veld ingevuld.' : `${n} velden ingevuld.`),
   cvAttached: (label: string) => `Cv bijgevoegd: ${label}`,
   attachWhichCv: 'Welk cv bijvoegen?',

@@ -13,6 +13,7 @@ export const overlay: tLocale['overlay'] = {
   fitDenominator: '/10 de match',
   leadWithHeader: 'Mettez en avant',
   gapsHeader: 'Attendez-vous à des questions sur',
+  languageNotice: (lang: string) => `Cette offre semble être en ${lang} — une langue absente de votre profil. Je peux quand même remplir le formulaire.`,
   filledFields: (n: number) => `${n} champ${n > 1 ? 's' : ''} rempli${n > 1 ? 's' : ''}.`,
   cvAttached: (label: string) => `CV joint : ${label}`,
   attachWhichCv: 'Quel CV joindre ?',

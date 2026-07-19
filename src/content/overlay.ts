@@ -74,6 +74,11 @@ const CSS = `
   }
   .fitLi { display: flex; gap: 7px; font-size: 12px; line-height: 1.45; margin: 4px 0; color: #3f3f46; }
   .fitLi .ic { flex: none; font-weight: 700; }
+  .langnote {
+    display: none; padding: 8px 12px; font-size: 12px; line-height: 1.45;
+    background: #fffdf5; border-bottom: 1px solid #f0d9a8; color: #7c5a10;
+  }
+  .langnote.on { display: block; }
   .scoring { text-align: center; padding: 22px 0 16px; }
   .scoring .label { font-weight: 600; font-size: 13.5px; }
   .spinner {
@@ -91,6 +96,7 @@ export class Overlay {
   private body: HTMLDivElement
   private cb: OverlayCallbacks
   private t: tOverlayContent
+  private langNote!: HTMLDivElement
   private unknownRefs = new Map<FormField, { item: HTMLElement; ta: HTMLTextAreaElement; save: HTMLButtonElement }>()
 
   constructor(atsName: string, t: tOverlayContent, cb: OverlayCallbacks) {
@@ -118,7 +124,10 @@ export class Overlay {
     this.body = document.createElement('div')
     this.body.className = 'body'
 
-    this.panel.append(head, this.body)
+    this.langNote = document.createElement('div')
+    this.langNote.className = 'langnote'
+
+    this.panel.append(head, this.langNote, this.body)
     this.root.appendChild(this.panel)
     document.documentElement.appendChild(this.host)
     this.renderIdle()
@@ -360,6 +369,12 @@ export class Overlay {
     r.item.style.opacity = '0.55'
     r.save.textContent = this.t.saved
     r.save.disabled = true
+  }
+
+  /** Amber strip under the header: "this job is in a language you don't list". */
+  showLanguageNotice(message: string) {
+    this.langNote.textContent = message
+    this.langNote.classList.add('on')
   }
 
   setBusy() {

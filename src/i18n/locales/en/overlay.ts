@@ -12,6 +12,7 @@ export const overlay = {
   fitDenominator: '/10 fit',
   leadWithHeader: 'Lead with',
   gapsHeader: 'Be ready for questions about',
+  languageNotice: (lang: string) => `This job looks like it’s in ${lang} — not one of your languages. I can still fill the form for you.`,
   filledFields: (n: number) => `Filled ${n} field${n === 1 ? '' : 's'}.`,
   cvAttached: (label: string) => `CV attached: ${label}`,
   attachWhichCv: 'Attach which CV?',

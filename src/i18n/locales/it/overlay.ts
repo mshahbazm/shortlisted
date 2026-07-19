@@ -12,6 +12,7 @@ export const overlay: tLocale['overlay'] = {
   fitDenominator: '/10 affinità',
   leadWithHeader: 'Punta su questo',
   gapsHeader: 'Preparati a domande su',
+  languageNotice: (lang: string) => `Questo annuncio sembra in ${lang} — una lingua non presente nel tuo profilo. Posso comunque compilare il modulo.`,
   filledFields: (n: number) => `Compilat${n === 1 ? 'o 1 campo' : `i ${n} campi`}.`,
   cvAttached: (label: string) => `CV allegato: ${label}`,
   attachWhichCv: 'Quale CV allego?',

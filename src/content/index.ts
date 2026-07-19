@@ -32,7 +32,7 @@ function main() {
     if (document.getElementById('shortlisted-overlay-host')) return
     void store.get('settings').then((s) => {
       if (document.getElementById('shortlisted-overlay-host')) return
-      boot(adapter.id === 'generic' ? GENERIC_ADAPTER : adapter, getContent(s.locale))
+      boot(adapter.id === 'generic' ? GENERIC_ADAPTER : adapter, getContent(s.locale), s.locale)
     })
   }
 
@@ -49,7 +49,7 @@ function main() {
   }
 }
 
-function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent) {
+function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent, uiLocale?: string) {
   let state: FillState | null = null
   let lastResult: FillResult | null = null
   let attachedLabel: string | null = null
@@ -182,6 +182,24 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
     return ok
   }
 
+  // Flag jobs written in a language the profile doesn't list. Detection is
+  // local (Chrome's built-in detector); English is assumed known — the whole
+  // product operates in English-language job markets.
+  void (async () => {
+    try {
+      const profile = (await store.get('profile')) as { languages: { langCode: string }[] }
+      const known = profile.languages.map((l) => l.langCode.toLowerCase().slice(0, 2))
+      if (known.length === 0) return
+      const pageLang = await detectPageLanguage()
+      if (!pageLang || pageLang === 'en' || known.includes(pageLang)) return
+      const name =
+        new Intl.DisplayNames([uiLocale ?? 'en'], { type: 'language' }).of(pageLang) ?? pageLang
+      overlay.showLanguageNotice(t.languageNotice(name))
+    } catch {
+      // Detection is best-effort; no notice beats a wrong notice.
+    }
+  })()
+
   // Log the application when the user clicks the real submit button.
   watchSubmit(adapter, () => {
     void sendMsg({
@@ -194,6 +212,17 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
       },
     })
   })
+}
+
+/** Best-effort page language: the declared <html lang>, else Chrome's local detector. */
+async function detectPageLanguage(): Promise<string | null> {
+  const declared = document.documentElement.lang?.toLowerCase().slice(0, 2)
+  if (declared) return declared
+  const sample = jobPageText().slice(0, 3000)
+  if (sample.length < 200 || !chrome.i18n?.detectLanguage) return null
+  const res = await chrome.i18n.detectLanguage(sample)
+  const top = res.languages?.[0]
+  return top && top.percentage >= 60 ? top.language.toLowerCase().slice(0, 2) : null
 }
 
 // The job description for scoring: prefer the page's main content region,

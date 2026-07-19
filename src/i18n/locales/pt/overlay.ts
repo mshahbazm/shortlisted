@@ -12,6 +12,7 @@ export const overlay: tLocale['overlay'] = {
   fitDenominator: '/10 de match',
   leadWithHeader: 'Destaca isto',
   gapsHeader: 'Prepara-te para perguntas sobre',
+  languageNotice: (lang: string) => `Esta vaga parece estar em ${lang} — um idioma que não está no teu perfil. Mesmo assim consigo preencher o formulário.`,
   filledFields: (n: number) =>
     n === 1 ? 'Preenchi 1 campo.' : `Preenchi ${n} campos.`,
   cvAttached: (label: string) => `CV anexado: ${label}`,

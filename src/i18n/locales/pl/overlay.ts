@@ -14,6 +14,7 @@ export const overlay: tLocale['overlay'] = {
   fitDenominator: '/10 dopasowania',
   leadWithHeader: 'Postaw na to',
   gapsHeader: 'Przygotuj się na pytania o',
+  languageNotice: (lang: string) => `To ogłoszenie wygląda na napisane w języku: ${lang} — nie ma go w Twoim profilu. Formularz i tak mogę wypełnić.`,
   filledFields: (n: number) => `Wypełniono ${n} ${plural(n, 'pole', 'pola', 'pól')}.`,
   cvAttached: (label: string) => `Dołączono CV: ${label}`,
   attachWhichCv: 'Które CV dołączyć?',
