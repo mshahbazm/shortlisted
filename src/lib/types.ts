@@ -403,6 +403,12 @@ export const storageDefaults = (): StorageShape => ({
 
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
 
+/** "role — company" CV label, unless the role already names the company. */
+export function roleCompanyLabel(role: string, company: string): string {
+  if (!company || role.toLowerCase().includes(company.toLowerCase())) return role
+  return `${role} — ${company}`
+}
+
 export function base64ToBytes(base64: string): Uint8Array {
   const bin = atob(base64)
   const bytes = new Uint8Array(bin.length)

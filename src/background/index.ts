@@ -3,7 +3,7 @@
 
 import { Msg } from '../lib/messaging'
 import * as store from '../lib/store'
-import { BankAnswer, PendingQuestion, Profile, ResumeVariant, jobUrlKey, uid } from '../lib/types'
+import { BankAnswer, PendingQuestion, Profile, ResumeVariant, jobUrlKey, roleCompanyLabel, uid } from '../lib/types'
 import { normalizeQuestion, similarity } from '../lib/questions'
 import { cloudFillAssist, cloudResumeIntake, polishAnswer, runQuickScore, runTailorCv } from '../ai/run'
 import { renderResumePdf } from '../pdf/resumePdf'
@@ -108,7 +108,7 @@ async function handle(msg: Msg): Promise<unknown> {
         const safe = result.resume.label.replace(/[^\w\- ]/g, '').replace(/\s+/g, '-').slice(0, 40)
         const entry: ResumeVariant = {
           id: uid(),
-          label: [result.resume.label, result.job.company].filter(Boolean).join(' — '),
+          label: roleCompanyLabel(result.resume.label, result.job.company),
           fileName: `${profile.identity.firstName}-${profile.identity.lastName}-${safe}.pdf`.replace(/\s+/g, '-'),
           tags: [result.job.role, result.job.company].filter(Boolean),
           isDefault: false,

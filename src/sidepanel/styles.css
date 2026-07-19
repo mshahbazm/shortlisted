@@ -271,3 +271,19 @@ select.langswitch:hover { color: var(--fg); }
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 .kv-error { color: var(--red); font-size: 11.5px; margin: 2px 0 6px; }
+
+/* ---- CV list cards ---- */
+.cv-item { padding: 12px 14px; }
+.cv-item + .cv-item { border-top: 1px solid var(--border); }
+.cv-head { display: flex; align-items: center; gap: 8px; }
+.cv-label {
+  font-weight: 600; font-size: 13.5px; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cv-del { margin-left: auto; flex: none; }
+.cv-tags { display: flex; gap: 6px; margin-top: 6px; overflow: hidden; }
+.cv-tags .chip {
+  max-width: 46%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: none;
+}
+.cv-actions { display: flex; gap: 14px; margin-top: 8px; }
+.cv-actions .link { padding: 0; }

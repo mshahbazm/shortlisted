@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { Section } from '../components'
-import { Profile, ResumeVariant, base64ToBytes, bytesToBase64, uid } from '../../lib/types'
+import { Profile, ResumeVariant, base64ToBytes, bytesToBase64, roleCompanyLabel, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
 import { renderPdfPages, renderPdfThumbnail } from '../../lib/pdfText'
@@ -105,7 +105,7 @@ export function ResumesTab() {
       const safe = result.resume.label.replace(/[^\w\- ]/g, '').replace(/\s+/g, '-').slice(0, 40)
       await addResume((list) => ({
         id: uid(),
-        label: uniqueLabel([result.resume.label, result.job.company].filter(Boolean).join(' — '), list),
+        label: uniqueLabel(roleCompanyLabel(result.resume.label, result.job.company), list),
         fileName: `${profile.identity.firstName}-${profile.identity.lastName}-${safe}.pdf`.replace(/\s+/g, '-'),
         tags: [result.job.role, result.job.company].filter(Boolean),
         isDefault: false, createdAt: Date.now(), source: 'generated',
@@ -156,23 +156,24 @@ export function ResumesTab() {
       {resumes.length > 0 && (
         <div className="list" style={{ marginBottom: 16 }}>
           {resumes.map((r) => (
-            <div key={r.id} className="list-item">
-              <div className="grow">
-                <div className="title">
-                  {r.label} {r.isDefault && <span className="chip green">{t.defaultChip}</span>}
-                </div>
-                <div className="sub">
-                  {r.tags.slice(0, 3).map((t) => <span key={t} className="chip">{t}</span>)}
-                </div>
+            <div key={r.id} className="cv-item">
+              <div className="cv-head">
+                <span className="cv-label">{r.label}</span>
+                {r.isDefault && <span className="chip green">{t.defaultChip}</span>}
+                <button className="small danger cv-del" onClick={() => removeResume(r.id)}>✕</button>
               </div>
-              <button className="small link" onClick={() => void openPreview(r)}>{t.previewLabel}</button>
-              <button className="small link" onClick={() => download(r)}>{t.pdf}</button>
-              {!r.isDefault && (
-                <button className="small link" onClick={() => makeDefault(r.id)}>
-                  {t.makeDefault}
-                </button>
+              {r.tags.length > 0 && (
+                <div className="cv-tags">
+                  {r.tags.slice(0, 3).map((tag) => <span key={tag} className="chip">{tag}</span>)}
+                </div>
               )}
-              <button className="small danger" onClick={() => removeResume(r.id)}>✕</button>
+              <div className="cv-actions">
+                <button className="small link" onClick={() => void openPreview(r)}>{t.previewLabel}</button>
+                <button className="small link" onClick={() => download(r)}>{t.pdf}</button>
+                {!r.isDefault && (
+                  <button className="small link" onClick={() => makeDefault(r.id)}>{t.makeDefault}</button>
+                )}
+              </div>
             </div>
           ))}
         </div>
