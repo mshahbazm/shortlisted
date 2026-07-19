@@ -9,7 +9,6 @@ export const overlay: tLocale['overlay'] = {
   scoringFit: 'Valuto la tua affinità…',
   scoringFailed: 'Valutazione fallita.',
   scoringFailedRetry: 'Valutazione fallita — riprova.',
-  fitDenominator: '/10 affinità',
   leadWithHeader: 'Punta su questo',
   gapsHeader: 'Preparati a domande su',
   languageNotice: (lang: string) => `Questo annuncio sembra in ${lang} — una lingua non presente nel tuo profilo. Posso comunque compilare il modulo.`,

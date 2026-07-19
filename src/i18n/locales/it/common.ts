@@ -19,4 +19,9 @@ export const common: tLocale['common'] = {
   location: 'Località',
   pasteJobPlaceholder: "Incolla qui l'intero annuncio…",
   fillProfileFirst: 'Prima compila il tuo profilo.',
+  fitLongShot: 'Improbabile',
+  fitBorderline: 'Al limite',
+  fitWorthAShot: 'Vale un tentativo',
+  fitGoodFit: 'Buon match',
+  fitStrongFit: 'Match forte',
 }

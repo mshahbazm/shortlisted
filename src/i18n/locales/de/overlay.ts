@@ -10,7 +10,6 @@ export const overlay: tLocale['overlay'] = {
   scoringFit: 'Bewerte deinen Fit…',
   scoringFailed: 'Bewertung fehlgeschlagen.',
   scoringFailedRetry: 'Bewertung fehlgeschlagen — versuch es nochmal.',
-  fitDenominator: '/10 Fit',
   leadWithHeader: 'Damit punktest du',
   gapsHeader: 'Rechne mit Fragen zu',
   languageNotice: (lang: string) => `Diese Stelle scheint auf ${lang} zu sein — laut Profil keine deiner Sprachen. Ausfüllen kann ich trotzdem.`,

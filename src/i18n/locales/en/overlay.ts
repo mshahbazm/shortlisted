@@ -9,7 +9,6 @@ export const overlay = {
   scoringFit: 'Scoring your fit…',
   scoringFailed: 'Scoring failed.',
   scoringFailedRetry: 'Scoring failed — try again.',
-  fitDenominator: '/10 fit',
   leadWithHeader: 'Lead with',
   gapsHeader: 'Be ready for questions about',
   languageNotice: (lang: string) => `This job looks like it’s in ${lang} — not one of your languages. I can still fill the form for you.`,

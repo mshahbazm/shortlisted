@@ -3,6 +3,7 @@
 
 import { FormField, flashField } from './fields'
 import { FillResult } from './engine'
+import { FIT_COLORS, FitBand, fitBand, fitPercent } from '../lib/fitBands'
 import type { tMerged } from '../i18n/content'
 
 export type tOverlayContent = tMerged<'overlay'>
@@ -59,14 +60,14 @@ const CSS = `
     background: #fff; color: #1f1f1f; font-weight: 600; font-size: 12.5px; cursor: pointer; }
   .scoreBtn:hover { background: #f6f6f4; }
   .scoreBtn:disabled { opacity: 0.5; cursor: default; }
-  .fitTop { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
-  .fitCircle {
-    flex: none; width: 50px; height: 50px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 19px; font-weight: 750; border: 3.5px solid;
+  .fitScore { margin-top: 12px; border-radius: 10px; padding: 12px 14px; border: 1px solid; }
+  .fitScore .row1 { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+  .fitScore .pct { font-size: 24px; font-weight: 750; letter-spacing: -0.02em; }
+  .fitScore .word {
+    margin-left: auto; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.05em; text-transform: uppercase;
   }
-  .fitCircle small { font-size: 10px; font-weight: 600; color: #a1a1aa; margin-left: 1px; }
-  .fitVerdict { font-size: 12.5px; line-height: 1.45; }
+  .fitVerdict { font-size: 12.5px; line-height: 1.5; }
   .fitSection { margin-top: 12px; }
   .fitH {
     font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em;
@@ -187,23 +188,36 @@ export class Overlay {
       this.body.append(box)
       return
     }
-    // Color says it before the number does: green = go, brand = maybe, amber = long shot.
-    const color = fit.score >= 7 ? '#16a34a' : fit.score >= 5 ? '#3d11ff' : '#b45309'
-    const top = document.createElement('div')
-    top.className = 'fitTop'
-    const circle = document.createElement('div')
-    circle.className = 'fitCircle'
-    circle.style.borderColor = color
-    circle.style.color = color
-    circle.textContent = String(fit.score)
-    const denom = document.createElement('small')
-    denom.textContent = this.t.fitDenominator
-    circle.append(denom)
+    // Percentage + band word in a light traffic-light box, verdict beneath.
+    const band = fitBand(fit.score)
+    const colors = FIT_COLORS[band]
+    const words: Record<FitBand, string> = {
+      longShot: this.t.fitLongShot,
+      borderline: this.t.fitBorderline,
+      worthAShot: this.t.fitWorthAShot,
+      goodFit: this.t.fitGoodFit,
+      strongFit: this.t.fitStrongFit,
+    }
+    const score = document.createElement('div')
+    score.className = 'fitScore'
+    score.style.background = colors.bg
+    score.style.borderColor = colors.border
+    const row1 = document.createElement('div')
+    row1.className = 'row1'
+    const pct = document.createElement('span')
+    pct.className = 'pct'
+    pct.style.color = colors.fg
+    pct.textContent = fitPercent(fit.score)
+    const word = document.createElement('span')
+    word.className = 'word'
+    word.style.color = colors.fg
+    word.textContent = words[band]
+    row1.append(pct, word)
     const verdict = document.createElement('div')
     verdict.className = 'fitVerdict'
     verdict.textContent = fit.verdict
-    top.append(circle, verdict)
-    box.append(top)
+    score.append(row1, verdict)
+    box.append(score)
 
     box.append(
       this.fitList(this.t.leadWithHeader, fit.strengths, '✓', '#16a34a'),

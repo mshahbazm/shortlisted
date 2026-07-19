@@ -11,7 +11,6 @@ export const overlay: tLocale['overlay'] = {
   scoringFit: 'Oceniam Twoje dopasowanie…',
   scoringFailed: 'Ocena nie powiodła się.',
   scoringFailedRetry: 'Ocena nie powiodła się — spróbuj ponownie.',
-  fitDenominator: '/10 dopasowania',
   leadWithHeader: 'Postaw na to',
   gapsHeader: 'Przygotuj się na pytania o',
   languageNotice: (lang: string) => `To ogłoszenie wygląda na napisane w języku: ${lang} — nie ma go w Twoim profilu. Formularz i tak mogę wypełnić.`,

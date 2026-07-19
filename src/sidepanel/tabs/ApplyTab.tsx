@@ -5,6 +5,7 @@ import { Section } from '../components'
 import { QueueItem, jobUrlKey, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
 import { cloudUsageStats, runScoreFit, ScoreFitResult, UsageStatsRow } from '../../ai/run'
+import { FIT_COLORS, FitBand, fitBand, fitPercent } from '../../lib/fitBands'
 
 export function ApplyTab() {
   const t = useContent('apply')
@@ -190,6 +191,30 @@ function DevCosts() {
   )
 }
 
+function FitScoreBox({ score, verdict }: { score: number; verdict: string }) {
+  const t = useContent('apply')
+  const band = fitBand(score)
+  const c = FIT_COLORS[band]
+  const words: Record<FitBand, string> = {
+    longShot: t.fitLongShot,
+    borderline: t.fitBorderline,
+    worthAShot: t.fitWorthAShot,
+    goodFit: t.fitGoodFit,
+    strongFit: t.fitStrongFit,
+  }
+  return (
+    <div style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: 10, padding: '12px 14px' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
+        <span style={{ fontSize: 24, fontWeight: 750, letterSpacing: '-0.02em', color: c.fg }}>{fitPercent(score)}</span>
+        <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: c.fg }}>
+          {words[band]}
+        </span>
+      </div>
+      <div style={{ fontSize: 12.5, lineHeight: 1.5 }}>{verdict}</div>
+    </div>
+  )
+}
+
 function FitChecker({
   disabled,
   run,
@@ -231,10 +256,7 @@ function FitChecker({
       {err && <p className="error">{err}</p>}
       {result && (
         <div style={{ marginTop: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-            <span style={{ fontSize: 26, fontWeight: 700 }}>{result.fit.overallScore}<span style={{ fontSize: 14, color: 'var(--muted)' }}>/10</span></span>
-            <span style={{ fontSize: 13 }}>{result.fit.verdict}</span>
-          </div>
+          <FitScoreBox score={result.fit.overallScore} verdict={result.fit.verdict} />
           {result.fit.strengths.length > 0 && (
             <p className="microhint" style={{ margin: '8px 0 4px' }}>
               {t.leadWith(result.fit.strengths.join(' · '))}

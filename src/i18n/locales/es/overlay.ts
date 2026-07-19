@@ -9,7 +9,6 @@ export const overlay: tLocale['overlay'] = {
   scoringFit: 'Calculando tu encaje…',
   scoringFailed: 'No se pudo puntuar.',
   scoringFailedRetry: 'No se pudo puntuar — inténtalo de nuevo.',
-  fitDenominator: '/10 de encaje',
   leadWithHeader: 'Destaca esto',
   gapsHeader: 'Prepárate para preguntas sobre',
   languageNotice: (lang: string) => `Esta oferta parece estar en ${lang} — un idioma que no está en tu perfil. Aun así puedo rellenar el formulario.`,

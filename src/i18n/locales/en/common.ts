@@ -19,4 +19,9 @@ export const common = {
   location: 'Location',
   pasteJobPlaceholder: 'Paste the whole job posting…',
   fillProfileFirst: 'Fill your profile first.',
+  fitLongShot: 'Long shot',
+  fitBorderline: 'Borderline',
+  fitWorthAShot: 'Worth a shot',
+  fitGoodFit: 'Good fit',
+  fitStrongFit: 'Strong fit',
 }

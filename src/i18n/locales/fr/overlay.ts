@@ -10,7 +10,6 @@ export const overlay: tLocale['overlay'] = {
   scoringFit: 'Calcul de votre match…',
   scoringFailed: 'Échec du calcul.',
   scoringFailedRetry: 'Échec du calcul — réessayez.',
-  fitDenominator: '/10 de match',
   leadWithHeader: 'Mettez en avant',
   gapsHeader: 'Attendez-vous à des questions sur',
   languageNotice: (lang: string) => `Cette offre semble être en ${lang} — une langue absente de votre profil. Je peux quand même remplir le formulaire.`,
