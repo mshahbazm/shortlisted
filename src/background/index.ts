@@ -105,7 +105,19 @@ async function refreshBadge() {
   await chrome.action.setBadgeBackgroundColor({ color: '#3d11ff' })
 }
 
-chrome.runtime.onMessage.addListener((msg: Msg, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((msg: Msg, sender, sendResponse) => {
+  // sidePanel.open() only works while the click's user-gesture token is
+  // alive, and that token dies at the first await — so panel-opening
+  // messages are handled HERE, synchronously, with the sender's window id.
+  if (msg.type === 'openProfileNote' || msg.type === 'openSidePanel') {
+    if (msg.type === 'openProfileNote') void store.set('pendingNav', 'tellme')
+    const windowId = sender.tab?.windowId
+    if (windowId !== undefined) {
+      chrome.sidePanel.open({ windowId }).catch((e) => console.warn('[shortlisted] sidePanel.open failed:', e))
+    }
+    sendResponse({ ok: true })
+    return false
+  }
   handle(msg)
     .then(sendResponse)
     .catch((err) => sendResponse({ error: String(err) }))
@@ -288,21 +300,8 @@ async function handle(msg: Msg): Promise<unknown> {
       return { ok: true }
     }
 
-    case 'openSidePanel': {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-      if (tab?.windowId) await chrome.sidePanel.open({ windowId: tab.windowId })
-      return { ok: true }
-    }
-
-    // "Update profile" from the fit report: open the panel on the Profile tab
-    // with the tell-me box ready. The nav hint travels via storage so the
-    // panel picks it up whether it was already open or not.
-    case 'openProfileNote': {
-      await store.set('pendingNav', 'tellme')
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-      if (tab?.windowId) await chrome.sidePanel.open({ windowId: tab.windowId })
-      return { ok: true }
-    }
+    // 'openSidePanel' / 'openProfileNote' are handled synchronously in the
+    // onMessage listener above — sidePanel.open() must run before any await.
 
     case 'scoreFitPage': {
       const [settings, profile] = await Promise.all([store.get('settings'), store.get('profile')])
@@ -319,26 +318,30 @@ async function handle(msg: Msg): Promise<unknown> {
       }
     }
 
+    // Failures come back as codes, not sentences — the side panel owns the
+    // wording so it can be shown in the user's language.
     case 'fillCurrentTab': {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-      if (!tab?.id || !tab.url) return { error: 'No active tab.' }
+      if (!tab?.id || !tab.url) return { errorCode: 'noTab' }
       if (/^(chrome|edge|about|chrome-extension|devtools|view-source):/.test(tab.url)) {
-        return { error: 'Cannot fill this page.' }
+        return { errorCode: 'cannotFill' }
       }
       try {
         await injectContentScript(tab.id)
       } catch (e) {
-        return { error: `Could not inject: ${String(e)}` }
+        console.error('[shortlisted] inject failed:', e)
+        return { errorCode: 'cannotFill' }
       }
       // Injecting is not enough: the script guards against double-loading, so
       // on a page where it was already running the injection is a no-op. The
       // message is what actually opens the panel and starts the fill, and only
       // frames holding a form answer it.
       try {
-        await chrome.tabs.sendMessage(tab.id, { type: 'triggerFill' } satisfies Msg)
-        return { ok: true }
+        const res = await chrome.tabs.sendMessage<Msg, { handled?: boolean }>(tab.id, { type: 'triggerFill' })
+        return res?.handled ? { ok: true } : { errorCode: 'noForm' }
       } catch {
-        return { error: 'No fillable form found on this page.' }
+        // No frame answered: nothing on this page holds a form.
+        return { errorCode: 'noForm' }
       }
     }
 
