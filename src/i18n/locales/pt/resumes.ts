@@ -24,6 +24,10 @@ export const resumes: tLocale['resumes'] = {
   generateFromProfile: 'Gerar do perfil',
   masterCvLabel: 'CV principal',
 
+  contentsLabel: 'Conteúdo',
+  contentsHint: 'Marca o que este CV mostra — é regenerado no instante. Tudo vem do teu perfil.',
+  contentsWork: 'Experiência',
+  contentsSkills: 'Competências',
   previewLabel: 'Pré-visualizar',
   cvReady: 'CV criado ✓',
   pickStyleTitle: 'Escolhe um estilo',

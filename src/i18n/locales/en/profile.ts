@@ -74,6 +74,12 @@ export const profile = {
   hoursPlaceholder: '"4+ hours with US East"',
   englishLevel: 'English level',
 
+  tellMeTitle: 'Tell me something new',
+  tellMeSummary: 'plain words in, filed into the right place',
+  tellMePlaceholder: 'e.g. I worked with Webflow at Xvelopers — built about ten client sites.',
+  tellMeButton: 'Add to profile',
+  tellMeNothing: 'Nothing new found in that — your profile already covers it.',
+  tellMeAdded: (n: number) => `Filed into your profile ✓ (${n} new)`,
   reimportTitle: 'Re-import from CV',
   reimportSummary: 'upload PDF or paste text, AI rebuilds the profile',
   uploadPdf: 'Upload PDF',

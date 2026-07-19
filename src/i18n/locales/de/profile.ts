@@ -74,6 +74,12 @@ export const profile: tLocale['profile'] = {
   hoursPlaceholder: '"4+ Stunden mit US-Ostküste"',
   englishLevel: 'Englisch-Niveau',
 
+  tellMeTitle: 'Erzähl mir etwas Neues',
+  tellMeSummary: 'einfache Worte rein, am richtigen Ort abgelegt',
+  tellMePlaceholder: 'z. B. Ich habe bei Xvelopers mit Webflow gearbeitet — rund zehn Kundenseiten gebaut.',
+  tellMeButton: 'Zum Profil hinzufügen',
+  tellMeNothing: 'Nichts Neues gefunden — dein Profil deckt das schon ab.',
+  tellMeAdded: (n: number) => `Im Profil abgelegt ✓ (${n} neu)`,
   reimportTitle: 'Neu aus dem Lebenslauf importieren',
   reimportSummary: 'PDF hochladen oder Text einfügen, die KI baut das Profil neu',
   uploadPdf: 'PDF hochladen',

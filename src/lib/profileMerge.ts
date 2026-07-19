@@ -11,7 +11,7 @@ const LANG_CODES: Record<string, string> = {
   portuguese: 'pt', polish: 'pl', urdu: 'ur', hindi: 'hi', arabic: 'ar', chinese: 'zh',
   mandarin: 'zh', japanese: 'ja', korean: 'ko', russian: 'ru', turkish: 'tr', punjabi: 'pa',
 }
-const PROFICIENCIES = ['elementary', 'limited_working', 'professional_working', 'full_professional', 'native']
+const PROFICIENCIES = ['elementary', 'limited_working', 'professional_working', 'full_professional', 'native_bilingual']
 
 export function applyIntakeFacts(p: Profile, facts: IntakeNewFacts): Profile {
   const has = (list: { name: string }[], name: string) =>
@@ -47,5 +47,23 @@ export function applyIntakeFacts(p: Profile, facts: IntakeNewFacts): Profile {
         .filter((c) => c.name.trim() && !has(p.certifications, c.name))
         .map((c) => ({ name: c.name.trim(), issuingOrganization: c.issuingOrganization, year: c.year })),
     ],
+    work: p.work.map((w) => {
+      const fresh = facts.newWorkHighlights
+        .filter((h) => h.workId === w.id && h.bullet.trim())
+        .map((h) => h.bullet.trim())
+        .filter((b) => !w.highlights.some((x) => x.toLowerCase() === b.toLowerCase()))
+      return fresh.length ? { ...w, highlights: [...w.highlights, ...fresh] } : w
+    }),
   }
+}
+
+/** How many facts a merge would add — for user-facing confirmations. */
+export function countIntakeFacts(facts: IntakeNewFacts): number {
+  return (
+    facts.newSkills.length +
+    facts.newLanguages.length +
+    facts.newCertifications.length +
+    facts.newWorkHighlights.length +
+    Object.values(facts.newLinks).filter(Boolean).length
+  )
 }

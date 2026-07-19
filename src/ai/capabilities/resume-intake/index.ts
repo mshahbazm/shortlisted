@@ -14,6 +14,8 @@ export interface IntakeNewFacts {
   newLinks: { website?: string; github?: string; linkedin?: string; portfolio?: string }
   newLanguages: { name: string; proficiency?: string }[]
   newCertifications: { name: string; issuingOrganization?: string; year?: number }[]
+  /** Facts clearly tied to one of the candidate's existing jobs, as CV bullets. */
+  newWorkHighlights: { workId: string; bullet: string }[]
 }
 
 export interface ResumeIntakeResult extends IntakeNewFacts {
@@ -22,7 +24,7 @@ export interface ResumeIntakeResult extends IntakeNewFacts {
 
 const intakeSchema = {
   type: 'object',
-  required: ['tags', 'newSkills', 'newLinks', 'newLanguages', 'newCertifications'],
+  required: ['tags', 'newSkills', 'newLinks', 'newLanguages', 'newCertifications', 'newWorkHighlights'],
   properties: {
     tags: { type: 'array', items: { type: 'string' } },
     newSkills: { type: 'array', items: { type: 'string' } },
@@ -55,6 +57,17 @@ const intakeSchema = {
         },
       },
     },
+    newWorkHighlights: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: ['workId', 'bullet'],
+        properties: {
+          workId: { type: 'string' },
+          bullet: { type: 'string' },
+        },
+      },
+    },
   },
 } as const
 
@@ -71,10 +84,14 @@ const INTAKE_PROMPT =
   `case-insensitively; do not repeat near-duplicates like "React.js" when "React" is known).\n` +
   `- newLinks: URLs found in the CV, ONLY for the slots listed in missingLinkSlots.\n` +
   `- newLanguages: spoken languages stated in the CV not in knownLanguages. proficiency is one of: ` +
-  `elementary, limited_working, professional_working, full_professional, native.\n` +
-  `- newCertifications: certifications stated in the CV not in knownCertifications.\n\n` +
-  `HARD RULE: every returned fact must be literally present in the CV text. Never infer, never ` +
-  `invent. When in doubt, leave it out — empty arrays are a fine answer.`
+  `elementary, limited_working, professional_working, full_professional, native_bilingual.\n` +
+  `- newCertifications: certifications stated in the CV not in knownCertifications.\n` +
+  `- newWorkHighlights: when a stated fact is clearly tied to ONE of the knownWork entries ` +
+  `(the employer is named or unmistakable), return it as {workId, bullet} — the bullet phrased ` +
+  `as one concise CV bullet in plain confident language, faithful to what was stated. If the ` +
+  `fact is not clearly tied to a known employer, leave it to newSkills instead.\n\n` +
+  `HARD RULE: every returned fact must be literally present in the provided text. Never infer, ` +
+  `never invent. When in doubt, leave it out — empty arrays are a fine answer.`
 
 export async function resumeIntake(
   client: LlmClient,
@@ -88,7 +105,9 @@ export async function resumeIntake(
     ),
     knownLanguages: profile?.languages.map((l) => l.name) ?? [],
     knownCertifications: profile?.certifications.map((c) => c.name) ?? [],
+    knownWork: profile?.work.map((w) => ({ id: w.id, company: w.company, title: w.title })) ?? [],
   }
+  const workIds = new Set(known.knownWork.map((w) => w.id))
   const input = JSON.stringify({ cv: cvText.slice(0, 16000), ...known })
 
   const { value, usage } = await runJsonPass<IntakeNewFacts>(
@@ -109,6 +128,10 @@ export async function resumeIntake(
           return `newLinks.${slot}: that slot is already filled — only missingLinkSlots may be returned`
         }
       }
+      for (const wh of v.newWorkHighlights ?? []) {
+        if (!workIds.has(wh.workId)) return `newWorkHighlights: unknown workId ${wh.workId} — use only knownWork ids`
+        if (wh.bullet.length > 300) return 'newWorkHighlights: bullets must stay under 300 characters'
+      }
       return null
     },
   )
@@ -119,6 +142,7 @@ export async function resumeIntake(
     newLinks: value?.newLinks ?? {},
     newLanguages: value?.newLanguages ?? [],
     newCertifications: value?.newCertifications ?? [],
+    newWorkHighlights: value?.newWorkHighlights ?? [],
     usage,
   }
 }

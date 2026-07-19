@@ -143,6 +143,7 @@ export function ResumesTab() {
     a.click()
   }
 
+  const [editingCv, setEditingCv] = useState<string | null>(null)
   const [preview, setPreview] = useState<{ label: string; pages: string[] } | null>(null)
   const openPreview = async (r: ResumeVariant) => {
     setPreview({ label: r.label, pages: [] })
@@ -178,6 +179,9 @@ export function ResumesTab() {
               <div className="cv-actions">
                 <button className="small link" onClick={() => void openPreview(r)}>{t.previewLabel}</button>
                 <button className="small link" onClick={() => download(r)}>{t.pdf}</button>
+                {r.content && (
+                  <button className="small link" onClick={() => setEditingCv(r.id)}>{t.contentsLabel}</button>
+                )}
                 {!r.isDefault && (
                   <button className="small link" onClick={() => makeDefault(r.id)}>{t.makeDefault}</button>
                 )}
@@ -244,6 +248,11 @@ export function ResumesTab() {
 
       {picking && <TemplatePicker profile={profile} onPick={onPickTemplate} onCancel={() => setPicking(null)} />}
 
+      {editingCv && (() => {
+        const r = resumes.find((x) => x.id === editingCv)
+        return r?.content ? <ContentsEditor r={r} profile={profile} onClose={() => setEditingCv(null)} /> : null
+      })()}
+
       {preview && (
         <div className="tpl-overlay" onClick={() => setPreview(null)}>
           <div className="pv-sheet" onClick={(e) => e.stopPropagation()}>
@@ -305,6 +314,88 @@ function TemplatePicker({
           ))}
         </div>
         <button className="ghost small" onClick={onCancel}>{t.cancel}</button>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * "What this CV shows": tick work entries and skills in or out. Content only
+ * ever comes from the profile; every toggle re-renders the PDF locally —
+ * free and instant, no AI involved.
+ */
+function ContentsEditor({ r, profile, onClose }: { r: ResumeVariant; profile: Profile; onClose: () => void }) {
+  const t = useContent('resumes')
+  const content = r.content!
+  const skillOn = (name: string) => content.skills.some((s) => s.toLowerCase() === name.toLowerCase())
+  // Profile skills first, plus any content-only skills (e.g. added via note).
+  const allSkills = [
+    ...profile.skills.map((s) => s.name),
+    ...content.skills.filter((s) => !profile.skills.some((p) => p.name.toLowerCase() === s.toLowerCase())),
+  ]
+
+  const apply = (next: NonNullable<ResumeVariant['content']>) => {
+    const base64 = renderResumePdf(profile, next, r.templateId)
+    void store.update('resumes', (list) =>
+      list.map((x) => (x.id === r.id ? { ...x, content: next, dataBase64: base64 } : x)),
+    )
+  }
+
+  const toggleWork = (workId: string) => {
+    const included = content.work.some((w) => w.sourceId === workId)
+    if (included && content.work.length === 1) return // a CV needs at least one job
+    let work
+    if (included) {
+      work = content.work.filter((w) => w.sourceId !== workId)
+    } else {
+      const order = new Map(profile.work.map((w, i) => [w.id, i]))
+      const src = profile.work.find((w) => w.id === workId)
+      if (!src) return
+      work = [...content.work, { sourceId: workId, bullets: src.highlights }].sort(
+        (a, b) => (order.get(a.sourceId) ?? 99) - (order.get(b.sourceId) ?? 99),
+      )
+    }
+    apply({ ...content, work })
+  }
+
+  const toggleSkill = (name: string) => {
+    const skills = skillOn(name)
+      ? content.skills.filter((s) => s.toLowerCase() !== name.toLowerCase())
+      : [...content.skills, name]
+    apply({ ...content, skills })
+  }
+
+  return (
+    <div className="tpl-overlay" onClick={onClose}>
+      <div className="pv-sheet" onClick={(e) => e.stopPropagation()}>
+        <h3>{r.label}</h3>
+        <p className="microhint" style={{ margin: '0 0 10px' }}>{t.contentsHint}</p>
+        <div className="ct-h">{t.contentsWork}</div>
+        {profile.work.map((w) => {
+          const on = content.work.some((x) => x.sourceId === w.id)
+          return (
+            <label key={w.id} className="ct-row">
+              <input
+                type="checkbox"
+                checked={on}
+                disabled={on && content.work.length === 1}
+                onChange={() => toggleWork(w.id)}
+              />
+              <span>{w.title}{w.company ? ` · ${w.company}` : ''}</span>
+            </label>
+          )
+        })}
+        <div className="ct-h" style={{ marginTop: 12 }}>{t.contentsSkills}</div>
+        <div className="ct-skills">
+          {allSkills.map((name) => (
+            <label key={name} className="ct-row">
+              <input type="checkbox" checked={skillOn(name)} onChange={() => toggleSkill(name)} />
+              <span>{name}</span>
+            </label>
+          ))}
+        </div>
+        <div className="spacer" />
+        <button className="ghost small" onClick={onClose}>{t.done}</button>
       </div>
     </div>
   )

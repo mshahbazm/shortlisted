@@ -287,3 +287,10 @@ select.langswitch:hover { color: var(--fg); }
 }
 .cv-actions { display: flex; gap: 14px; margin-top: 8px; }
 .cv-actions .link { padding: 0; }
+
+/* ---- CV contents editor ---- */
+.ct-h { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.ct-row { display: flex; gap: 8px; align-items: center; padding: 4px 2px; font-size: 13px; cursor: pointer; border-radius: 6px; }
+.ct-row:hover { background: var(--hover); }
+.ct-row input[type='checkbox'] { accent-color: var(--accent); }
+.ct-skills { display: grid; grid-template-columns: repeat(2, 1fr); }

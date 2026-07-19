@@ -30,6 +30,11 @@ export async function cloudResumeIntake(settings: Settings, pdfBase64: string): 
   return cloudCall<IntakeNewFacts>(settings, '/v1/resume-intake', { pdfBase64 })
 }
 
+/** Free-form profile note ("I worked with Webflow at X") → additive facts. */
+export async function cloudProfileNote(settings: Settings, text: string): Promise<IntakeNewFacts> {
+  return cloudCall<IntakeNewFacts>(settings, '/v1/resume-intake', { text })
+}
+
 /**
  * The reasoning layer for form filling: ONE batched call covering both the
  * fields the deterministic filler couldn't handle and the uncertain fills it

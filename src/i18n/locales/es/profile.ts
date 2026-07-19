@@ -74,6 +74,12 @@ export const profile: tLocale['profile'] = {
   hoursPlaceholder: '"4+ horas con la costa este de EE. UU."',
   englishLevel: 'Nivel de inglés',
 
+  tellMeTitle: 'Cuéntame algo nuevo',
+  tellMeSummary: 'palabras sencillas, guardadas en el lugar correcto',
+  tellMePlaceholder: 'p. ej. Trabajé con Webflow en Xvelopers — unos diez sitios de clientes.',
+  tellMeButton: 'Añadir al perfil',
+  tellMeNothing: 'No hay nada nuevo — tu perfil ya lo cubre.',
+  tellMeAdded: (n: number) => `Guardado en tu perfil ✓ (${n} nuevo/s)`,
   reimportTitle: 'Reimportar desde el CV',
   reimportSummary: 'sube un PDF o pega texto, la IA reconstruye el perfil',
   uploadPdf: 'Subir PDF',

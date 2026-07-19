@@ -23,6 +23,10 @@ export const resumes = {
   generateFromProfile: 'Generate from profile',
   masterCvLabel: 'Master CV',
 
+  contentsLabel: 'Contents',
+  contentsHint: 'Tick what this CV shows — it re-renders instantly. Everything comes from your profile.',
+  contentsWork: 'Experience',
+  contentsSkills: 'Skills',
   previewLabel: 'Preview',
   cvReady: 'CV created ✓',
   pickStyleTitle: 'Pick a style',

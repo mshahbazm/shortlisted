@@ -25,6 +25,10 @@ export const resumes: tLocale['resumes'] = {
   generateFromProfile: 'Aus dem Profil generieren',
   masterCvLabel: 'Master-Lebenslauf',
 
+  contentsLabel: 'Inhalt',
+  contentsHint: 'Hak an, was dieser Lebenslauf zeigt — er wird sofort neu erstellt. Alles kommt aus deinem Profil.',
+  contentsWork: 'Erfahrung',
+  contentsSkills: 'Fähigkeiten',
   previewLabel: 'Vorschau',
   cvReady: 'Lebenslauf erstellt ✓',
   pickStyleTitle: 'Stil wählen',

@@ -13,14 +13,19 @@ import {
   ymString,
   workPeriodLabel,
 } from '../../lib/types'
-import { cloudParseResumePdf, runExtractProfile } from '../../ai/run'
+import { cloudParseResumePdf, cloudProfileNote, runExtractProfile } from '../../ai/run'
 import * as store from '../../lib/store'
+import { applyIntakeFacts, countIntakeFacts } from '../../lib/profileMerge'
 import { showToast } from '../toast'
 
 export function ProfileTab() {
   const t = useContent('profile')
   const [profile, saveProfileRaw, loaded] = useStore('profile')
   const [settings] = useStore('settings')
+  // "Tell me something" — free words in, filed into the right profile slots.
+  const [note, setNote] = useState('')
+  const [noteBusy, setNoteBusy] = useState(false)
+  const [noteMsg, setNoteMsg] = useState('')
 
   const p = profile
   if (!loaded) return null
@@ -165,6 +170,41 @@ export function ProfileTab() {
         <KV k={t.relocation} v={p.facts.relocation ?? ''} onChange={(v) => setFacts('relocation', v)} />
         <KV k={t.hoursOverlap} v={p.facts.hoursOverlap ?? ''} placeholder={t.hoursPlaceholder} onChange={(v) => setFacts('hoursOverlap', v)} />
         <KV k={t.englishLevel} v={p.facts.englishLevel ?? ''} onChange={(v) => setFacts('englishLevel', v)} />
+      </Section>
+
+      <Section title={t.tellMeTitle} summary={t.tellMeSummary}>
+        <textarea
+          rows={2}
+          placeholder={t.tellMePlaceholder}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
+        <div className="spacer" />
+        <button
+          className="primary small"
+          disabled={noteBusy || note.trim().length < 8}
+          onClick={() => {
+            setNoteBusy(true)
+            setNoteMsg('')
+            void cloudProfileNote(settings, note.trim())
+              .then(async (facts) => {
+                const n = countIntakeFacts(facts)
+                if (n === 0) {
+                  setNoteMsg(t.tellMeNothing)
+                  return
+                }
+                await store.update('profile', (cur) => applyIntakeFacts(cur, facts))
+                setNote('')
+                setNoteMsg(t.tellMeAdded(n))
+                showToast(t.savedToast)
+              })
+              .catch((e) => setNoteMsg(e instanceof Error ? e.message : String(e)))
+              .finally(() => setNoteBusy(false))
+          }}
+        >
+          {noteBusy ? '…' : t.tellMeButton}
+        </button>
+        {noteMsg && <p className="microhint" style={{ marginTop: 8 }}>{noteMsg}</p>}
       </Section>
 
       <Section title={t.reimportTitle} summary={t.reimportSummary}>
