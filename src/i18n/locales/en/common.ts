@@ -24,4 +24,17 @@ export const common = {
   fitWorthAShot: 'Worth a shot',
   fitGoodFit: 'Good fit',
   fitStrongFit: 'Strong fit',
+  // CV template style names — descriptive, so nobody mistakes them for brands.
+  tplHarvard: 'Classic serif',
+  tplAtlas: 'Modern clean',
+  tplOnyx: 'Compact technical',
+  tplAzure: 'Blue professional',
+  tplMeridian: 'Sidebar teal',
+  tplRegent: 'Executive serif',
+  tplPivot: 'Skills first',
+  tplCoral: 'Color header',
+  tplIvory: 'Minimal serif',
+  tplSlate: 'Sidebar slate',
+  tplAmber: 'Warm accent',
+  tplMint: 'Fresh green',
 }

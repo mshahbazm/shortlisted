@@ -4,18 +4,29 @@ import { useContent } from '../../i18n'
 import { Section } from '../components'
 import { Profile, ResumeVariant, base64ToBytes, bytesToBase64, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
-import { renderPdfThumbnail } from '../../lib/pdfText'
+import { renderPdfPages, renderPdfThumbnail } from '../../lib/pdfText'
 import { masterVariant, renderResumePdf } from '../../pdf/resumePdf'
-import { ALL_TAGS, ResumeTemplate, TEMPLATES, TemplateTag, getTemplate } from '../../pdf/templates'
+import { ALL_TAGS, ResumeTemplate, TEMPLATES, TemplateTag } from '../../pdf/templates'
 import { runTailorCv } from '../../ai/run'
 import { showToast } from '../toast'
+import type { tMerged } from '../../i18n/content'
 
-/** "Master CV · Atlas" → "Master CV · Atlas (2)" when the name is taken. */
+/** "Modern clean" → "Modern clean (2)" when the name is taken. */
 function uniqueLabel(base: string, existing: { label: string }[]): string {
   if (!existing.some((r) => r.label === base)) return base
   let n = 2
   while (existing.some((r) => r.label === `${base} (${n})`)) n++
   return `${base} (${n})`
+}
+
+/** Localized descriptive style name for a template id. */
+function styleName(t: tMerged<'resumes'>, id: string): string {
+  const names: Record<string, string> = {
+    harvard: t.tplHarvard, atlas: t.tplAtlas, onyx: t.tplOnyx, azure: t.tplAzure,
+    meridian: t.tplMeridian, regent: t.tplRegent, pivot: t.tplPivot, coral: t.tplCoral,
+    ivory: t.tplIvory, slate: t.tplSlate, amber: t.tplAmber, mint: t.tplMint,
+  }
+  return names[id] ?? id
 }
 
 export function ResumesTab() {
@@ -60,7 +71,7 @@ export function ResumesTab() {
       const name = `${profile.identity.firstName}-${profile.identity.lastName}-CV-${templateId}.pdf`.replace(/\s+/g, '-')
       addResume({
         id: uid(),
-        label: uniqueLabel(`${t.masterCvLabel} · ${getTemplate(templateId).name}`, resumes),
+        label: uniqueLabel(styleName(t, templateId), resumes),
         fileName: name,
         tags: ['master', ...(profile.headline ? [profile.headline] : [])],
         isDefault: resumes.length === 0, createdAt: Date.now(), source: 'generated',
@@ -83,7 +94,7 @@ export function ResumesTab() {
       const safe = result.resume.label.replace(/[^\w\- ]/g, '').replace(/\s+/g, '-').slice(0, 40)
       addResume({
         id: uid(),
-        label: uniqueLabel(`${result.resume.label} · ${getTemplate(templateId).name}`, resumes),
+        label: uniqueLabel([result.resume.label, result.job.company].filter(Boolean).join(' — '), resumes),
         fileName: `${profile.identity.firstName}-${profile.identity.lastName}-${safe}.pdf`.replace(/\s+/g, '-'),
         tags: [result.job.role, result.job.company].filter(Boolean),
         isDefault: false, createdAt: Date.now(), source: 'generated',
@@ -112,6 +123,17 @@ export function ResumesTab() {
     a.click()
   }
 
+  const [preview, setPreview] = useState<{ label: string; pages: string[] } | null>(null)
+  const openPreview = async (r: ResumeVariant) => {
+    setPreview({ label: r.label, pages: [] })
+    try {
+      const pages = await renderPdfPages(base64ToBytes(r.dataBase64), 660)
+      setPreview((cur) => (cur?.label === r.label ? { label: r.label, pages } : cur))
+    } catch {
+      setPreview(null)
+    }
+  }
+
   const hasProfile = profile.work.length > 0 && !!profile.identity.firstName
 
   return (
@@ -131,6 +153,7 @@ export function ResumesTab() {
                   {r.tags.slice(0, 3).map((t) => <span key={t} className="chip">{t}</span>)}
                 </div>
               </div>
+              <button className="small link" onClick={() => void openPreview(r)}>{t.previewLabel}</button>
               <button className="small link" onClick={() => download(r)}>{t.pdf}</button>
               {!r.isDefault && (
                 <button className="small link" onClick={() => saveResumes(resumes.map((x) => ({ ...x, isDefault: x.id === r.id })))}>
@@ -191,6 +214,19 @@ export function ResumesTab() {
       </Section>
 
       {picking && <TemplatePicker profile={profile} onPick={onPickTemplate} onCancel={() => setPicking(null)} />}
+
+      {preview && (
+        <div className="tpl-overlay" onClick={() => setPreview(null)}>
+          <div className="pv-sheet" onClick={(e) => e.stopPropagation()}>
+            <h3>{preview.label}</h3>
+            {preview.pages.length === 0 && <p className="progress">{t.working}</p>}
+            {preview.pages.map((p, i) => (
+              <img key={i} src={p} alt="" />
+            ))}
+            <button className="ghost small" onClick={() => setPreview(null)}>{t.done}</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -234,7 +270,7 @@ function TemplatePicker({
           {shown.map((tpl) => (
             <button key={tpl.id} className="tpl-card" onClick={() => onPick(tpl.id)}>
               <PdfThumb tpl={tpl} profile={profile} cache={cache.current} />
-              <span className="tpl-name">{tpl.name}</span>
+              <span className="tpl-name">{styleName(t, tpl.id)}</span>
               <span className="tpl-for">{tpl.tags.slice(0, 2).map((tg) => tagLabel[tg]).join(' · ')}</span>
             </button>
           ))}
@@ -276,5 +312,5 @@ function PdfThumb({
     }
   }, [tpl.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return <div className="tpl-thumb">{src && <img src={src} alt={tpl.name} />}</div>
+  return <div className="tpl-thumb">{src && <img src={src} alt="" />}</div>
 }

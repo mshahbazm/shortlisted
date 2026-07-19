@@ -190,9 +190,14 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
 
     onFillMenu: async () => {
       if (!state) state = await sendMsg<FillState>({ type: 'getFillState' })
+      const styleNames: Record<string, string> = {
+        harvard: t.tplHarvard, atlas: t.tplAtlas, onyx: t.tplOnyx, azure: t.tplAzure,
+        meridian: t.tplMeridian, regent: t.tplRegent, pivot: t.tplPivot, coral: t.tplCoral,
+        ivory: t.tplIvory, slate: t.tplSlate, amber: t.tplAmber, mint: t.tplMint,
+      }
       overlay.showFillMenu(
         state.resumes.map(({ id, label, isDefault }) => ({ id, label, isDefault })),
-        TEMPLATES.map(({ id, name }) => ({ id, name })),
+        TEMPLATES.map(({ id }) => ({ id, name: styleNames[id] ?? id })),
       )
     },
 

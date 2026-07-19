@@ -7,22 +7,31 @@ import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
 
-/** First page of a PDF as a PNG data URL — the template picker's live previews. */
-export async function renderPdfThumbnail(data: Uint8Array, targetWidth: number): Promise<string> {
+/** PDF pages as PNG data URLs — template previews and the in-panel CV viewer. */
+export async function renderPdfPages(data: Uint8Array, targetWidth: number, maxPages = 4): Promise<string[]> {
   const task = pdfjs.getDocument({ data })
   const doc = await task.promise
   try {
-    const page = await doc.getPage(1)
-    const base = page.getViewport({ scale: 1 })
-    const viewport = page.getViewport({ scale: targetWidth / base.width })
-    const canvas = document.createElement('canvas')
-    canvas.width = Math.ceil(viewport.width)
-    canvas.height = Math.ceil(viewport.height)
-    await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise
-    return canvas.toDataURL('image/png')
+    const urls: string[] = []
+    for (let i = 1; i <= Math.min(doc.numPages, maxPages); i++) {
+      const page = await doc.getPage(i)
+      const base = page.getViewport({ scale: 1 })
+      const viewport = page.getViewport({ scale: targetWidth / base.width })
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.ceil(viewport.width)
+      canvas.height = Math.ceil(viewport.height)
+      await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise
+      urls.push(canvas.toDataURL('image/png'))
+    }
+    return urls
   } finally {
     void task.destroy()
   }
+}
+
+/** First page only — the template picker's thumbnails. */
+export async function renderPdfThumbnail(data: Uint8Array, targetWidth: number): Promise<string> {
+  return (await renderPdfPages(data, targetWidth, 1))[0] ?? ''
 }
 
 export async function extractPdfText(data: ArrayBuffer): Promise<string> {

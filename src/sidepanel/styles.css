@@ -246,6 +246,13 @@ select.langswitch:hover { color: var(--fg); }
   border-radius: 4px; overflow: hidden;
 }
 .tpl-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+.pv-sheet {
+  background: var(--bg); width: 100%; max-width: 680px; max-height: 90vh;
+  overflow-y: auto; border-radius: 12px; padding: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+}
+.pv-sheet h3 { margin: 0 0 10px; font-size: 15px; }
+.pv-sheet img { width: 100%; display: block; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 10px; }
 
 /* ---- toast ---- */
 .toast {

@@ -23,6 +23,7 @@ export const resumes: tLocale['resumes'] = {
   generateFromProfile: 'Générer depuis le profil',
   masterCvLabel: 'CV principal',
 
+  previewLabel: 'Aperçu',
   cvReady: 'CV créé ✓',
   pickStyleTitle: 'Choisissez un style',
   pickStyleHint: 'Chaque style est compatible ATS — vrai texte, polices standard, lecture propre. Choisissez le look qui correspond au poste.',

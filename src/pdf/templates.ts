@@ -27,8 +27,6 @@ export type TemplateTag =
 
 export interface ResumeTemplate {
   id: string
-  /** Product name — shown as-is in every language. */
-  name: string
   tags: TemplateTag[]
   font: 'helvetica' | 'times'
   /** Accent hex for name/rules/bullet markers; null = pure monochrome. */
@@ -45,7 +43,6 @@ export const TEMPLATES: ResumeTemplate[] = [
   {
     // The de-facto standard for consulting, banking and law. Serif, no color.
     id: 'harvard',
-    name: 'Harvard',
     tags: ['finance', 'consulting', 'legal', 'education'],
     font: 'times',
     accent: null,
@@ -58,7 +55,6 @@ export const TEMPLATES: ResumeTemplate[] = [
   {
     // Clean modern sans — the safe default for almost anyone.
     id: 'atlas',
-    name: 'Atlas',
     tags: ['engineering', 'operations', 'data'],
     font: 'helvetica',
     accent: null,
@@ -71,7 +67,6 @@ export const TEMPLATES: ResumeTemplate[] = [
   {
     // Dense, compact, maximum content per page — long technical histories.
     id: 'onyx',
-    name: 'Onyx',
     tags: ['engineering', 'data'],
     font: 'helvetica',
     accent: null,
@@ -84,7 +79,6 @@ export const TEMPLATES: ResumeTemplate[] = [
   {
     // Professional with a confident blue accent — business roles.
     id: 'azure',
-    name: 'Azure',
     tags: ['marketing', 'sales', 'operations'],
     font: 'helvetica',
     accent: '#2563eb',
@@ -97,7 +91,6 @@ export const TEMPLATES: ResumeTemplate[] = [
   {
     // Two-column with a skills sidebar — the classic best-seller look.
     id: 'meridian',
-    name: 'Meridian',
     tags: ['creative', 'marketing', 'hr'],
     font: 'helvetica',
     accent: '#0f766e',
@@ -110,7 +103,6 @@ export const TEMPLATES: ResumeTemplate[] = [
   {
     // Understated serif, centered name, thin rules — senior and executive.
     id: 'regent',
-    name: 'Regent',
     tags: ['executive', 'finance', 'legal'],
     font: 'times',
     accent: null,
@@ -123,7 +115,6 @@ export const TEMPLATES: ResumeTemplate[] = [
   {
     // Skills-first hybrid — career changers and skills-led screening.
     id: 'pivot',
-    name: 'Pivot',
     tags: ['data', 'student', 'operations'],
     font: 'helvetica',
     accent: '#334155',
@@ -136,7 +127,6 @@ export const TEMPLATES: ResumeTemplate[] = [
   {
     // Bold color header band — creative and media applications.
     id: 'coral',
-    name: 'Coral',
     tags: ['creative', 'marketing'],
     font: 'helvetica',
     accent: '#e11d48',
@@ -149,7 +139,6 @@ export const TEMPLATES: ResumeTemplate[] = [
   {
     // Elegant monochrome serif with spaced small caps — quiet confidence.
     id: 'ivory',
-    name: 'Ivory',
     tags: ['consulting', 'legal', 'education'],
     font: 'times',
     accent: null,
@@ -162,7 +151,6 @@ export const TEMPLATES: ResumeTemplate[] = [
   {
     // Sidebar layout in sober slate — technical roles that want structure.
     id: 'slate',
-    name: 'Slate',
     tags: ['engineering', 'operations', 'data'],
     font: 'helvetica',
     accent: '#334155',
@@ -175,7 +163,6 @@ export const TEMPLATES: ResumeTemplate[] = [
   {
     // Warm amber accent — people-facing roles.
     id: 'amber',
-    name: 'Amber',
     tags: ['healthcare', 'education', 'hr', 'sales'],
     font: 'helvetica',
     accent: '#b45309',
@@ -188,7 +175,6 @@ export const TEMPLATES: ResumeTemplate[] = [
   {
     // Fresh green, skills-forward — first jobs and internships.
     id: 'mint',
-    name: 'Mint',
     tags: ['student', 'sales', 'hr'],
     font: 'helvetica',
     accent: '#059669',
