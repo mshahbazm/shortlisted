@@ -104,6 +104,9 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
   const idx = STEPS.indexOf(step)
 
   const finish = () => {
+    // The account exists now — tag the wizard's kept CV and fold any facts
+    // the profile build missed (additive, background).
+    if (wizardResumeId.current) void sendMsg({ type: 'intakeResume', resumeId: wizardResumeId.current })
     // Read-modify-write against live storage — the settings object in this
     // closure may predate verifyLoginCode saving accountEmail.
     void store.update('settings', (s) => ({ ...s, onboarded: true })).then(onDone)

@@ -17,6 +17,8 @@ export const profile: tLocale['profile'] = {
   locationPlaceholder: 'Ciudad, País',
 
   linksTitle: 'Enlaces',
+  savedToast: 'Guardado ✓',
+  invalidUrl: 'Ese enlace no parece válido — revísalo e inténtalo de nuevo.',
   linksAdded: (n: number) => `${n} añadido${n === 1 ? '' : 's'}`,
   website: 'Sitio web',
   github: 'GitHub',

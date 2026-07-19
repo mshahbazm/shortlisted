@@ -17,6 +17,8 @@ export const profile = {
   locationPlaceholder: 'City, Country',
 
   linksTitle: 'Links',
+  savedToast: 'Saved ✓',
+  invalidUrl: 'That doesn’t look like a valid link — check it and try again.',
   linksAdded: (n: number) => `${n} added`,
   website: 'Website',
   github: 'GitHub',

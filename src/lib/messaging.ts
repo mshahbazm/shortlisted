@@ -14,6 +14,7 @@ export type Msg =
   | { type: 'getFillState' }
   | { type: 'getResumeData'; resumeId: string }
   | { type: 'saveResume'; base64: string; fileName: string }
+  | { type: 'intakeResume'; resumeId: string }
   | {
       type: 'saveAnswer'
       questionRaw: string

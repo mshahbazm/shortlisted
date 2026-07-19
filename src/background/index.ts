@@ -3,9 +3,9 @@
 
 import { Msg } from '../lib/messaging'
 import * as store from '../lib/store'
-import { BankAnswer, PendingQuestion, ResumeVariant, jobUrlKey, uid } from '../lib/types'
+import { BankAnswer, PendingQuestion, Profile, ResumeVariant, jobUrlKey, uid } from '../lib/types'
 import { normalizeQuestion, similarity } from '../lib/questions'
-import { cloudFillAssist, polishAnswer, runQuickScore } from '../ai/run'
+import { cloudFillAssist, cloudResumeIntake, polishAnswer, runQuickScore } from '../ai/run'
 import { pullFromCloud, startCloudMirror } from './cloudMirror'
 // CRXJS: gives us the emitted content-script path for scripting.executeScript.
 import contentScriptPath from '../content/index.ts?script'
@@ -76,10 +76,17 @@ async function handle(msg: Msg): Promise<unknown> {
         list = [...resumes, entry]
         return list
       })
+      // Tag it and fold new facts into the profile in the background.
+      void intakeResume(entry.id)
       return {
         id: entry.id,
         resumes: list.map(({ id, label, fileName, isDefault, tags }) => ({ id, label, fileName, isDefault, tags })),
       }
+    }
+
+    case 'intakeResume': {
+      void intakeResume(msg.resumeId)
+      return { ok: true }
     }
 
     case 'saveAnswer': {
@@ -248,6 +255,72 @@ async function handle(msg: Msg): Promise<unknown> {
  * free). Only stores the polish if the raw answer hasn't changed meanwhile;
  * options/booleans are never polished (their value must match the form).
  */
+// Best-effort ISO codes for languages a CV plausibly lists by name.
+const LANG_CODES: Record<string, string> = {
+  english: 'en', dutch: 'nl', german: 'de', french: 'fr', spanish: 'es', italian: 'it',
+  portuguese: 'pt', polish: 'pl', urdu: 'ur', hindi: 'hi', arabic: 'ar', chinese: 'zh',
+  mandarin: 'zh', japanese: 'ja', korean: 'ko', russian: 'ru', turkish: 'tr', punjabi: 'pa',
+}
+const PROFICIENCIES = ['elementary', 'limited_working', 'professional_working', 'full_professional', 'native']
+
+/**
+ * Uploaded-CV intake: ask the cloud what roles the CV targets (tags) and what
+ * facts it holds that the profile lacks. Merging is strictly additive — the
+ * profile is never overwritten, only filled in. Fire and forget.
+ */
+async function intakeResume(resumeId: string): Promise<void> {
+  const [settings, resumes] = await Promise.all([store.get('settings'), store.get('resumes')])
+  if (!settings.accountEmail) return
+  const r = resumes.find((x) => x.id === resumeId)
+  if (!r) return
+  try {
+    const facts = await cloudResumeIntake(settings, r.dataBase64)
+    if (facts.tags.length) {
+      await store.update('resumes', (list) =>
+        list.map((x) => (x.id === resumeId && x.tags.length === 0 ? { ...x, tags: facts.tags } : x)),
+      )
+    }
+    await store.update('profile', (p) => {
+      const has = (list: { name: string }[], name: string) =>
+        list.some((x) => x.name.toLowerCase() === name.toLowerCase())
+      return {
+        ...p,
+        skills: [
+          ...p.skills,
+          ...facts.newSkills.filter((n) => n.trim() && !has(p.skills, n)).map((name) => ({ name: name.trim() })),
+        ],
+        links: {
+          ...p.links,
+          website: p.links.website || facts.newLinks.website || undefined,
+          github: p.links.github || facts.newLinks.github || undefined,
+          linkedin: p.links.linkedin || facts.newLinks.linkedin || undefined,
+          portfolio: p.links.portfolio || facts.newLinks.portfolio || undefined,
+        },
+        languages: [
+          ...p.languages,
+          ...facts.newLanguages
+            .filter((l) => l.name.trim() && !has(p.languages, l.name))
+            .map((l) => ({
+              langCode: LANG_CODES[l.name.trim().toLowerCase()] ?? '',
+              name: l.name.trim(),
+              proficiency: (PROFICIENCIES.includes(l.proficiency ?? '')
+                ? l.proficiency
+                : 'professional_working') as Profile['languages'][number]['proficiency'],
+            })),
+        ],
+        certifications: [
+          ...p.certifications,
+          ...facts.newCertifications
+            .filter((c) => c.name.trim() && !has(p.certifications, c.name))
+            .map((c) => ({ name: c.name.trim(), issuingOrganization: c.issuingOrganization, year: c.year })),
+        ],
+      }
+    })
+  } catch (e) {
+    console.warn('[shortlisted] resume intake failed:', e)
+  }
+}
+
 async function polishInBackground(questionNorm: string, questionRaw: string, answer: string): Promise<void> {
   try {
     const settings = await store.get('settings')

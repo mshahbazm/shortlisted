@@ -7,6 +7,7 @@ import { ProfileTab } from './tabs/ProfileTab'
 import { ResumesTab } from './tabs/ResumesTab'
 import { QuestionsTab } from './tabs/QuestionsTab'
 import { SettingsTab } from './tabs/SettingsTab'
+import { Toasts } from './toast'
 import * as store from '../lib/store'
 
 const TABS = ['Apply', 'Profile', 'CVs', 'Answers', 'Settings'] as const
@@ -61,6 +62,7 @@ export function App() {
         {tab === 'Answers' && <QuestionsTab />}
         {tab === 'Settings' && <SettingsTab />}
       </main>
+      <Toasts />
     </>
   )
 }

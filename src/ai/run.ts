@@ -17,9 +17,18 @@ import * as store from '../lib/store'
 import type { TailorCvResult } from './capabilities/tailor-cv'
 import type { QuickScoreResult, ScoreFitResult } from './capabilities/score-fit'
 import type { AssistField, AssistResultItem, CorrectionItem, VerifyField } from './capabilities/fill-assist'
+import type { IntakeNewFacts } from './capabilities/resume-intake'
 
 export type { QuickScoreResult, ScoreFitResult }
 export type { AssistField, AssistResultItem, CorrectionItem, VerifyField }
+
+/**
+ * Uploaded-CV intake: role/field tags for the CV plus profile facts it
+ * contains that the account is missing (additive only). Free micro-call.
+ */
+export async function cloudResumeIntake(settings: Settings, pdfBase64: string): Promise<IntakeNewFacts> {
+  return cloudCall<IntakeNewFacts>(settings, '/v1/resume-intake', { pdfBase64 })
+}
 
 /**
  * The reasoning layer for form filling: ONE batched call covering both the

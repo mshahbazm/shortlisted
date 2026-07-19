@@ -14,15 +14,21 @@ import {
   workPeriodLabel,
 } from '../../lib/types'
 import { cloudParseResumePdf, runExtractProfile } from '../../ai/run'
+import { showToast } from '../toast'
 
 export function ProfileTab() {
   const t = useContent('profile')
-  const [profile, saveProfile, loaded] = useStore('profile')
+  const [profile, saveProfileRaw, loaded] = useStore('profile')
   const [settings] = useStore('settings')
 
   const p = profile
   if (!loaded) return null
-  const set = (patch: Partial<typeof profile>) => saveProfile({ ...p, ...patch })
+  // Every edit on this tab persists immediately; the toast is the receipt.
+  const save = (v: typeof profile) => {
+    saveProfileRaw(v)
+    showToast(t.savedToast)
+  }
+  const set = (patch: Partial<typeof profile>) => save({ ...p, ...patch })
   const setIdentity = (k: keyof typeof p.identity, v: string) => set({ identity: { ...p.identity, [k]: v } })
   const setLinks = (k: keyof typeof p.links, v: string) => set({ links: { ...p.links, [k]: v } })
   const setFacts = (k: keyof typeof p.facts, v: string) => set({ facts: { ...p.facts, [k]: v } })
@@ -65,10 +71,10 @@ export function ProfileTab() {
       </Section>
 
       <Section title={t.linksTitle} summary={t.linksAdded(Object.values(p.links).filter(Boolean).length)}>
-        <KV k={t.website} v={p.links.website ?? ''} onChange={(v) => setLinks('website', v)} />
-        <KV k={t.github} v={p.links.github ?? ''} onChange={(v) => setLinks('github', v)} />
-        <KV k={t.linkedin} v={p.links.linkedin ?? ''} onChange={(v) => setLinks('linkedin', v)} />
-        <KV k={t.portfolio} v={p.links.portfolio ?? ''} onChange={(v) => setLinks('portfolio', v)} />
+        <KV k={t.website} v={p.links.website ?? ''} url invalidHint={t.invalidUrl} onChange={(v) => setLinks('website', v)} />
+        <KV k={t.github} v={p.links.github ?? ''} url invalidHint={t.invalidUrl} onChange={(v) => setLinks('github', v)} />
+        <KV k={t.linkedin} v={p.links.linkedin ?? ''} url invalidHint={t.invalidUrl} onChange={(v) => setLinks('linkedin', v)} />
+        <KV k={t.portfolio} v={p.links.portfolio ?? ''} url invalidHint={t.invalidUrl} onChange={(v) => setLinks('portfolio', v)} />
       </Section>
 
       <Section
@@ -158,11 +164,11 @@ export function ProfileTab() {
         <ImportBox
           cloudPdf={async (file) => {
             const { profile: extracted } = await cloudParseResumePdf(settings, await file.arrayBuffer())
-            saveProfile({ ...extracted, facts: p.facts })
+            save({ ...extracted, facts: p.facts })
           }}
           onImport={async (text) => {
             const extracted = await runExtractProfile(settings, text)
-            saveProfile({ ...extracted, facts: p.facts })
+            save({ ...extracted, facts: p.facts })
           }}
         />
       </Section>

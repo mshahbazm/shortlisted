@@ -3,6 +3,7 @@ import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { Section } from '../components'
 import { ResumeVariant, bytesToBase64, uid } from '../../lib/types'
+import { sendMsg } from '../../lib/messaging'
 import { masterVariant, renderResumePdf } from '../../pdf/resumePdf'
 import { ALL_TAGS, ResumeTemplate, TEMPLATES, TemplateTag } from '../../pdf/templates'
 import { runTailorCv } from '../../ai/run'
@@ -27,11 +28,15 @@ export function ResumesTab() {
   }
 
   const onUpload = async (file: File) => {
+    const id = uid()
     addResume({
-      id: uid(), label: file.name.replace(/\.pdf$/i, ''), fileName: file.name, tags: [],
+      id, label: file.name.replace(/\.pdf$/i, ''), fileName: file.name, tags: [],
       isDefault: resumes.length === 0, createdAt: Date.now(), source: 'uploaded',
       dataBase64: bytesToBase64(await file.arrayBuffer()),
     })
+    // Background: tag the CV for the roles it targets, fold new facts into
+    // the profile (additive only).
+    void sendMsg({ type: 'intakeResume', resumeId: id })
   }
 
   const generateMaster = (templateId: string) => {
@@ -41,7 +46,8 @@ export function ResumesTab() {
       const base64 = renderResumePdf(profile, variant, templateId)
       const name = `${profile.identity.firstName}-${profile.identity.lastName}-CV.pdf`.replace(/\s+/g, '-')
       addResume({
-        id: uid(), label: t.masterCvLabel, fileName: name, tags: ['master'],
+        id: uid(), label: t.masterCvLabel, fileName: name,
+        tags: ['master', ...(profile.headline ? [profile.headline] : [])],
         isDefault: resumes.length === 0, createdAt: Date.now(), source: 'generated',
         templateId, dataBase64: base64, content: variant,
       })
