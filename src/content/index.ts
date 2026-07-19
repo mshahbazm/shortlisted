@@ -81,7 +81,12 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
     const el = field.el
     if (el instanceof HTMLInputElement && el.type === 'checkbox') return el.checked ? 'Yes' : ''
     if (el instanceof HTMLInputElement && el.type === 'file') return ''
-    if (el instanceof HTMLSelectElement) return el.selectedOptions[0]?.textContent?.trim() || el.value
+    if (el instanceof HTMLSelectElement) {
+      // A selected placeholder is not an answer ("Select...", "Choose one", empty value).
+      if (!el.value) return ''
+      const text = el.selectedOptions[0]?.textContent?.trim() || el.value
+      return /^(select|choose|please select|pick one|--)/i.test(text) ? '' : text
+    }
     return el.value.trim()
   }
 
