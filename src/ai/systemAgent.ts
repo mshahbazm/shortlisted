@@ -19,6 +19,9 @@ export interface LlmResponse {
   text: string
   inputTokens: number
   outputTokens: number
+  /** Which model actually served this call (set by clients that know). */
+  model?: string
+  provider?: string
 }
 
 export type LlmClient = (req: LlmRequest) => Promise<LlmResponse>
