@@ -76,7 +76,7 @@ export const profile: tLocale['profile'] = {
 
   tellMeTitle: 'Vertel me iets nieuws',
   tellMeSummary: 'gewone woorden erin, op de juiste plek gezet',
-  tellMePlaceholder: 'bijv. Ik werkte met Webflow bij Xvelopers — zo’n tien klantsites gebouwd.',
+  tellMePlaceholder: 'Een vaardigheid, taal, certificaat of iets uit een vorige baan — gewone woorden. bijv. Ik ken ook Figma. Of: Bij mijn vorige werkgever leidde ik een team van vijf.',
   tellMeButton: 'Aan profiel toevoegen',
   tellMeNothing: 'Niets nieuws gevonden — je profiel dekt dit al.',
   tellMeAdded: (n: number) => `In je profiel gezet ✓ (${n} nieuw)`,

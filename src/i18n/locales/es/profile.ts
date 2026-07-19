@@ -76,7 +76,7 @@ export const profile: tLocale['profile'] = {
 
   tellMeTitle: 'Cuéntame algo nuevo',
   tellMeSummary: 'palabras sencillas, guardadas en el lugar correcto',
-  tellMePlaceholder: 'p. ej. Trabajé con Webflow en Xvelopers — unos diez sitios de clientes.',
+  tellMePlaceholder: 'Una habilidad, un idioma, una certificación o algo de un trabajo anterior — con palabras sencillas. p. ej. También sé Figma. O: En mi empresa anterior dirigí un equipo de cinco.',
   tellMeButton: 'Añadir al perfil',
   tellMeNothing: 'No hay nada nuevo — tu perfil ya lo cubre.',
   tellMeAdded: (n: number) => `Guardado en tu perfil ✓ (${n} nuevo/s)`,

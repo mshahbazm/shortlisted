@@ -76,7 +76,7 @@ export const profile = {
 
   tellMeTitle: 'Tell me something new',
   tellMeSummary: 'plain words in, filed into the right place',
-  tellMePlaceholder: 'e.g. I worked with Webflow at Xvelopers — built about ten client sites.',
+  tellMePlaceholder: 'A skill, a language, a certification, or something you did at a past job — plain words. e.g. I also know Figma. Or: I led a team of five at my previous company.',
   tellMeButton: 'Add to profile',
   tellMeNothing: 'Nothing new found in that — your profile already covers it.',
   tellMeAdded: (n: number) => `Filed into your profile ✓ (${n} new)`,
