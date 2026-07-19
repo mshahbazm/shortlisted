@@ -21,6 +21,7 @@ export const resumes: tLocale['resumes'] = {
   tailorNoteHint: 'Optional. Neue Fakten, die du hier nennst, werden auch in deinem Profil gespeichert.',
   addTitle: 'Lebenslauf hinzufügen',
   addSummary: 'PDF hochladen oder aus dem Profil generieren',
+  uploading: 'Wird hochgeladen…',
   uploadPdf: 'PDF hochladen',
   generateFromProfile: 'Aus dem Profil generieren',
   masterCvLabel: 'Master-Lebenslauf',

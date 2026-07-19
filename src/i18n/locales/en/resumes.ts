@@ -19,6 +19,7 @@ export const resumes = {
   tailorNoteHint: 'Optional. New facts you state here are also saved to your profile.',
   addTitle: 'Add a CV',
   addSummary: 'upload a PDF, or generate from profile',
+  uploading: 'Uploading…',
   uploadPdf: 'Upload PDF',
   generateFromProfile: 'Generate from profile',
   masterCvLabel: 'Master CV',

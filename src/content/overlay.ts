@@ -183,8 +183,47 @@ export class Overlay {
 
     this.panel.append(head, this.langNote, this.actions, this.body)
     this.root.appendChild(this.panel)
-    document.documentElement.appendChild(this.host)
+    this.mount()
+    this.keepAttached()
     this.renderIdle()
+  }
+
+  /**
+   * Put ourselves back if the page takes us out of the DOM. Sites drop nodes
+   * they don't own for all sorts of reasons — a failed React hydration
+   * re-rendering its container, an SPA route change, a framework that owns
+   * <html>, a script that tidies up "unexpected" elements. The panel simply
+   * vanishing is indistinguishable from it never having appeared, so this
+   * costs one observer and removes a whole class of report.
+   *
+   * Capped: if a page is determined to remove us, fighting it forever would
+   * spin the main thread. Losing the panel is better than hanging the tab.
+   */
+  /**
+   * <body>, not <html>. A div parented to <html> is invalid structure, and
+   * pages do police it — frameworks that own the document, and scripts that
+   * tidy "unexpected" nodes. body is where overlays are expected to live.
+   */
+  private mount() {
+    ;(document.body ?? document.documentElement).appendChild(this.host)
+  }
+
+  private keepAttached() {
+    let reattached = 0
+    const mo = new MutationObserver(() => {
+      if (this.host.isConnected) return
+      if (reattached >= 20) {
+        console.warn('[shortlisted] panel removed by the page 20 times — giving up re-attaching')
+        mo.disconnect()
+        return
+      }
+      reattached++
+      console.warn(`[shortlisted] panel removed by the page, re-attaching (${reattached})`)
+      this.mount()
+    })
+    // Watch both: whichever parent we landed in, plus the document root, so a
+    // wholesale replacement of body is seen too.
+    mo.observe(document.documentElement, { childList: true, subtree: true })
   }
 
   /**
@@ -565,7 +604,7 @@ export class Overlay {
     }
     q.onclick = jumpToField
 
-    const isChoice = field.kind === 'select' || field.kind === 'radio'
+    const isChoice = field.kind === 'select' || field.kind === 'radio' || field.kind === 'combobox'
     const opts = isChoice ? (optionsOf(field) ?? []) : undefined
 
     // Long or dynamically-loaded lists: hand the pick to the page itself —

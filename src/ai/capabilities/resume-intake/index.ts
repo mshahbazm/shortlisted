@@ -16,6 +16,23 @@ export interface IntakeNewFacts {
   newCertifications: { name: string; issuingOrganization?: string; year?: number }[]
   /** Facts clearly tied to one of the candidate's existing jobs, as CV bullets. */
   newWorkHighlights: { workId: string; bullet: string }[]
+  /**
+   * A job the candidate names that is NOT in knownWork. Without this the model
+   * has nowhere to put "I worked at Pavago on Webflow" — a highlight needs an
+   * existing workId, so the whole statement was dropped in silence. Dates and
+   * title are optional because people rarely state them in a sentence; the
+   * entry is flagged as needing completion instead of being guessed at.
+   */
+  newWork: {
+    company: string
+    title?: string
+    startYear?: number
+    startMonth?: number
+    endYear?: number
+    endMonth?: number
+    isCurrent?: boolean
+    highlights?: string[]
+  }[]
 }
 
 export interface ResumeIntakeResult extends IntakeNewFacts {
@@ -68,6 +85,23 @@ const intakeSchema = {
         },
       },
     },
+    newWork: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: ['company'],
+        properties: {
+          company: { type: 'string' },
+          title: { type: 'string' },
+          startYear: { type: 'integer' },
+          startMonth: { type: 'integer' },
+          endYear: { type: 'integer' },
+          endMonth: { type: 'integer' },
+          isCurrent: { type: 'boolean' },
+          highlights: { type: 'array', items: { type: 'string' } },
+        },
+      },
+    },
   },
 } as const
 
@@ -88,8 +122,12 @@ const INTAKE_PROMPT =
   `- newCertifications: certifications stated in the CV not in knownCertifications.\n` +
   `- newWorkHighlights: when a stated fact is clearly tied to ONE of the knownWork entries ` +
   `(the employer is named or unmistakable), return it as {workId, bullet} — the bullet phrased ` +
-  `as one concise CV bullet in plain confident language, faithful to what was stated. If the ` +
-  `fact is not clearly tied to a known employer, leave it to newSkills instead.\n\n` +
+  `as one concise CV bullet in plain confident language, faithful to what was stated.\n` +
+  `- newWork: when the text names an employer that is NOT in knownWork, return it here instead ` +
+  `of forcing it into newWorkHighlights. company is required; include title and dates ONLY if ` +
+  `stated — never guess them, an incomplete entry is expected and the candidate fills the rest ` +
+  `in. Put anything said about what they did there in that entry's highlights. Match knownWork ` +
+  `case-insensitively before deciding a company is new.\n\n` +
   `HARD RULE: every returned fact must be literally present in the provided text. Never infer, ` +
   `never invent. When in doubt, leave it out — empty arrays are a fine answer.`
 
@@ -129,8 +167,20 @@ export async function resumeIntake(
         }
       }
       for (const wh of v.newWorkHighlights ?? []) {
-        if (!workIds.has(wh.workId)) return `newWorkHighlights: unknown workId ${wh.workId} — use only knownWork ids`
+        if (!workIds.has(wh.workId)) {
+          return `newWorkHighlights: unknown workId ${wh.workId} — use a knownWork id, or return that employer in newWork`
+        }
         if (wh.bullet.length > 300) return 'newWorkHighlights: bullets must stay under 300 characters'
+      }
+      const knownCompanies = new Set(known.knownWork.map((w) => w.company.toLowerCase().trim()))
+      for (const w of v.newWork ?? []) {
+        if (typeof w.company !== 'string' || !w.company.trim()) return 'newWork: company is required'
+        if (knownCompanies.has(w.company.toLowerCase().trim())) {
+          return `newWork: ${w.company} is already in knownWork — use newWorkHighlights with its id`
+        }
+        if ((w.highlights ?? []).some((b) => b.length > 300)) {
+          return 'newWork: bullets must stay under 300 characters'
+        }
       }
       return null
     },
@@ -143,6 +193,7 @@ export async function resumeIntake(
     newLanguages: value?.newLanguages ?? [],
     newCertifications: value?.newCertifications ?? [],
     newWorkHighlights: value?.newWorkHighlights ?? [],
+    newWork: value?.newWork ?? [],
     usage,
   }
 }

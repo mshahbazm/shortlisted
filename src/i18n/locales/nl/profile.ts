@@ -78,6 +78,12 @@ export const profile: tLocale['profile'] = {
   tellMeSummary: 'een nieuwe vaardigheid, een certificaat, iets wat je vergat',
   tellMePlaceholder: 'Alles over jou — een vaardigheid die je net leerde, een behaald certificaat, een taal die je spreekt, of iets uit een oude baan dat je nooit opschreef. Gewone woorden.',
   tellMeButton: 'Aan profiel toevoegen',
+  tellMeFinishJob: (company: string) =>
+    `Vul functie en periode in voor ${company}, zodat een cv op maat geen gat laat zien.`,
+  workNeedsDetail:
+    'Functietitel en startdatum ontbreken — een cv op maat leest dit als een gat.',
+  tellMeNoSuchJob:
+    'Ik kon dat niet aan een baan koppelen — voeg de baan eerst toe onder Werk en vertel het me daarna.',
   tellMeNothing: 'Niets nieuws gevonden — je profiel dekt dit al.',
   tellMeAdded: (n: number) => `In je profiel gezet ✓ (${n} nieuw)`,
   reimportTitle: 'Opnieuw importeren uit cv',

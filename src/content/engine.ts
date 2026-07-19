@@ -1,6 +1,7 @@
 import { FillState } from '../lib/messaging'
 import { matchQuestion } from '../lib/questions'
 import { Adapter, findFormRoot } from './adapters'
+import { comboboxValue, selectComboboxOption } from './combobox'
 import {
   FormField,
   attachFile,
@@ -20,7 +21,7 @@ export interface FillResult {
   skipped: FormField[] // demographic/consent fields we never auto-touch
 }
 
-export function fillForm(adapter: Adapter, state: FillState): FillResult {
+export async function fillForm(adapter: Adapter, state: FillState): Promise<FillResult> {
   const root = findFormRoot(adapter)
   const fields = collectFields(root)
   const result: FillResult = { filled: [], unknown: [], resumeFields: [], skipped: [] }
@@ -44,14 +45,14 @@ export function fillForm(adapter: Adapter, state: FillState): FillResult {
 
     // 1) Deterministic profile mapping.
     const profileValue = profileValueFor(label, state.profile)
-    if (profileValue && applyValue(field, profileValue)) {
+    if (profileValue && (await applyValue(field, profileValue))) {
       result.filled.push({ field, source: 'profile', value: profileValue })
       continue
     }
 
     // 2) Answer bank (exact then fuzzy).
     const match = label.length > 4 ? matchQuestion(label, state.answerBank) : null
-    if (match && applyValue(field, match.answer.polished ?? match.answer.answer)) {
+    if (match && (await applyValue(field, match.answer.polished ?? match.answer.answer))) {
       result.filled.push({
         field,
         source: match.exact ? 'bank' : 'bank-fuzzy',
@@ -72,6 +73,10 @@ export function fillForm(adapter: Adapter, state: FillState): FillResult {
 }
 
 function alreadyFilled(field: FormField): boolean {
+  // Its .value is always "" — asking the element would say "empty" for a
+  // dropdown the user has already answered, and we would offer to fill it
+  // again and list it as an open question.
+  if (field.kind === 'combobox') return comboboxValue(field.el) !== ''
   if (field.kind === 'radio') return field.radioGroup?.some((r) => r.checked) ?? false
   if (field.kind === 'checkbox') return (field.el as HTMLInputElement).checked
   if (field.kind === 'select') {
@@ -81,11 +86,15 @@ function alreadyFilled(field: FormField): boolean {
   return (field.el as HTMLInputElement | HTMLTextAreaElement).value.trim() !== ''
 }
 
-export function applyValue(field: FormField, value: string): boolean {
+export async function applyValue(field: FormField, value: string): Promise<boolean> {
   try {
     switch (field.kind) {
       case 'select':
         return setSelectValue(field.el as HTMLSelectElement, value)
+      // Setting .value does nothing on these — the component owns its state,
+      // so the option has to be clicked the way a person would.
+      case 'combobox':
+        return selectComboboxOption(field.el, value)
       case 'radio':
         return field.radioGroup ? setRadioValue(field.radioGroup, value) : false
       case 'checkbox': {

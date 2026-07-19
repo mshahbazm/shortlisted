@@ -78,6 +78,12 @@ export const profile: tLocale['profile'] = {
   tellMeSummary: 'eine neue Fähigkeit, ein Zertifikat, etwas Vergessenes',
   tellMePlaceholder: 'Alles über dich — eine gerade gelernte Fähigkeit, ein erworbenes Zertifikat, eine Sprache, die du sprichst, oder etwas aus einem alten Job, das nie aufgeschrieben wurde. Einfache Worte.',
   tellMeButton: 'Zum Profil hinzufügen',
+  tellMeFinishJob: (company: string) =>
+    `Ergänzen Sie Position und Zeitraum für ${company}, damit ein zugeschnittener Lebenslauf keine Lücke zeigt.`,
+  workNeedsDetail:
+    'Position und Startdatum fehlen — ein zugeschnittener Lebenslauf liest das als Lücke.',
+  tellMeNoSuchJob:
+    'Das ließ sich keiner Station zuordnen — legen Sie die Station zuerst unter Berufserfahrung an und erzählen Sie es mir dann.',
   tellMeNothing: 'Nichts Neues gefunden — dein Profil deckt das schon ab.',
   tellMeAdded: (n: number) => `Im Profil abgelegt ✓ (${n} neu)`,
   reimportTitle: 'Neu aus dem Lebenslauf importieren',

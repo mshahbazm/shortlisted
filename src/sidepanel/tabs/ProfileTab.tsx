@@ -15,7 +15,7 @@ import {
 } from '../../lib/types'
 import { cloudParseResumePdf, cloudProfileNote, runExtractProfile } from '../../ai/run'
 import * as store from '../../lib/store'
-import { applyIntakeFacts, countIntakeFacts } from '../../lib/profileMerge'
+import { mergeIntakeFacts, needsCompletion } from '../../lib/profileMerge'
 import { showToast } from '../toast'
 
 export function ProfileTab({ focusTellMe = false }: { focusTellMe?: boolean }) {
@@ -201,14 +201,31 @@ export function ProfileTab({ focusTellMe = false }: { focusTellMe?: boolean }) {
             setNoteMsg('')
             void cloudProfileNote(settings, note.trim())
               .then(async (facts) => {
-                const n = countIntakeFacts(facts)
-                if (n === 0) {
-                  setNoteMsg(t.tellMeNothing)
+                // Report what the merge actually stored, never what the model
+                // proposed: a highlight for a job that isn't on file has
+                // nowhere to go, and claiming it saved is how a fact appears
+                // to vanish.
+                let applied = 0
+                let unplaced = 0
+                let incomplete: string[] = []
+                await store.update('profile', (cur) => {
+                  const r = mergeIntakeFacts(cur, facts)
+                  applied = r.applied
+                  unplaced = r.unplacedHighlights
+                  incomplete = r.incompleteWork
+                  return r.profile
+                })
+                if (applied === 0) {
+                  setNoteMsg(unplaced > 0 ? t.tellMeNoSuchJob : t.tellMeNothing)
                   return
                 }
-                await store.update('profile', (cur) => applyIntakeFacts(cur, facts))
                 setNote('')
-                setNoteMsg(t.tellMeAdded(n))
+                // A job created from a sentence usually lacks a title or dates.
+                // Say so here rather than letting it look finished.
+                const parts = [t.tellMeAdded(applied)]
+                if (incomplete.length) parts.push(t.tellMeFinishJob(incomplete.join(', ')))
+                else if (unplaced > 0) parts.push(t.tellMeNoSuchJob)
+                setNoteMsg(parts.join(' '))
                 showToast(t.savedToast)
               })
               .catch((e) => setNoteMsg(e instanceof Error ? e.message : String(e)))
@@ -254,7 +271,11 @@ function parseLanguages(text: string): LanguageEntry[] {
 
 function WorkRow({ entry, onChange, onRemove }: { entry: WorkEntry; onChange: (w: WorkEntry) => void; onRemove: () => void }) {
   const t = useContent('profile')
-  const [open, setOpen] = useState(!entry.company && !entry.title)
+  // A job added from a sentence opens straight away: it is missing a title or
+  // dates, and the point is that the user finishes it rather than discovers
+  // later that a tailored CV had a gap in it.
+  const incomplete = needsCompletion(entry)
+  const [open, setOpen] = useState((!entry.company && !entry.title) || incomplete)
   if (!open) {
     return (
       <div className="kv" onClick={() => setOpen(true)}>
@@ -274,6 +295,7 @@ function WorkRow({ entry, onChange, onRemove }: { entry: WorkEntry; onChange: (w
   }
   return (
     <div style={{ padding: '6px 0 12px' }}>
+      {incomplete && <p className="microhint">{t.workNeedsDetail}</p>}
       <div className="row">
         <label className="f"><span>{t.roleTitle}</span>
           <input type="text" value={entry.title} onChange={(e) => onChange({ ...entry, title: e.target.value })} /></label>

@@ -78,6 +78,12 @@ export const profile: tLocale['profile'] = {
   tellMeSummary: 'una habilidad nueva, un certificado, algo que olvidaste',
   tellMePlaceholder: 'Cualquier cosa sobre ti — una habilidad que acabas de aprender, un certificado que obtuviste, un idioma que hablas o algo de un trabajo antiguo que nunca anotaste. Con palabras sencillas.',
   tellMeButton: 'Añadir al perfil',
+  tellMeFinishJob: (company: string) =>
+    `Añade el puesto y las fechas de ${company} para que un CV adaptado no muestre un hueco.`,
+  workNeedsDetail:
+    'Faltan el puesto y la fecha de inicio: un CV adaptado lo interpreta como un vacío.',
+  tellMeNoSuchJob:
+    'No pude vincular eso a un empleo: añade primero el empleo en Experiencia y luego cuéntamelo.',
   tellMeNothing: 'No hay nada nuevo — tu perfil ya lo cubre.',
   tellMeAdded: (n: number) => `Guardado en tu perfil ✓ (${n} nuevo/s)`,
   reimportTitle: 'Reimportar desde el CV',

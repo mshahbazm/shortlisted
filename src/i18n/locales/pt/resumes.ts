@@ -20,6 +20,7 @@ export const resumes: tLocale['resumes'] = {
   tailorNoteHint: 'Opcional. Os factos novos que indicares aqui também ficam guardados no teu perfil.',
   addTitle: 'Adicionar um CV',
   addSummary: 'carrega um PDF, ou gera a partir do perfil',
+  uploading: 'A carregar…',
   uploadPdf: 'Carregar PDF',
   generateFromProfile: 'Gerar do perfil',
   masterCvLabel: 'CV principal',

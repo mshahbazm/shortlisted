@@ -60,17 +60,29 @@ export function ResumesTab() {
   const makeDefault = (id: string) =>
     void store.update('resumes', (list) => list.map((x) => ({ ...x, isDefault: x.id === id })))
 
+  // Same shape as generateMaster and runTailor: busy state up front, errors
+  // surfaced, busy cleared in finally. This one used to do none of it, so a
+  // big PDF looked frozen and a failed write showed nothing at all — the
+  // caller is `void onUpload(f)`, so a rejection here vanished silently.
   const onUpload = async (file: File) => {
-    const id = uid()
-    const dataBase64 = bytesToBase64(await file.arrayBuffer())
-    await addResume((list) => ({
-      id, label: file.name.replace(/\.pdf$/i, ''), fileName: file.name, tags: [],
-      isDefault: list.length === 0, createdAt: Date.now(), source: 'uploaded', dataBase64,
-    }))
-    showToast(t.cvReady)
-    // Background: tag the CV for the roles it targets, fold new facts into
-    // the profile (additive only).
-    void sendMsg({ type: 'intakeResume', resumeId: id })
+    setErr('')
+    setBusyStep(t.uploading)
+    try {
+      const id = uid()
+      const dataBase64 = bytesToBase64(await file.arrayBuffer())
+      await addResume((list) => ({
+        id, label: file.name.replace(/\.pdf$/i, ''), fileName: file.name, tags: [],
+        isDefault: list.length === 0, createdAt: Date.now(), source: 'uploaded', dataBase64,
+      }))
+      showToast(t.cvReady)
+      // Background: tag the CV for the roles it targets, fold new facts into
+      // the profile (additive only).
+      void sendMsg({ type: 'intakeResume', resumeId: id })
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusyStep('')
+    }
   }
 
   const generateMaster = async (templateId: string) => {

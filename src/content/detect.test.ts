@@ -294,6 +294,124 @@ describe('stays quiet on everything else', () => {
     expect(d.confident).toBe(false)
   })
 
+  // The employer's side of a job board. Everything we score for is present —
+  // careers host, jobs path, job-description headings, name and email — so
+  // these have to be recognised rather than out-scored.
+  test('employer "post a job" form', () => {
+    const d = page(
+      `<h1>Post a job</h1><h2>About the role</h2><h2>Job description</h2>
+       <form>
+         <label for="co">Company name</label><input id="co">
+         <label for="n">Your name</label><input id="n">
+         <label for="e">Work email</label><input id="e" type="email">
+         <label for="jt">Job title</label><input id="jt">
+         <label for="jd">Job description</label><textarea id="jd"></textarea>
+         <label for="sal">Salary range</label><input id="sal">
+         <button type="submit">Post job</button>
+       </form>`,
+      { url: 'https://jobs.example.com/post-a-job', title: 'Post a job' },
+    )
+    expect(d.confident).toBe(false)
+    expect(d.veto).toBe('job-posting-form')
+  })
+
+  test('employer vacancy form with a generic submit button', () => {
+    const d = page(
+      `<h1>Post a job</h1><h2>Job description</h2><h2>Requirements</h2><h2>What we offer</h2>
+       <form>
+         <label for="co">Company</label><input id="co">
+         <label for="fn">First name</label><input id="fn" autocomplete="given-name">
+         <label for="ln">Last name</label><input id="ln" autocomplete="family-name">
+         <label for="e">Email</label><input id="e" type="email">
+         <label for="jd">Description</label><textarea id="jd"></textarea>
+         <button type="submit">Submit</button>
+       </form>`,
+      { url: 'https://careers.example.com/employers/new-vacancy', title: 'Post a vacancy' },
+    )
+    expect(d.confident).toBe(false)
+  })
+
+  // Guards the veto above from over-reaching. A company careers page almost
+  // always titles its ad section "Job description" and puts the form directly
+  // underneath, so that heading must never be read as employer intent.
+  test('real application under a "Job description" heading still fires', () => {
+    const d = page(
+      `<h1>Senior Engineer</h1>
+       <h2>Job description</h2><p>We are looking for…</p>
+       <h2>Requirements</h2><p>5 years…</p>
+       <div>
+         <div>First name</div><input name="first_name">
+         <div>Last name</div><input name="last_name">
+         <div>Email</div><input type="email" name="email">
+         <div>Upload your CV</div><input type="file" name="resume">
+         <button type="submit">Apply now</button>
+       </div>`,
+      { url: 'https://acme.com/careers/senior-engineer', title: 'Senior Engineer' },
+    )
+    expect(d.confident).toBe(true)
+  })
+
+  // The posting veto keys on the ACT of posting, never on a job title. An
+  // earlier version matched a bare 'recruiter' path segment, which silently
+  // killed every application for a recruiter role — a common job, and a
+  // failure with no symptom beyond the panel not appearing.
+  test('applying for a recruiter role is not a posting page', () => {
+    for (const url of [
+      'https://acme.com/careers/recruiter',
+      'https://acme.com/jobs/recruiters',
+      'https://acme.com/careers/hire',
+      'https://acme.com/jobs/technical-recruiter/apply',
+    ]) {
+      const d = page(
+        `<h1>Apply</h1><form>
+           <label for="fn">First name</label><input id="fn" autocomplete="given-name">
+           <label for="ln">Last name</label><input id="ln" autocomplete="family-name">
+           <label for="e">Email</label><input id="e" type="email">
+           <label for="cv">Upload your CV</label><input id="cv" type="file">
+           <button type="submit">Submit application</button>
+         </form>`,
+        { url, title: 'Apply' },
+      )
+      expect({ url, fires: d.confident }).toEqual({ url, fires: true })
+    }
+  })
+
+  test('employer-side paths still veto', () => {
+    for (const url of [
+      'https://board.com/post-a-job',
+      'https://board.com/for-employers/signup',
+      'https://board.com/employers/new',
+    ]) {
+      const d = page(
+        `<h1>Create listing</h1><form>
+           <label for="co">Company</label><input id="co">
+           <label for="fn">First name</label><input id="fn" autocomplete="given-name">
+           <label for="ln">Last name</label><input id="ln" autocomplete="family-name">
+           <label for="e">Email</label><input id="e" type="email">
+           <button type="submit">Submit</button>
+         </form>`,
+        { url, title: 'Create listing' },
+      )
+      expect({ url, veto: d.veto }).toEqual({ url, veto: 'job-posting-form' })
+    }
+  })
+
+  test('volunteer sign-up is not an application', () => {
+    const d = page(
+      `<h1>Volunteer with us</h1>
+       <form>
+         <label for="fn">First name</label><input id="fn" autocomplete="given-name">
+         <label for="ln">Last name</label><input id="ln" autocomplete="family-name">
+         <label for="e">Email</label><input id="e" type="email">
+         <label for="p">Phone</label><input id="p" type="tel">
+         <label for="w">Why do you want to volunteer?</label><textarea id="w"></textarea>
+         <button type="submit">Apply to volunteer</button>
+       </form>`,
+      { url: 'https://charity.example.org/get-involved/volunteer', title: 'Volunteer' },
+    )
+    expect(d.confident).toBe(false)
+  })
+
   // The shape most likely to fool us now that we run on every page: a form
   // with the full first/last/email/phone cluster that has nothing to do with
   // hiring. The cluster alone must never be enough.

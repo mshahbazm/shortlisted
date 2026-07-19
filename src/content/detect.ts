@@ -224,6 +224,43 @@ const EMAIL_RX = rx(EMAIL_WORDS)
 const PHONE_RX = rx(PHONE_WORDS)
 const PAYMENT_RX = rx(PAYMENT_WORDS)
 
+// The employer's side of a job board. These pages are the hardest negative we
+// have, because almost everything we score for is present: they sit on a
+// careers host, under a jobs path, they carry job-description headings, and
+// they ask for a name and email. The difference is who is being described —
+// an application asks about YOU, a posting asks about the ROLE — so the only
+// safe reading of "post a job" is to stop.
+const POSTING_WORDS = [
+  'post a job', 'post job', 'post a vacancy', 'post a role', 'advertise a job',
+  'advertise a role', 'for employers', 'hire talent', 'start hiring', 'hire developers',
+  'stelle ausschreiben', 'job schalten', 'stellenanzeige aufgeben', 'fur arbeitgeber',
+  'publier une offre', 'deposer une offre', 'espace recruteur', 'pour les recruteurs',
+  'publicar una oferta', 'publicar empleo', 'para empresas', 'area de empresas',
+  'publicar vaga', 'publicar uma vaga', 'anunciar vaga',
+  'vacature plaatsen', 'voor werkgevers', 'vacature aanmaken',
+  'pubblica un annuncio', 'pubblica offerta', 'per le aziende',
+  'dodaj ogloszenie', 'opublikuj oferte', 'dla pracodawcow',
+]
+const POSTING_RX = rx(POSTING_WORDS)
+
+// URL segments that only appear on the hiring side. Every entry has to name
+// the ACT of posting, never a job title or a bare noun: 'recruiter' and 'hire'
+// were removed after /careers/recruiter — applying for a recruiter role, one
+// of the commonest titles there is — was vetoed as if the user were an
+// employer. 'employer' alone is avoided too, since some boards serve real
+// application pages under /employers/<name>/jobs/<id>.
+const POSTING_PATH_RX =
+  /(^|\/)(post-a-job|post-job|postjob|post-a-vacancy|post-vacancy|advertise-a-job|advertise|new-vacancy|for-employers|for-recruiters|hire-talent|employer-signup|employers\/new|jobs\/new)(\/|$)/i
+
+// Asking someone to WRITE a job description is definitive: an application has
+// never once asked the candidate to supply the description of the role.
+const POSTING_FIELD_WORDS = [
+  'job description', 'describe the role', 'role description', 'stellenbeschreibung',
+  'description du poste', 'descripcion del puesto', 'descricao da vaga',
+  'functieomschrijving', 'descrizione del ruolo', 'opis stanowiska',
+]
+const POSTING_FIELD_RX = rx(POSTING_FIELD_WORDS)
+
 /** Cheap visibility test — display:none subtrees have no layout boxes. */
 function visible(el: Element): boolean {
   return (el as HTMLElement).getClientRects().length > 0
@@ -273,6 +310,23 @@ export function detectJobForm(doc: Document = document, href: string = location.
     return { score: 0, confident: false, signals, veto: 'payment-field' }
   }
 
+  const url = safeUrl(href)
+  const headings = [...doc.querySelectorAll('h1, h2, h3, h4, legend, [role="heading"]')]
+    .slice(0, 120)
+    .map((el) => norm(el.textContent ?? ''))
+    .filter((t) => t.length > 0 && t.length < 200)
+  const titleText = norm(doc.title ?? '')
+
+  // The employer's side of a job board, vetoed before scoring: these pages
+  // carry almost every signal an application does, so they have to be
+  // recognised for what they are rather than out-scored.
+  const postingIntent =
+    POSTING_RX.test(titleText) ||
+    headings.some((h) => POSTING_RX.test(h)) ||
+    (!!url && POSTING_PATH_RX.test(url.pathname)) ||
+    labels.some((l) => POSTING_FIELD_RX.test(l))
+  if (postingIntent) return { score: 0, confident: false, signals, veto: 'job-posting-form' }
+
   // --- Structural signals -------------------------------------------------
   let structural = 0
 
@@ -286,7 +340,6 @@ export function detectJobForm(doc: Document = document, href: string = location.
     structural++
   }
 
-  const url = safeUrl(href)
   const atsHost = !!url && ATS_HOST_RX.test(url.hostname)
   const atsFrame = [...doc.querySelectorAll('iframe[src]')].some((f) => {
     const src = safeUrl(f.getAttribute('src') ?? '')
@@ -341,12 +394,6 @@ export function detectJobForm(doc: Document = document, href: string = location.
 
   if (buttons.some((b) => APPLY_STRONG_RX.test(b))) add('apply-button', 3)
   else if (buttons.some((b) => SUBMIT_GENERIC_RX.test(b))) add('submit-button', 1)
-
-  const headings = [...doc.querySelectorAll('h1, h2, h3, h4, legend, [role="heading"]')]
-    .slice(0, 120)
-    .map((el) => norm(el.textContent ?? ''))
-    .filter((t) => t.length > 0 && t.length < 200)
-  const titleText = norm(doc.title ?? '')
 
   if (headings.some((h) => APPLY_HEADING_RX.test(h)) || APPLY_HEADING_RX.test(titleText)) {
     add('application-heading', 2)

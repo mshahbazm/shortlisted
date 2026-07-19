@@ -11,6 +11,7 @@ import { detectJobForm } from './detect'
 import { attachResume, fieldContext, fillForm, watchSubmit, applyValue, FillResult } from './engine'
 import { base64ToBytes, bytesToBase64 } from '../lib/types'
 import { TEMPLATES } from '../pdf/templates'
+import { comboboxValue, watchCombobox } from './combobox'
 import { FormField, labelFor, optionsOf } from './fields'
 import { Overlay } from './overlay'
 import type { AssistField, AssistResultItem, CorrectionItem, VerifyField } from '../ai/capabilities/fill-assist'
@@ -60,17 +61,22 @@ function main() {
     return detectJobForm().confident
   }
 
-  // Field count at the last scoring pass. Re-scoring is only worth it when
-  // the DOM gained or lost fields — this script now runs on every page in the
-  // browser, and most mutations are animations and ads, not forms appearing.
-  let scoredFieldCount = -1
-  const fieldCount = () => document.querySelectorAll('input,textarea,select').length
+  // What we scored last time. Re-scoring is only worth it when the DOM gained
+  // or lost fields — this script runs on every page in the browser, and most
+  // mutations are animations and ads, not forms appearing.
+  //
+  // The URL is part of the key because the count alone is not enough: a job
+  // board that swaps a listing view for an application view without a reload
+  // can land on the same number of fields, and keying on the count alone would
+  // skip the only scoring pass that mattered.
+  let scoredKey = ''
+  const currentKey = () => `${location.href}|${document.querySelectorAll('input,textarea,select').length}`
 
   const start = () => {
     if (document.getElementById('shortlisted-overlay-host')) return
-    const n = fieldCount()
-    if (n === scoredFieldCount) return
-    scoredFieldCount = n
+    const key = currentKey()
+    if (key === scoredKey) return
+    scoredKey = key
     void shouldMount().then((yes) => {
       if (yes) void ensureBooted()
     })
@@ -132,7 +138,11 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
   const lastSaved = new WeakMap<FormField, string>()
 
   const answerType = (field: FormField) =>
-    field.kind === 'select' ? ('select' as const) : field.kind === 'radio' ? ('boolean' as const) : ('text' as const)
+    field.kind === 'select' || field.kind === 'combobox'
+      ? ('select' as const)
+      : field.kind === 'radio'
+        ? ('boolean' as const)
+        : ('text' as const)
 
   const saveAnswer = (field: FormField, answer: string) => {
     lastSaved.set(field, answer)
@@ -147,6 +157,9 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
   }
 
   const readFieldValue = (field: FormField): string => {
+    // A custom dropdown keeps its answer in component state, not in .value —
+    // reading the element directly always returns "".
+    if (field.kind === 'combobox') return comboboxValue(field.el)
     if (field.radioGroup) {
       const checked = field.radioGroup.find((r) => r.checked)
       return checked ? labelFor(checked) || checked.value : ''
@@ -173,6 +186,13 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
         saveAnswer(field, value)
         overlay.markAnsweredFromForm(field, value)
       }
+      // Custom dropdowns emit no change/blur we can trust, so watch what they
+      // render instead. Without this, picking an option in the form left the
+      // panel still showing the question as unanswered.
+      if (field.kind === 'combobox') {
+        watchCombobox(field.el, capture)
+        continue
+      }
       for (const el of field.radioGroup ?? [field.el]) {
         el.addEventListener('change', capture)
         el.addEventListener('blur', capture)
@@ -186,7 +206,7 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
   const doFill = async () => {
     overlay.setBusy()
     state = await sendMsg<FillState>({ type: 'getFillState' })
-    lastResult = fillForm(adapter, state)
+    lastResult = await fillForm(adapter, state)
     await afterFill()
   }
 
@@ -230,7 +250,7 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
 
     onAnswer: (field: FormField, answer: string) => {
       saveAnswer(field, answer)
-      applyValue(field, answer)
+      void applyValue(field, answer)
     },
 
     onUploadResume: async (file: File) => {
@@ -408,7 +428,7 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
       const field = unknown[r.id]
       if (!field) continue
       lastSaved.set(field, r.value) // keep the form listeners from banking AI output
-      if (applyValue(field, r.value)) {
+      if (await applyValue(field, r.value)) {
         touched++
         overlay.markAiFilled(field, r.value)
         if (r.fromSavedQuestion) {
@@ -420,7 +440,7 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
       const field = uncertain[cor.id]?.field
       if (!field) continue
       lastSaved.set(field, cor.value)
-      if (applyValue(field, cor.value)) touched++
+      if (await applyValue(field, cor.value)) touched++
     }
     overlay.aiNote(touched > 0 ? t.aiFilledNote(touched) : '')
   }

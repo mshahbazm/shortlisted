@@ -1,11 +1,18 @@
 // Field discovery + native value setting. Framework-agnostic: works on plain
 // forms and React/Vue-controlled inputs (Greenhouse, Ashby, Workable are SPAs).
 
+import { comboboxContainer, comboboxLabel, comboboxOptionsSync, isCombobox } from './combobox'
+
 export type Fillable = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
 
 export interface FormField {
   el: Fillable
-  kind: 'text' | 'email' | 'tel' | 'url' | 'number' | 'textarea' | 'select' | 'file' | 'checkbox' | 'radio' | 'date'
+  kind:
+    | 'text' | 'email' | 'tel' | 'url' | 'number' | 'textarea' | 'select'
+    | 'file' | 'checkbox' | 'radio' | 'date'
+    // A dropdown built out of divs — react-select, MUI, Vuetify and the rest.
+    // Behaves like 'select' to the user and to us; see content/combobox.ts.
+    | 'combobox'
   label: string
   required: boolean
   radioGroup?: HTMLInputElement[] // all radios sharing this name
@@ -25,8 +32,17 @@ const SKIP_TYPES = new Set(['hidden', 'submit', 'button', 'reset', 'image', 'pas
 // themselves. Holding someone's passport number is not worth saving them a
 // keystroke.
 const SENSITIVE_AUTOCOMPLETE = /^(cc-|new-password|current-password|one-time-code)/
+// Anchored at BOTH ends. Label text arrives as concatenated DOM nodes, so a
+// short token matching mid-word is not hypothetical: Lever's resume input
+// reads "Resume/CV" + "Couldn't auto-read resume", which runs together as
+// "CVCouldn't" and matched a trailing-unanchored /cvc/. That silently dropped
+// the CV field and the attach step did nothing.
+// Every entry must be a term that is ONLY ever a secret. Bare "pin" and "nino"
+// were dropped for being ordinary words first ("pin your top achievement", and
+// a given name) — a real PIN field is type=password anyway, and NI numbers are
+// already covered by the spelled-out phrase.
 const SENSITIVE_LABEL =
-  /\b(password|passcode|pin\b|cvv|cvc|card\s*number|credit\s*card|debit\s*card|security\s*code|iban|sort\s*code|routing\s*number|account\s*number|social\s*security|\bssn\b|passport\s*number|national\s*insurance|\bnino\b|tax\s*id|verification\s*code|one[\s-]?time)/i
+  /\b(?:password|passcode|cvv|cvc|iban|ssn|pin\s*(?:code|number)|card\s*number|credit\s*card|debit\s*card|security\s*code|sort\s*code|routing\s*number|account\s*number|social\s*security|passport\s*number|national\s*insurance|tax\s*id|verification\s*code|one[\s-]?time\s*code)\b/i
 
 /**
  * True for anything that looks like a credential, a payment detail or a
@@ -37,6 +53,10 @@ export function isSensitiveField(el: Fillable): boolean {
   const autocomplete = (el.getAttribute('autocomplete') ?? '').toLowerCase()
   if (SENSITIVE_AUTOCOMPLETE.test(autocomplete)) return true
   if ((el as HTMLInputElement).type === 'password') return true
+  // A file input is never a password, card or ID field — those are typed, not
+  // uploaded. Exempting it keeps the CV attach, the single most valuable thing
+  // we do, out of reach of a label-text false positive entirely.
+  if ((el as HTMLInputElement).type === 'file') return false
   return SENSITIVE_LABEL.test(`${el.name} ${el.id} ${labelFor(el)}`)
 }
 
@@ -104,6 +124,12 @@ const PLACEHOLDER_OPTION = /^(select|choose|please select|pick one|--)/i
 
 /** The real answer choices of a select/radio field; undefined for free-text fields. */
 export function optionsOf(f: FormField): string[] | undefined {
+  // A custom dropdown can only list its options by opening the popup and
+  // waiting a frame for the component to render it, which this synchronous
+  // call cannot do. Answer only when a backing <select> makes it free;
+  // otherwise the panel falls through to "pick it on the page", and the form
+  // watcher records whatever the user chooses.
+  if (f.kind === 'combobox') return comboboxOptionsSync(f.el)
   if (f.el instanceof HTMLSelectElement) {
     return Array.from(f.el.options)
       .filter((o) => o.value !== '' && !PLACEHOLDER_OPTION.test(o.textContent?.trim() ?? ''))
@@ -121,12 +147,38 @@ export function collectFields(root: ParentNode): FormField[] {
   const els = Array.from(root.querySelectorAll<Fillable>('input, textarea, select'))
   const fields: FormField[] = []
   const seenRadioNames = new Set<string>()
+  // One custom dropdown renders several controls — react-select pairs a
+  // visible combobox input with a hidden <select>, and Select2 keeps the
+  // original <select> alongside its own. Collecting each of them turns one
+  // question into two or three identical rows in the panel, which is what the
+  // duplicated "Pronouns" entries were.
+  const claimed = new Set<Element>()
 
   for (const el of els) {
     if (!(el instanceof HTMLElement)) continue
     if (el instanceof HTMLInputElement && SKIP_TYPES.has(el.type)) continue
     if (isSensitiveField(el)) continue
     if (el.disabled) continue
+    if (claimed.has(el)) continue
+
+    if (isCombobox(el)) {
+      const box = comboboxContainer(el)
+      if (claimed.has(box)) continue
+      claimed.add(box)
+      // Everything else inside this widget belongs to it, not to the form.
+      for (const inner of box.querySelectorAll('input, textarea, select')) claimed.add(inner)
+      fields.push({
+        el,
+        kind: 'combobox',
+        label: comboboxLabel(el) || labelFor(el),
+        required: el.getAttribute('aria-required') === 'true' || el.required || /\*\s*$/.test(labelFor(el)),
+      })
+      continue
+    }
+
+    // Readonly is normally a display-only field, but it comes AFTER the
+    // combobox check: Vuetify and Element Plus make their dropdown input
+    // readonly on purpose.
     if ((el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) && el.readOnly) continue
     const style = el.ownerDocument.defaultView?.getComputedStyle(el)
     const hidden = style && (style.display === 'none' || style.visibility === 'hidden')

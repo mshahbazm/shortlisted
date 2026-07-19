@@ -71,6 +71,44 @@ describe('sensitive fields never enter the field list', () => {
     expect(found).toEqual(['Email'])
   })
 
+  // Regression: Lever renders the CV input with its status messages inside the
+  // same label region, so the text arrives as "Resume/CV" + "Couldn't auto-read
+  // resume" concatenated into "...RESUME/CVCouldn't...". A /cvc/ pattern that
+  // was not anchored at its end matched that, the field was dropped as a credit
+  // card, and the CV silently stopped attaching on every Lever application.
+  test('Lever resume input survives (real label text)', () => {
+    const doc2 = new Window({ url: 'https://jobs.lever.co/acme/123/apply' }).document as unknown as Document
+    doc2.body.innerHTML = `
+      <label for="resume-upload-input">Resume/CV</label>
+      <input id="resume-upload-input" name="resume" type="file"
+             class="application-file-input invisible-resume-upload">
+      <span>ATTACH RESUME/CV</span><span>Couldn't auto-read resume.</span>
+    `
+    const el = doc2.getElementById('resume-upload-input') as HTMLInputElement
+    expect(isSensitiveField(el)).toBe(false)
+  })
+
+  test('a file input is never treated as a secret', () => {
+    doc.body.innerHTML = `
+      <label for="f">Upload proof of your passport number</label>
+      <input id="f" type="file">
+    `
+    expect(isSensitiveField(doc.getElementById('f') as HTMLInputElement)).toBe(false)
+  })
+
+  // Short tokens must not match inside a longer run of text — the failure mode
+  // above, generalised.
+  test('short tokens do not match mid-word', () => {
+    doc.body.innerHTML = `
+      <label for="a">RESUME/CVCouldn't auto-read</label><input id="a">
+      <label for="b">Which iBank branch</label><input id="b">
+      <label for="c">Pinterest profile</label><input id="c">
+      <label for="d">Sponsorship needed</label><input id="d">
+    `
+    const el = (id: string) => doc.getElementById(id) as HTMLInputElement
+    for (const id of ['a', 'b', 'c', 'd']) expect(isSensitiveField(el(id))).toBe(false)
+  })
+
   test('a real application form is left intact', () => {
     const found = labels(`
       <label for="fn">First name</label><input id="fn">

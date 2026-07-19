@@ -78,6 +78,12 @@ export const profile = {
   tellMeSummary: 'a new skill, a certificate, anything you missed',
   tellMePlaceholder: 'Anything about you — a skill you just learned, a certificate you earned, a language you speak, or something from an old job you never wrote down. Plain words.',
   tellMeButton: 'Add to profile',
+  tellMeFinishJob: (company: string) =>
+    `Add the title and dates for ${company} so a tailored CV doesn't show a gap.`,
+  workNeedsDetail:
+    'Needs a job title and start date — a tailored CV reads this as a gap.',
+  tellMeNoSuchJob:
+    'I couldn\'t attach that to a job — add the job under Work first, then tell me about it.',
   tellMeNothing: 'Nothing new found in that — your profile already covers it.',
   tellMeAdded: (n: number) => `Filed into your profile ✓ (${n} new)`,
   reimportTitle: 'Re-import from CV',
