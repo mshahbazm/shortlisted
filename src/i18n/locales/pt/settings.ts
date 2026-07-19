@@ -35,4 +35,12 @@ export const settings: tLocale['settings'] = {
   importJson: 'Importar JSON',
   imported: 'Importado.',
   importFailed: (msg: string) => `Falha na importação: ${msg}`,
+
+  detectTitle: 'Deteção de vagas',
+  detectOn: 'todos os sites',
+  detectOff: 'apenas portais conhecidos',
+  detectHint:
+    'Por predefinição o painel só aparece nos portais de emprego que conhecemos. Ative isto e o Shortlisted também procura formulários de candidatura noutros sites, aparecendo quando tem a certeza. As páginas são analisadas no seu computador — nada é enviado.',
+  detectToggle: 'Procurar formulários de candidatura em todos os sites',
+  detectDeclined: 'Não ativado — o Chrome precisa de acesso a todos os sites.',
 }

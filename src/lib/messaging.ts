@@ -28,11 +28,15 @@ export type Msg =
   | { type: 'resolvePending'; questionRaw: string }
   | { type: 'recordApplication'; record: Omit<ApplicationRecord, 'id' | 'appliedAt' | 'status'> }
   | { type: 'openSidePanel' }
+  | { type: 'openProfileNote' }
   | { type: 'fillCurrentTab' }
   | { type: 'scoreFitPage'; jobText: string; jobUrl: string }
   | { type: 'cloudPull' }
   | { type: 'fillAssist'; fields: AssistField[]; verify: VerifyField[] }
   | { type: 'addPhrasing'; savedQuestion: string; phrasing: string }
+  // Background -> content script: mount the overlay and fill, whatever the
+  // detector thought of this page. Sent after "Fill current tab".
+  | { type: 'triggerFill' }
 
 export function sendMsg<T = unknown>(msg: Msg): Promise<T> {
   return chrome.runtime.sendMessage(msg)

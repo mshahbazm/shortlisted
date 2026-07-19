@@ -18,6 +18,8 @@ export interface OverlayCallbacks {
   onFillMenu: () => void
   onPickCv: (resumeId: string) => void
   onTailor: (templateId: string, note: string) => void
+  /** "Update profile" on the fit report → side panel, Profile tab, note box. */
+  onUpdateProfile: () => void
 }
 
 export interface QuickFitDisplay {
@@ -366,6 +368,16 @@ export class Overlay {
       this.fitList(this.t.leadWithHeader, fit.strengths, '✓', '#16a34a'),
       this.fitList(this.t.gapsHeader, fit.gaps, '–', '#b45309'),
     )
+    // The report often names things the user HAS but never told us — give
+    // them the one-click road to say so.
+    const hint = document.createElement('div')
+    hint.className = 'note'
+    hint.textContent = this.t.updateProfileHint
+    const upd = document.createElement('button')
+    upd.className = 'scoreBtn'
+    upd.textContent = this.t.updateProfile
+    upd.onclick = () => this.cb.onUpdateProfile()
+    box.append(hint, upd)
     this.body.append(box)
   }
 

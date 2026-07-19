@@ -5,6 +5,7 @@ import { FillState, Msg, sendMsg } from '../lib/messaging'
 import * as store from '../lib/store'
 import { getContent, type tOverlayContent } from './i18n-bridge'
 import { GENERIC_ADAPTER, detectAdapter } from './adapters'
+import { detectJobForm } from './detect'
 import { attachResume, fieldContext, fillForm, watchSubmit, applyValue, FillResult } from './engine'
 import { bytesToBase64 } from '../lib/types'
 import { TEMPLATES } from '../pdf/templates'
@@ -24,35 +25,80 @@ if (!window.__shortlistedLoaded) {
 }
 
 function main() {
-  const adapter = detectAdapter(location.href) ?? GENERIC_ADAPTER
+  const known = detectAdapter(location.href)
+  const adapter = known ?? GENERIC_ADAPTER
 
   // In iframes (Greenhouse embeds), only run when a form actually exists.
   const inIframe = window !== window.top
   const hasForm = () => !!document.querySelector('form input, form textarea')
 
+  let handle: BootHandle | null = null
+
+  const ensureBooted = async (): Promise<BootHandle | null> => {
+    if (handle) return handle
+    if (document.getElementById('shortlisted-overlay-host')) return null
+    const s = await store.get('settings')
+    // Re-check after the await — two mutation batches can race here.
+    if (handle) return handle
+    if (document.getElementById('shortlisted-overlay-host')) return null
+    handle = boot(adapter, getContent(s.locale), s.locale)
+    return handle
+  }
+
+  // Mount by ourselves only where we're sure: a known ATS, or a page the
+  // detector is confident about. Everywhere else stays untouched until the
+  // user asks for us via "Fill current tab".
+  const shouldMount = (): boolean => {
+    if (inIframe && !hasForm()) return false
+    if (known) return true
+    return detectJobForm().confident
+  }
+
   const start = () => {
-    if (inIframe && !hasForm()) return
     if (document.getElementById('shortlisted-overlay-host')) return
-    void store.get('settings').then((s) => {
-      if (document.getElementById('shortlisted-overlay-host')) return
-      boot(adapter.id === 'generic' ? GENERIC_ADAPTER : adapter, getContent(s.locale), s.locale)
-    })
+    if (shouldMount()) void ensureBooted()
   }
 
   if (document.readyState === 'complete' || document.readyState === 'interactive') start()
   else document.addEventListener('DOMContentLoaded', start)
 
-  // SPA sites render the form late; watch for it.
-  if (adapter.observe || adapter.id === 'generic') {
+  // The side panel's "Fill current tab": mount even where the detector said
+  // no, then fill straight away. Frames with no form stay silent so the frame
+  // that DOES have one wins the response race (Greenhouse-style embeds).
+  chrome.runtime.onMessage.addListener((msg: Msg, _sender, sendResponse) => {
+    if (msg.type !== 'triggerFill') return
+    if (inIframe && !hasForm()) return
+    void (async () => {
+      const h = await ensureBooted()
+      h?.fill()
+      sendResponse({ handled: true })
+    })()
+    return true // async sendResponse
+  })
+
+  // SPA sites render the form late; re-check as the page settles. Scoring
+  // walks every field label, so it runs debounced, not per mutation.
+  if (adapter.observe || !known) {
+    let timer: ReturnType<typeof setTimeout> | undefined
     const mo = new MutationObserver(() => {
-      if (!document.getElementById('shortlisted-overlay-host') && hasForm()) start()
+      if (document.getElementById('shortlisted-overlay-host')) return
+      clearTimeout(timer)
+      timer = setTimeout(start, 400)
     })
     mo.observe(document.documentElement, { childList: true, subtree: true })
-    setTimeout(() => mo.disconnect(), 60_000)
+    setTimeout(() => {
+      mo.disconnect()
+      clearTimeout(timer)
+    }, 60_000)
   }
 }
 
-function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent, uiLocale?: string) {
+/** What main() keeps hold of after boot, so a later message can drive the UI. */
+interface BootHandle {
+  fill: () => void
+}
+
+function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent, uiLocale?: string): BootHandle {
   let state: FillState | null = null
   let lastResult: FillResult | null = null
   let attachedLabel: string | null = null
@@ -241,6 +287,10 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
       }
     },
 
+    onUpdateProfile: () => {
+      void sendMsg({ type: 'openProfileNote' })
+    },
+
     onScoreFit: async () => {
       overlay.renderFitLoading()
       const res = await sendMsg<
@@ -365,6 +415,8 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
       },
     })
   })
+
+  return { fill: () => void doFill() }
 }
 
 /** Best-effort page language: the declared <html lang>, else Chrome's local detector. */

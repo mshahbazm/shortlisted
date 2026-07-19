@@ -299,6 +299,14 @@ function FitChecker({
               {t.gapsHint(result.fit.gaps.join(', '))}
             </p>
           )}
+          <p className="microhint" style={{ marginTop: 8 }}>{t.updateProfileHint}</p>
+          <button
+            className="ghost small"
+            style={{ marginTop: 6 }}
+            onClick={() => void store.set('pendingNav', 'tellme')}
+          >
+            {t.updateProfile}
+          </button>
         </div>
       )}
     </>

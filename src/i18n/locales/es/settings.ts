@@ -35,4 +35,12 @@ export const settings: tLocale['settings'] = {
   importJson: 'Importar JSON',
   imported: 'Importado.',
   importFailed: (msg: string) => `Error al importar: ${msg}`,
+
+  detectTitle: 'Detección de ofertas',
+  detectOn: 'todos los sitios',
+  detectOff: 'solo portales conocidos',
+  detectHint:
+    'Por defecto el panel solo aparece en los portales de empleo que conocemos. Si activas esto, Shortlisted también busca formularios de solicitud en otros sitios y aparece cuando está seguro. Las páginas se analizan en tu ordenador: no se envía nada a ninguna parte.',
+  detectToggle: 'Buscar formularios de solicitud en todos los sitios',
+  detectDeclined: 'No se activó: Chrome necesita acceso a todos los sitios.',
 }

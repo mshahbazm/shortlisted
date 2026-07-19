@@ -35,4 +35,12 @@ export const settings: tLocale['settings'] = {
   importJson: 'Importa JSON',
   imported: 'Importato.',
   importFailed: (msg: string) => `Import fallito: ${msg}`,
+
+  detectTitle: 'Rilevamento offerte',
+  detectOn: 'tutti i siti',
+  detectOff: 'solo portali noti',
+  detectHint:
+    'Di norma il pannello compare solo sui portali di lavoro che conosciamo. Attiva questa opzione e Shortlisted cerca moduli di candidatura anche su altri siti, comparendo quando è sicuro. Le pagine vengono analizzate sul tuo computer: non viene inviato nulla.',
+  detectToggle: 'Cercare moduli di candidatura su tutti i siti',
+  detectDeclined: 'Non attivato: Chrome richiede l’accesso a tutti i siti.',
 }

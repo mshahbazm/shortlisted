@@ -12,6 +12,8 @@ export const overlay: tLocale['overlay'] = {
   leadWithHeader: 'Zet dit voorop',
   gapsHeader: 'Reken op vragen over',
   languageNotice: (lang: string) => `Deze vacature lijkt in het ${lang} te zijn — die taal staat niet in je profiel. Invullen kan ik nog steeds.`,
+  updateProfileHint: 'Heb je ervaring die deze hiaten missen — iets dat nog niet in je profiel staat? Voeg het toe; scores en cv’s gebruiken het meteen.',
+  updateProfile: 'Profiel bijwerken',
   aiWorking: (n: number) => `AI beantwoordt ${n} ${n === 1 ? 'vraag' : 'vragen'}…`,
   aiFilledNote: (n: number) => `AI heeft er ${n} ingevuld — controleer voor het verzenden.`,
   aiFilled: 'Door AI ingevuld op basis van jouw gegevens — controleer het. Opslaan om te onthouden.',

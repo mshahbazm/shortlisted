@@ -11,9 +11,27 @@ export function SettingsTab() {
   const [settings, saveSettings] = useStore('settings')
   const importRef = useRef<HTMLInputElement>(null)
   const [msg, setMsg] = useState('')
+  const [detectMsg, setDetectMsg] = useState('')
 
   const s = settings
   const set = (patch: Partial<typeof s>) => saveSettings({ ...s, ...patch })
+
+  // Chrome only grants host permissions from a user gesture, so the request
+  // has to happen here in the click handler — not in the service worker.
+  const toggleDetect = async (on: boolean) => {
+    setDetectMsg('')
+    if (!on) {
+      set({ detectEverywhere: false })
+      await chrome.permissions.remove({ origins: ['<all_urls>'] }).catch(() => false)
+      return
+    }
+    const granted = await chrome.permissions.request({ origins: ['<all_urls>'] }).catch(() => false)
+    if (!granted) {
+      setDetectMsg(t.detectDeclined)
+      return
+    }
+    set({ detectEverywhere: true })
+  }
 
   const importAll = async (file: File) => {
     setMsg('')
@@ -64,6 +82,22 @@ export function SettingsTab() {
         defaultOpen={!s.accountEmail}
       >
         <AccountPanel />
+      </Section>
+
+      <Section
+        title={t.detectTitle}
+        summary={s.detectEverywhere ? t.detectOn : t.detectOff}
+      >
+        <p className="microhint">{t.detectHint}</p>
+        <label className="f">
+          <span>{t.detectToggle}</span>
+          <input
+            type="checkbox"
+            checked={!!s.detectEverywhere}
+            onChange={(e) => void toggleDetect(e.target.checked)}
+          />
+        </label>
+        {detectMsg && <p className="microhint">{detectMsg}</p>}
       </Section>
 
       <Section title={t.backupTitle} summary={t.backupSummary}>

@@ -12,6 +12,8 @@ export const overlay = {
   leadWithHeader: 'Lead with',
   gapsHeader: 'Be ready for questions about',
   languageNotice: (lang: string) => `This job looks like it’s in ${lang} — not one of your languages. I can still fill the form for you.`,
+  updateProfileHint: 'Have experience these gaps miss — something not in your profile yet? Add it; scores and CVs use it right away.',
+  updateProfile: 'Update profile',
   aiWorking: (n: number) => `AI is answering ${n} question${n === 1 ? '' : 's'}…`,
   aiFilledNote: (n: number) => `AI filled ${n} — review before submitting.`,
   aiFilled: 'Filled by AI from your facts — check it. Save to remember.',

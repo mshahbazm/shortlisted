@@ -22,6 +22,8 @@ export const apply: tLocale['apply'] = {
   scoreMyFit: 'Puntuar mi encaje',
   scoring: 'Puntuando…',
   leadWith: (strengths: string) => `Destaca: ${strengths}`,
+  updateProfileHint: '¿Tienes experiencia que estos huecos no ven — algo que aún no está en tu perfil? Añádelo; las puntuaciones y los CV la usan al instante.',
+  updateProfile: 'Actualizar perfil',
   gapsHint: (gaps: string) => `Carencias (prepárate para estas preguntas): ${gaps}`,
   notShown: 'no se muestra',
 

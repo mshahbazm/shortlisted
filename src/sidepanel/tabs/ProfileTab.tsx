@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { KV, Section } from '../components'
@@ -18,7 +18,7 @@ import * as store from '../../lib/store'
 import { applyIntakeFacts, countIntakeFacts } from '../../lib/profileMerge'
 import { showToast } from '../toast'
 
-export function ProfileTab() {
+export function ProfileTab({ focusTellMe = false }: { focusTellMe?: boolean }) {
   const t = useContent('profile')
   const [profile, saveProfileRaw, loaded] = useStore('profile')
   const [settings] = useStore('settings')
@@ -26,6 +26,18 @@ export function ProfileTab() {
   const [note, setNote] = useState('')
   const [noteBusy, setNoteBusy] = useState(false)
   const [noteMsg, setNoteMsg] = useState('')
+  const tellMeRef = useRef<HTMLTextAreaElement>(null)
+
+  // Arriving via "Update profile" on a fit report: bring the box into view,
+  // cursor ready.
+  useEffect(() => {
+    if (!focusTellMe || !loaded) return
+    const id = window.setTimeout(() => {
+      tellMeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      tellMeRef.current?.focus()
+    }, 150)
+    return () => window.clearTimeout(id)
+  }, [focusTellMe, loaded])
 
   const p = profile
   if (!loaded) return null
@@ -172,8 +184,9 @@ export function ProfileTab() {
         <KV k={t.englishLevel} v={p.facts.englishLevel ?? ''} onChange={(v) => setFacts('englishLevel', v)} />
       </Section>
 
-      <Section title={t.tellMeTitle} summary={t.tellMeSummary}>
+      <Section key={focusTellMe ? 'tellme-open' : 'tellme'} title={t.tellMeTitle} summary={t.tellMeSummary} defaultOpen={focusTellMe}>
         <textarea
+          ref={tellMeRef}
           rows={2}
           placeholder={t.tellMePlaceholder}
           value={note}

@@ -12,6 +12,8 @@ export const overlay: tLocale['overlay'] = {
   leadWithHeader: 'Punta su questo',
   gapsHeader: 'Preparati a domande su',
   languageNotice: (lang: string) => `Questo annuncio sembra in ${lang} — una lingua non presente nel tuo profilo. Posso comunque compilare il modulo.`,
+  updateProfileHint: 'Hai esperienza che queste lacune non vedono — qualcosa non ancora nel profilo? Aggiungila; punteggi e CV la usano subito.',
+  updateProfile: 'Aggiorna profilo',
   aiWorking: (n: number) => `L’IA sta rispondendo a ${n} domand${n === 1 ? 'a' : 'e'}…`,
   aiFilledNote: (n: number) => `L’IA ha compilato ${n} — controlla prima di inviare.`,
   aiFilled: 'Compilato dall’IA dai tuoi dati — controllalo. Salva per ricordarlo.',

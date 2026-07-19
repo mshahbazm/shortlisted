@@ -15,7 +15,21 @@ type Tab = (typeof TABS)[number]
 
 export function App() {
   const [tab, setTab] = useState<Tab>('Apply')
+  const [focusTellMe, setFocusTellMe] = useState(false)
   const [pending] = useStore('pendingQuestions')
+
+  // Navigation hints from outside the panel ("Update profile" on the fit
+  // report): consume once, then clear.
+  useEffect(() => {
+    const consume = (nav: string) => {
+      if (nav !== 'tellme') return
+      setTab('Profile')
+      setFocusTellMe(true)
+      void store.set('pendingNav', '')
+    }
+    void store.get('pendingNav').then(consume)
+    return store.onChange('pendingNav', consume)
+  }, [])
   const t = useContent('nav')
   const tabLabels: Record<Tab, string> = {
     Apply: t.apply, Profile: t.profile, CVs: t.cvs, Answers: t.answers, Settings: t.settings,
@@ -49,7 +63,7 @@ export function App() {
     <>
       <nav className="tabs">
         {TABS.map((t) => (
-          <button key={t} className={t === tab ? 'active' : ''} onClick={() => setTab(t)}>
+          <button key={t} className={t === tab ? 'active' : ''} onClick={() => { setTab(t); setFocusTellMe(false) }}>
             {tabLabels[t]}
             {t === 'Answers' && pending.length > 0 && <span className="dot">{pending.length}</span>}
           </button>
@@ -57,7 +71,7 @@ export function App() {
       </nav>
       <main className="page">
         {tab === 'Apply' && <ApplyTab />}
-        {tab === 'Profile' && <ProfileTab />}
+        {tab === 'Profile' && <ProfileTab focusTellMe={focusTellMe} />}
         {tab === 'CVs' && <ResumesTab />}
         {tab === 'Answers' && <QuestionsTab />}
         {tab === 'Settings' && <SettingsTab />}

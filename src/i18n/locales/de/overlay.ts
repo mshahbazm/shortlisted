@@ -13,6 +13,8 @@ export const overlay: tLocale['overlay'] = {
   leadWithHeader: 'Damit punktest du',
   gapsHeader: 'Rechne mit Fragen zu',
   languageNotice: (lang: string) => `Diese Stelle scheint auf ${lang} zu sein — laut Profil keine deiner Sprachen. Ausfüllen kann ich trotzdem.`,
+  updateProfileHint: 'Hast du Erfahrung, die diese Lücken übersehen — etwas, das noch nicht im Profil steht? Füg es hinzu; Scores und Lebensläufe nutzen es sofort.',
+  updateProfile: 'Profil aktualisieren',
   aiWorking: (n: number) => `KI beantwortet ${n} Frage${n === 1 ? '' : 'n'}…`,
   aiFilledNote: (n: number) => `KI hat ${n} ausgefüllt — vor dem Absenden prüfen.`,
   aiFilled: 'Von der KI aus deinen Fakten ausgefüllt — prüfe es. Speichern zum Merken.',

@@ -22,6 +22,8 @@ export const apply = {
   scoreMyFit: 'Score my fit',
   scoring: 'Scoring…',
   leadWith: (strengths: string) => `Lead with: ${strengths}`,
+  updateProfileHint: 'Have experience these gaps miss — something not in your profile yet? Add it; scores and CVs use it right away.',
+  updateProfile: 'Update profile',
   gapsHint: (gaps: string) => `Gaps (be ready for these questions): ${gaps}`,
   notShown: 'not shown',
 

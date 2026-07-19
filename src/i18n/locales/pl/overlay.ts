@@ -14,6 +14,8 @@ export const overlay: tLocale['overlay'] = {
   leadWithHeader: 'Postaw na to',
   gapsHeader: 'Przygotuj się na pytania o',
   languageNotice: (lang: string) => `To ogłoszenie wygląda na napisane w języku: ${lang} — nie ma go w Twoim profilu. Formularz i tak mogę wypełnić.`,
+  updateProfileHint: 'Masz doświadczenie, którego te braki nie widzą — coś, czego nie ma jeszcze w profilu? Dodaj je; oceny i CV użyją go od razu.',
+  updateProfile: 'Zaktualizuj profil',
   aiWorking: (n: number) => `AI odpowiada na ${n} ${plural(n, 'pytanie', 'pytania', 'pytań')}…`,
   aiFilledNote: (n: number) => `AI wypełniło ${n} — sprawdź przed wysłaniem.`,
   aiFilled: 'Wypełnione przez AI na podstawie Twoich danych — sprawdź. Zapisz, aby zapamiętać.',

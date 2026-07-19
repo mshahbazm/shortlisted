@@ -328,6 +328,12 @@ export interface Settings {
   onboarded?: boolean
   /** UI language (i18n/locale.ts code). Unset = follow the browser language. */
   locale?: string
+  /**
+   * Watch every site for job application forms, not just the ATS platforms we
+   * ship adapters for. Off by default: turning it on needs the "all sites"
+   * host permission, so it has to be the user's explicit choice.
+   */
+  detectEverywhere?: boolean
 }
 
 export const defaultSettings = (): Settings => ({
@@ -388,6 +394,8 @@ export interface StorageShape {
   queue: QueueItem[]
   fitScores: Record<string, FitScoreRecord>
   settings: Settings
+  /** Transient UI navigation hint ('tellme' → Profile tab, note box open). */
+  pendingNav: string
 }
 
 export const storageDefaults = (): StorageShape => ({
@@ -399,6 +407,7 @@ export const storageDefaults = (): StorageShape => ({
   queue: [],
   fitScores: {},
   settings: defaultSettings(),
+  pendingNav: '',
 })
 
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36)

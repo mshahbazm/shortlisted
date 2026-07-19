@@ -21,6 +21,8 @@ export const apply: tLocale['apply'] = {
   scoreMyFit: 'Beoordeel mijn match',
   scoring: 'Beoordelen…',
   leadWith: (strengths: string) => `Zet voorop: ${strengths}`,
+  updateProfileHint: 'Heb je ervaring die deze hiaten missen — iets dat nog niet in je profiel staat? Voeg het toe; scores en cv’s gebruiken het meteen.',
+  updateProfile: 'Profiel bijwerken',
   gapsHint: (gaps: string) => `Hiaten (wees op deze vragen voorbereid): ${gaps}`,
   notShown: 'niet getoond',
 
