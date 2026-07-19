@@ -271,6 +271,7 @@ export interface ResumeVariant {
   isDefault: boolean
   createdAt: number
   source: 'uploaded' | 'generated'
+  templateId?: string // design template the PDF was rendered with (generated only)
   dataBase64: string // the PDF bytes
   // For generated variants: the content JSON so it can be re-edited/re-rendered.
   content?: TailoredResume

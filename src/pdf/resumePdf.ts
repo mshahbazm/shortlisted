@@ -1,181 +1,310 @@
-// Profile/tailored JSON -> one simple, ATS-friendly, top-to-bottom PDF.
-// Deterministic: no AI here. Single column, standard fonts, real text
-// (parses cleanly in every ATS resume parser).
+// Profile/tailored JSON -> an ATS-friendly PDF in the chosen template.
+// Deterministic: no AI here. One renderer interprets template design tokens
+// (font, accent, header/section style, single vs sidebar layout, density) —
+// always real text, standard fonts, no tables, no graphics.
 
 import { jsPDF } from 'jspdf'
 import { Profile, TailoredResume, workPeriodLabel } from '../lib/types'
+import { ResumeTemplate, getTemplate } from './templates'
 
 const PAGE_W = 595.28 // A4 points
 const PAGE_H = 841.89
 const MARGIN = 48
-const CONTENT_W = PAGE_W - MARGIN * 2
 
-const COLORS = {
-  ink: '#111827',
-  soft: '#4b5563',
-  line: '#d1d5db',
+const INK = '#111827'
+const SOFT = '#4b5563'
+const LINE = '#d1d5db'
+
+/** A text column with its own cursor. Page breaks only when `breaks` is on. */
+interface Col {
+  x: number
+  w: number
+  y: number
+  breaks: boolean
 }
 
-export function renderResumePdf(profile: Profile, variant: TailoredResume): string {
+export function renderResumePdf(profile: Profile, variant: TailoredResume, templateId?: string): string {
+  const tpl = getTemplate(templateId)
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
-  let y = MARGIN
 
-  const ensure = (needed: number) => {
-    if (y + needed > PAGE_H - MARGIN) {
-      doc.addPage()
-      y = MARGIN
-    }
+  const base = tpl.density === 'compact' ? 8.8 : 9.5
+  const lh = tpl.density === 'compact' ? 1.28 : 1.35
+  const accent = tpl.accent ?? INK
+
+  const font = (bold: boolean) => doc.setFont(tpl.font, bold ? 'bold' : 'normal')
+
+  const ensure = (col: Col, needed: number): boolean => {
+    if (col.y + needed <= PAGE_H - MARGIN) return true
+    if (!col.breaks) return false // sidebar: stop instead of spilling onto page 2
+    doc.addPage()
+    col.y = MARGIN
+    return true
   }
 
   const text = (
+    col: Col,
     str: string,
     size: number,
-    opts: { bold?: boolean; color?: string; gapAfter?: number; indent?: number } = {},
+    opts: { bold?: boolean; color?: string; gapAfter?: number; indent?: number; align?: 'left' | 'center' } = {},
   ) => {
     if (!str) return
-    doc.setFont('helvetica', opts.bold ? 'bold' : 'normal')
+    font(opts.bold ?? false)
     doc.setFontSize(size)
-    doc.setTextColor(opts.color ?? COLORS.ink)
-    const width = CONTENT_W - (opts.indent ?? 0)
+    doc.setTextColor(opts.color ?? INK)
+    const width = col.w - (opts.indent ?? 0)
     const lines: string[] = doc.splitTextToSize(str, width)
-    const lineH = size * 1.35
+    const lineH = size * lh
     for (const line of lines) {
-      ensure(lineH)
-      doc.text(line, MARGIN + (opts.indent ?? 0), y)
-      y += lineH
+      if (!ensure(col, lineH)) return
+      if (opts.align === 'center') doc.text(line, col.x + col.w / 2, col.y, { align: 'center' })
+      else doc.text(line, col.x + (opts.indent ?? 0), col.y)
+      col.y += lineH
     }
-    y += opts.gapAfter ?? 0
+    col.y += opts.gapAfter ?? 0
   }
 
-  const bullet = (str: string, size = 9.5) => {
+  const bullet = (col: Col, str: string, size = base) => {
     if (!str) return
-    doc.setFont('helvetica', 'normal')
+    font(false)
     doc.setFontSize(size)
-    doc.setTextColor(COLORS.ink)
-    const lines: string[] = doc.splitTextToSize(str, CONTENT_W - 14)
-    const lineH = size * 1.35
-    ensure(lineH)
-    doc.text('•', MARGIN + 2, y)
+    const lines: string[] = doc.splitTextToSize(str, col.w - 14)
+    const lineH = size * lh
+    if (!ensure(col, lineH)) return
+    doc.setTextColor(tpl.accent ?? INK)
+    doc.text('•', col.x + 2, col.y)
+    doc.setTextColor(INK)
     for (const line of lines) {
-      ensure(lineH)
-      doc.text(line, MARGIN + 14, y)
-      y += lineH
+      if (!ensure(col, lineH)) return
+      doc.text(line, col.x + 14, col.y)
+      col.y += lineH
     }
-    y += 1.5
+    col.y += tpl.density === 'compact' ? 1 : 1.5
   }
 
-  const sectionTitle = (title: string) => {
-    ensure(34)
-    y += 8
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(10.5)
-    doc.setTextColor(COLORS.ink)
-    doc.text(title.toUpperCase(), MARGIN, y)
-    y += 5
-    doc.setDrawColor(COLORS.line)
-    doc.setLineWidth(0.7)
-    doc.line(MARGIN, y, PAGE_W - MARGIN, y)
-    y += 13
+  const sectionTitle = (col: Col, title: string, small = false) => {
+    if (!ensure(col, 34)) return
+    col.y += small ? 6 : 8
+    font(true)
+    doc.setFontSize(small ? 9 : 10.5)
+    switch (tpl.sectionStyle) {
+      case 'rule':
+        doc.setTextColor(INK)
+        doc.text(title.toUpperCase(), col.x, col.y)
+        col.y += 5
+        doc.setDrawColor(LINE)
+        doc.setLineWidth(0.7)
+        doc.line(col.x, col.y, col.x + col.w, col.y)
+        col.y += small ? 11 : 13
+        break
+      case 'caps':
+        doc.setTextColor(INK)
+        doc.text(title.toUpperCase(), col.x, col.y, { charSpace: 1.1 })
+        col.y += small ? 13 : 16
+        break
+      case 'accentRule':
+        doc.setTextColor(INK)
+        doc.text(title.toUpperCase(), col.x, col.y)
+        col.y += 4
+        doc.setDrawColor(accent)
+        doc.setLineWidth(2)
+        doc.line(col.x, col.y, col.x + 26, col.y)
+        col.y += small ? 11 : 13
+        break
+      case 'sideRule':
+        doc.setFillColor(accent)
+        doc.rect(col.x, col.y - 8, 3, 10, 'F')
+        doc.setTextColor(INK)
+        doc.text(title.toUpperCase(), col.x + 9, col.y)
+        col.y += small ? 13 : 16
+        break
+    }
   }
 
-  // ---- Header ----
+  // ---- Header (full width, both layouts) ----
   const name = `${profile.identity.firstName} ${profile.identity.lastName}`.trim()
-  text(name, 21, { bold: true, gapAfter: 1 })
-  text(variant.headline, 11.5, { color: COLORS.soft, gapAfter: 4 })
-
   const contact = [profile.identity.email, profile.identity.phone, profile.identity.location]
     .filter(Boolean)
     .join('  ·  ')
-  text(contact, 9, { color: COLORS.soft, gapAfter: 1 })
   const links = [profile.links.website, profile.links.github, profile.links.linkedin, profile.links.portfolio]
     .filter(Boolean)
     .join('  ·  ')
-  text(links, 9, { color: COLORS.soft, gapAfter: 2 })
+  const contactInHeader = tpl.layout === 'single'
 
-  // ---- Summary ----
-  if (variant.summary) {
-    sectionTitle('Summary')
-    text(variant.summary, 9.5, { gapAfter: 2 })
+  const full: Col = { x: MARGIN, w: PAGE_W - MARGIN * 2, y: MARGIN, breaks: true }
+
+  if (tpl.headerStyle === 'bar') {
+    const barH = 74
+    doc.setFillColor(accent)
+    doc.rect(0, 0, PAGE_W, barH, 'F')
+    font(true)
+    doc.setFontSize(21)
+    doc.setTextColor('#ffffff')
+    doc.text(name, MARGIN, 38)
+    if (variant.headline) {
+      font(false)
+      doc.setFontSize(11)
+      doc.text(variant.headline, MARGIN, 56)
+    }
+    full.y = barH + 20
+    if (contactInHeader) {
+      text(full, contact, 9, { color: SOFT, gapAfter: 1 })
+      text(full, links, 9, { color: SOFT, gapAfter: 2 })
+    }
+  } else {
+    const align = tpl.headerStyle === 'centered' ? 'center' : 'left'
+    text(full, name, 21, { bold: true, gapAfter: 1, align, color: tpl.accent ?? INK })
+    text(full, variant.headline, 11.5, { color: SOFT, gapAfter: 4, align })
+    if (contactInHeader) {
+      text(full, contact, 9, { color: SOFT, gapAfter: 1, align })
+      text(full, links, 9, { color: SOFT, gapAfter: 2, align })
+    }
+    if (tpl.headerStyle === 'centered') {
+      full.y += 2
+      doc.setDrawColor(LINE)
+      doc.setLineWidth(0.7)
+      doc.line(MARGIN, full.y, PAGE_W - MARGIN, full.y)
+      full.y += 6
+    }
   }
 
-  // ---- Highlights ----
-  if (variant.highlights.length) {
-    sectionTitle('Highlights')
-    for (const h of variant.highlights) bullet(h)
-  }
+  // ---- Columns ----
+  const SIDEBAR_W = 150
+  const GAP = 22
+  const main: Col =
+    tpl.layout === 'sidebar'
+      ? { x: MARGIN + SIDEBAR_W + GAP, w: PAGE_W - MARGIN * 2 - SIDEBAR_W - GAP, y: full.y, breaks: true }
+      : full
+  const sidebarTop = full.y
 
-  // ---- Skills ----
-  if (variant.skills.length) {
-    sectionTitle('Skills')
-    text(variant.skills.join('  ·  '), 9.5, { gapAfter: 2 })
-  }
+  // ---- Content sections ----
+  const skillsLine = variant.skills.join('  ·  ')
+  const languagesLine = profile.languages
+    .map((l) => `${l.name} (${l.proficiency.replaceAll('_', ' ')})`)
+    .join('  ·  ')
 
-  // ---- Experience ----
-  const workById = new Map(profile.work.map((w) => [w.id, w]))
-  const entries = variant.work.map((v) => ({ v, src: workById.get(v.sourceId) })).filter((e) => e.src)
-  if (entries.length) {
-    sectionTitle('Experience')
+  const summary = () => {
+    if (!variant.summary) return
+    sectionTitle(main, 'Summary')
+    text(main, variant.summary, base, { gapAfter: 2 })
+  }
+  const highlights = () => {
+    if (!variant.highlights.length) return
+    sectionTitle(main, 'Highlights')
+    for (const h of variant.highlights) bullet(main, h)
+  }
+  const skills = () => {
+    if (!variant.skills.length) return
+    sectionTitle(main, 'Skills')
+    text(main, skillsLine, base, { gapAfter: 2 })
+  }
+  const experience = () => {
+    const workById = new Map(profile.work.map((w) => [w.id, w]))
+    const entries = variant.work.map((v) => ({ v, src: workById.get(v.sourceId) })).filter((e) => e.src)
+    if (!entries.length) return
+    sectionTitle(main, 'Experience')
     for (const { v, src } of entries) {
       const w = src!
-      ensure(30)
+      if (!ensure(main, 30)) return
       const dates = workPeriodLabel(w)
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(10.5)
-      doc.setTextColor(COLORS.ink)
-      doc.text(`${w.title} · ${w.company}`, MARGIN, y)
-      doc.setFont('helvetica', 'normal')
+      font(true)
+      doc.setFontSize(base + 1)
+      doc.setTextColor(INK)
+      const titleLine = doc.splitTextToSize(`${w.title} · ${w.company}`, main.w - 86)[0] ?? ''
+      doc.text(titleLine, main.x, main.y)
+      font(false)
       doc.setFontSize(9)
-      doc.setTextColor(COLORS.soft)
-      doc.text(dates, PAGE_W - MARGIN, y, { align: 'right' })
-      y += 15
+      doc.setTextColor(SOFT)
+      doc.text(dates, main.x + main.w, main.y, { align: 'right' })
+      main.y += tpl.density === 'compact' ? 13 : 15
       const bullets = v.bullets.length ? v.bullets : w.highlights
-      for (const b of bullets) bullet(b)
-      y += 5
+      for (const b of bullets) bullet(main, b)
+      main.y += tpl.density === 'compact' ? 3 : 5
     }
   }
-
-  // ---- Education ----
-  const eduById = new Map(profile.education.map((e) => [e.id, e]))
-  const edus = variant.educationIds.map((id) => eduById.get(id)).filter(Boolean)
-  if (edus.length) {
-    sectionTitle('Education')
+  const education = () => {
+    const eduById = new Map(profile.education.map((e) => [e.id, e]))
+    const edus = variant.educationIds.map((id) => eduById.get(id)).filter(Boolean)
+    if (!edus.length) return
+    sectionTitle(main, 'Education')
     for (const e of edus) {
-      ensure(16)
+      if (!ensure(main, 16)) return
       const dates = [e!.startYear, e!.isCurrent ? 'Present' : e!.endYear].filter(Boolean).join(' — ')
       const degreeLine = [e!.degree, e!.fieldOfStudy].filter(Boolean).join(', ')
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(10)
-      doc.setTextColor(COLORS.ink)
-      doc.text(`${degreeLine} · ${e!.school}`, MARGIN, y)
+      font(true)
+      doc.setFontSize(base + 0.5)
+      doc.setTextColor(INK)
+      const line = doc.splitTextToSize(`${degreeLine} · ${e!.school}`, main.w - 76)[0] ?? ''
+      doc.text(line, main.x, main.y)
       if (dates) {
-        doc.setFont('helvetica', 'normal')
+        font(false)
         doc.setFontSize(9)
-        doc.setTextColor(COLORS.soft)
-        doc.text(dates, PAGE_W - MARGIN, y, { align: 'right' })
+        doc.setTextColor(SOFT)
+        doc.text(dates, main.x + main.w, main.y, { align: 'right' })
       }
-      y += 15
-      if (e!.description) {
-        text(e!.description, 9, { color: COLORS.soft, gapAfter: 3 })
-      }
+      main.y += 15
+      if (e!.description) text(main, e!.description, 9, { color: SOFT, gapAfter: 3 })
     }
   }
-
-  // ---- Certifications ----
-  if (profile.certifications.length) {
-    sectionTitle('Certifications')
+  const certifications = () => {
+    if (!profile.certifications.length) return
+    sectionTitle(main, 'Certifications')
     for (const c of profile.certifications) {
-      const line = [c.name, c.issuingOrganization, c.year].filter(Boolean).join(' · ')
-      bullet(line, 9.5)
+      bullet(main, [c.name, c.issuingOrganization, c.year].filter(Boolean).join(' · '))
     }
   }
+  const languages = () => {
+    if (!profile.languages.length) return
+    sectionTitle(main, 'Languages')
+    text(main, languagesLine, base, { gapAfter: 2 })
+  }
 
-  // ---- Languages ----
-  if (profile.languages.length) {
-    sectionTitle('Languages')
-    const line = profile.languages
-      .map((l) => `${l.name} (${l.proficiency.replaceAll('_', ' ')})`)
-      .join('  ·  ')
-    text(line, 9.5, { gapAfter: 2 })
+  if (tpl.layout === 'sidebar') {
+    summary()
+    highlights()
+    experience()
+    education()
+  } else if (tpl.skillsFirst) {
+    summary()
+    skills()
+    highlights()
+    experience()
+    education()
+    certifications()
+    languages()
+  } else {
+    summary()
+    highlights()
+    experience()
+    education()
+    skills()
+    certifications()
+    languages()
+  }
+
+  // ---- Sidebar (page 1 only, drawn after the main flow) ----
+  if (tpl.layout === 'sidebar') {
+    doc.setPage(1)
+    const side: Col = { x: MARGIN, w: SIDEBAR_W, y: sidebarTop, breaks: false }
+    const sideItem = (label: string, items: string[]) => {
+      if (!items.length) return
+      sectionTitle(side, label, true)
+      for (const item of items) text(side, item, 8.8, { color: INK, gapAfter: 2 })
+    }
+    const present = (items: (string | undefined)[]): string[] => items.filter((s): s is string => Boolean(s))
+    sideItem('Contact', present([profile.identity.email, profile.identity.phone, profile.identity.location]))
+    sideItem(
+      'Links',
+      present([profile.links.website, profile.links.github, profile.links.linkedin, profile.links.portfolio]),
+    )
+    sideItem('Skills', variant.skills)
+    sideItem(
+      'Languages',
+      profile.languages.map((l) => `${l.name} (${l.proficiency.replaceAll('_', ' ')})`),
+    )
+    sideItem(
+      'Certifications',
+      profile.certifications.map((c) => [c.name, c.year].filter(Boolean).join(' · ')),
+    )
   }
 
   // Return base64 (without the data: prefix) for storage.

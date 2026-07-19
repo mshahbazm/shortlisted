@@ -215,3 +215,34 @@ select.langswitch:hover { color: var(--fg); }
   border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 12px;
 }
 .card h3 { margin: 0 0 8px; font-size: 13.5px; font-weight: 600; }
+
+/* ---- CV template picker ---- */
+.tpl-overlay {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.35); z-index: 50;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.tpl-sheet {
+  background: var(--bg); width: 100%; max-width: 640px; max-height: 88vh;
+  overflow-y: auto; border-radius: 12px; padding: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+}
+.tpl-sheet h3 { margin: 0 0 4px; font-size: 15px; }
+.tpl-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 12px; }
+.tpl-tags .chip { cursor: pointer; border: none; font: inherit; font-size: 11px; }
+.tpl-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px; margin-bottom: 12px;
+}
+.tpl-card {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+  padding: 8px; cursor: pointer; display: flex; flex-direction: column; gap: 3px;
+  align-items: stretch; text-align: left; font: inherit; color: var(--fg);
+}
+.tpl-card:hover { border-color: var(--accent); }
+.tpl-name { font-weight: 600; font-size: 12px; margin-top: 2px; }
+.tpl-for { font-size: 10.5px; color: var(--muted); }
+.tpl-thumb {
+  aspect-ratio: 210 / 280; background: #fff; border: 1px solid #e4e4e7;
+  border-radius: 4px; padding: 6px; display: flex; flex-direction: column;
+  overflow: hidden;
+}
