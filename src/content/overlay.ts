@@ -27,16 +27,19 @@ const CSS = `
   * { box-sizing: border-box; font-family: -apple-system, system-ui, sans-serif; }
   .panel {
     position: fixed; bottom: 18px; right: 18px; z-index: 2147483646;
-    width: 320px; max-height: 70vh; overflow: auto;
+    width: 320px; max-height: 70vh; display: flex; flex-direction: column; overflow: hidden;
     background: #ffffff; color: #1f1f1f; border: 1px solid #e7e7e4;
     border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,.12), 0 2px 6px rgba(0,0,0,.06);
     font-size: 13px; line-height: 1.5;
   }
-  .head { display:flex; align-items:center; justify-content:space-between;
-    padding: 10px 12px; border-bottom: 1px solid #e7e7e4; position: sticky; top: 0; background:#fff; z-index: 1; }
+  .head { display:flex; align-items:center; justify-content:space-between; flex: none;
+    padding: 10px 12px; border-bottom: 1px solid #e7e7e4; background:#fff; }
   .head b { font-size: 13px; font-weight: 650; }
   .head .min { cursor:pointer; border:none; background:none; color:#a1a1aa; font-size:15px; }
-  .body { padding: 12px; }
+  .actions { flex: none; padding: 12px; border-bottom: 1px solid #e7e7e4; }
+  .actions:empty { display: none; }
+  .body { padding: 12px; overflow-y: auto; min-height: 0; }
+  .body > :first-child { margin-top: 0; }
   .fillBtn { width: 100%; padding: 9px 0; border: none; border-radius: 8px;
     background: #18181b; color: #fff; font-weight: 600; font-size: 13px; cursor: pointer; }
   .fillBtn:hover { background:#333336; }
@@ -55,12 +58,12 @@ const CSS = `
   .resumeRow { display:flex; gap:6px; align-items:center; margin-top:6px; }
   select { flex:1; background:#fff; color:#1f1f1f; border:1px solid #e7e7e4; border-radius:6px; padding:5px; }
   .note { color:#71717a; font-size:11.5px; margin-top:10px; }
-  .collapsed .body { display:none; }
+  .collapsed .body, .collapsed .actions, .collapsed .langnote { display:none; }
   .scoreBtn { width: 100%; margin-top: 8px; padding: 8px 0; border: 1px solid #e7e7e4; border-radius: 8px;
     background: #fff; color: #1f1f1f; font-weight: 600; font-size: 12.5px; cursor: pointer; }
   .scoreBtn:hover { background: #f6f6f4; }
   .scoreBtn:disabled { opacity: 0.5; cursor: default; }
-  .fitScore { margin-top: 12px; border-radius: 10px; padding: 12px 14px; border: 1px solid; }
+  .fitScore { border-radius: 10px; padding: 12px 14px; border: 1px solid; }
   .fitScore .row1 { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
   .fitScore .pct { font-size: 24px; font-weight: 750; letter-spacing: -0.02em; }
   .fitScore .word {
@@ -94,13 +97,14 @@ export class Overlay {
   private host: HTMLDivElement
   private root: ShadowRoot
   private panel: HTMLDivElement
+  private actions: HTMLDivElement
   private body: HTMLDivElement
   private cb: OverlayCallbacks
   private t: tOverlayContent
   private langNote!: HTMLDivElement
   private unknownRefs = new Map<FormField, { item: HTMLElement; ta: HTMLTextAreaElement; save: HTMLButtonElement }>()
 
-  constructor(atsName: string, t: tOverlayContent, cb: OverlayCallbacks) {
+  constructor(t: tOverlayContent, cb: OverlayCallbacks) {
     this.cb = cb
     this.t = t
     this.host = document.createElement('div')
@@ -115,12 +119,15 @@ export class Overlay {
     const head = document.createElement('div')
     head.className = 'head'
     const title = document.createElement('b')
-    title.textContent = `Shortlisted · ${atsName}`
+    title.textContent = 'Shortlisted'
     const min = document.createElement('button')
     min.className = 'min'
     min.textContent = '—'
     min.onclick = () => this.panel.classList.toggle('collapsed')
     head.append(title, min)
+
+    this.actions = document.createElement('div')
+    this.actions.className = 'actions'
 
     this.body = document.createElement('div')
     this.body.className = 'body'
@@ -128,19 +135,20 @@ export class Overlay {
     this.langNote = document.createElement('div')
     this.langNote.className = 'langnote'
 
-    this.panel.append(head, this.langNote, this.body)
+    this.panel.append(head, this.langNote, this.actions, this.body)
     this.root.appendChild(this.panel)
     document.documentElement.appendChild(this.host)
     this.renderIdle()
   }
 
   renderIdle() {
+    this.actions.replaceChildren()
     this.body.replaceChildren()
     const btn = document.createElement('button')
     btn.className = 'fillBtn'
     btn.textContent = this.t.fillApplication
     btn.onclick = () => this.cb.onFill()
-    this.body.append(btn, this.scoreButton())
+    this.actions.append(btn, this.scoreButton())
     const note = document.createElement('div')
     note.className = 'note'
     note.textContent = this.t.idleNote
@@ -158,6 +166,7 @@ export class Overlay {
   // Scoring takes over the whole panel: one spinner, one label — the buttons
   // come back with the result.
   renderFitLoading() {
+    this.actions.replaceChildren()
     this.body.replaceChildren()
     const wrap = document.createElement('div')
     wrap.className = 'scoring'
@@ -171,18 +180,20 @@ export class Overlay {
   }
 
   renderFitResult(fit: QuickFitDisplay | null, error?: string) {
-    // Rebuild the panel: actions on top, then the score (or the error).
+    // Rebuild the panel: the pinned action bar on top, the score (or the
+    // error) scrolling beneath it.
+    this.actions.replaceChildren()
     this.body.replaceChildren()
     const fill = document.createElement('button')
     fill.className = 'fillBtn'
     fill.textContent = this.t.fillApplication
     fill.onclick = () => this.cb.onFill()
-    this.body.append(fill)
+    this.actions.append(fill)
 
     const box = document.createElement('div')
     box.id = 'fitbox'
     if (!fit) {
-      this.body.append(this.scoreButton())
+      this.actions.append(this.scoreButton())
       box.className = 'note'
       box.textContent = error ?? this.t.scoringFailed
       this.body.append(box)
@@ -258,6 +269,7 @@ export class Overlay {
     resumes: { id: string; label: string; isDefault: boolean }[],
     attachedResumeLabel: string | null,
   ) {
+    this.actions.replaceChildren()
     this.body.replaceChildren()
     this.unknownRefs.clear()
 
@@ -265,7 +277,7 @@ export class Overlay {
     again.className = 'fillBtn'
     again.textContent = this.t.fillAgain
     again.onclick = () => this.cb.onFill()
-    this.body.append(again, this.scoreButton())
+    this.actions.append(again, this.scoreButton())
 
     const stat = document.createElement('div')
     stat.className = 'stat'
@@ -422,6 +434,7 @@ export class Overlay {
   }
 
   setBusy() {
+    this.actions.replaceChildren()
     this.body.replaceChildren()
     const note = document.createElement('div')
     note.className = 'note'

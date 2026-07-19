@@ -107,7 +107,7 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
     }
   }
 
-  const overlay = new Overlay(adapter.name, t, {
+  const overlay = new Overlay(t, {
     onFill: async () => {
       overlay.setBusy()
       state = await sendMsg<FillState>({ type: 'getFillState' })
