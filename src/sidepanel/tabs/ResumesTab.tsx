@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { Section } from '../components'
-import { ResumeVariant, bytesToBase64, uid } from '../../lib/types'
+import { Profile, ResumeVariant, base64ToBytes, bytesToBase64, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
+import { renderPdfThumbnail } from '../../lib/pdfText'
 import { masterVariant, renderResumePdf } from '../../pdf/resumePdf'
 import { ALL_TAGS, ResumeTemplate, TEMPLATES, TemplateTag } from '../../pdf/templates'
 import { runTailorCv } from '../../ai/run'
@@ -170,14 +171,24 @@ export function ResumesTab() {
         />
       </Section>
 
-      {picking && <TemplatePicker onPick={onPickTemplate} onCancel={() => setPicking(null)} />}
+      {picking && <TemplatePicker profile={profile} onPick={onPickTemplate} onCancel={() => setPicking(null)} />}
     </div>
   )
 }
 
-function TemplatePicker({ onPick, onCancel }: { onPick: (id: string) => void; onCancel: () => void }) {
+function TemplatePicker({
+  profile,
+  onPick,
+  onCancel,
+}: {
+  profile: Profile
+  onPick: (id: string) => void
+  onCancel: () => void
+}) {
   const t = useContent('resumes')
   const [tag, setTag] = useState<TemplateTag | null>(null)
+  // Rendered previews live as long as the picker does — filter clicks reuse them.
+  const cache = useRef(new Map<string, string>())
   const shown = tag ? TEMPLATES.filter((tpl) => tpl.tags.includes(tag)) : TEMPLATES
 
   const tagLabel: Record<TemplateTag, string> = {
@@ -203,7 +214,7 @@ function TemplatePicker({ onPick, onCancel }: { onPick: (id: string) => void; on
         <div className="tpl-grid">
           {shown.map((tpl) => (
             <button key={tpl.id} className="tpl-card" onClick={() => onPick(tpl.id)}>
-              <TemplateThumb tpl={tpl} />
+              <PdfThumb tpl={tpl} profile={profile} cache={cache.current} />
               <span className="tpl-name">{tpl.name}</span>
               <span className="tpl-for">{tpl.tags.slice(0, 2).map((tg) => tagLabel[tg]).join(' · ')}</span>
             </button>
@@ -215,56 +226,36 @@ function TemplatePicker({ onPick, onCancel }: { onPick: (id: string) => void; on
   )
 }
 
-/** Tiny schematic preview built from the same design tokens the PDF uses. */
-function TemplateThumb({ tpl }: { tpl: ResumeTemplate }) {
-  const accent = tpl.accent ?? '#111827'
-  const gray = '#d4d4d8'
-  const line = (w: string, h = 3, c = gray) => (
-    <div style={{ width: w, height: h, background: c, borderRadius: 1, flex: 'none' }} />
-  )
-  const section = (
-    <>
-      {line('34%', 3, '#71717a')}
-      {tpl.sectionStyle === 'accentRule' && line('16%', 2, accent)}
-      {line('92%')}
-      {line('84%')}
-      {line('88%')}
-    </>
-  )
-  const centered = tpl.headerStyle === 'centered'
-  return (
-    <div className="tpl-thumb">
-      {tpl.headerStyle === 'bar' ? (
-        <div style={{ background: accent, margin: '-6px -6px 4px', padding: '6px 6px 5px', display: 'flex', flexDirection: 'column', gap: 3 }}>
-          {line('52%', 4, '#ffffff')}
-          {line('36%', 2, 'rgba(255,255,255,0.7)')}
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: centered ? 'center' : 'flex-start', marginBottom: 4 }}>
-          {line('52%', 4, accent)}
-          {line('38%', 2)}
-        </div>
-      )}
-      {tpl.layout === 'sidebar' ? (
-        <div style={{ display: 'flex', gap: 4, flex: 1 }}>
-          <div style={{ width: '30%', display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {line('80%', 3, accent)}
-            {line('100%', 2)}
-            {line('90%', 2)}
-            {line('95%', 2)}
-            {line('70%', 2)}
-          </div>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>{section}{line('76%')}</div>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: tpl.density === 'compact' ? 2 : 3, flex: 1 }}>
-          {section}
-          {line('34%', 3, '#71717a')}
-          {tpl.sectionStyle === 'accentRule' && line('16%', 2, accent)}
-          {line('90%')}
-          {line('80%')}
-        </div>
-      )}
-    </div>
-  )
+/** Live preview: the user's OWN profile rendered by the real PDF engine. */
+function PdfThumb({
+  tpl,
+  profile,
+  cache,
+}: {
+  tpl: ResumeTemplate
+  profile: Profile
+  cache: Map<string, string>
+}) {
+  const [src, setSrc] = useState(cache.get(tpl.id) ?? '')
+
+  useEffect(() => {
+    if (cache.has(tpl.id)) return
+    let alive = true
+    void (async () => {
+      try {
+        const b64 = renderResumePdf(profile, masterVariant(profile), tpl.id)
+        const url = await renderPdfThumbnail(base64ToBytes(b64), 320)
+        if (!alive) return
+        cache.set(tpl.id, url)
+        setSrc(url)
+      } catch {
+        // Preview failure is cosmetic — the card stays pickable.
+      }
+    })()
+    return () => {
+      alive = false
+    }
+  }, [tpl.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  return <div className="tpl-thumb">{src && <img src={src} alt={tpl.name} />}</div>
 }

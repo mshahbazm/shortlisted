@@ -7,6 +7,24 @@ import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
 
+/** First page of a PDF as a PNG data URL — the template picker's live previews. */
+export async function renderPdfThumbnail(data: Uint8Array, targetWidth: number): Promise<string> {
+  const task = pdfjs.getDocument({ data })
+  const doc = await task.promise
+  try {
+    const page = await doc.getPage(1)
+    const base = page.getViewport({ scale: 1 })
+    const viewport = page.getViewport({ scale: targetWidth / base.width })
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.ceil(viewport.width)
+    canvas.height = Math.ceil(viewport.height)
+    await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise
+    return canvas.toDataURL('image/png')
+  } finally {
+    void task.destroy()
+  }
+}
+
 export async function extractPdfText(data: ArrayBuffer): Promise<string> {
   const doc = await pdfjs.getDocument({ data }).promise
   const pages: string[] = []

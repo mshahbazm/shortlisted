@@ -15,6 +15,16 @@ const INK = '#111827'
 const SOFT = '#4b5563'
 const LINE = '#d1d5db'
 
+/** Mix a hex color toward white — the sidebar's soft background tint. */
+function pale(hex: string, f = 0.93): string {
+  const n = parseInt(hex.slice(1), 16)
+  const ch = (v: number) => Math.round(v + (255 - v) * f)
+  const r = ch((n >> 16) & 255)
+  const g = ch((n >> 8) & 255)
+  const b = ch(n & 255)
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`
+}
+
 /** A text column with its own cursor. Page breaks only when `breaks` is on. */
 interface Col {
   x: number
@@ -89,7 +99,7 @@ export function renderResumePdf(profile: Profile, variant: TailoredResume, templ
     switch (tpl.sectionStyle) {
       case 'rule':
         doc.setTextColor(INK)
-        doc.text(title.toUpperCase(), col.x, col.y)
+        doc.text(title.toUpperCase(), col.x, col.y, { charSpace: 0.6 })
         col.y += 5
         doc.setDrawColor(LINE)
         doc.setLineWidth(0.7)
@@ -103,7 +113,7 @@ export function renderResumePdf(profile: Profile, variant: TailoredResume, templ
         break
       case 'accentRule':
         doc.setTextColor(INK)
-        doc.text(title.toUpperCase(), col.x, col.y)
+        doc.text(title.toUpperCase(), col.x, col.y, { charSpace: 0.6 })
         col.y += 4
         doc.setDrawColor(accent)
         doc.setLineWidth(2)
@@ -114,7 +124,7 @@ export function renderResumePdf(profile: Profile, variant: TailoredResume, templ
         doc.setFillColor(accent)
         doc.rect(col.x, col.y - 8, 3, 10, 'F')
         doc.setTextColor(INK)
-        doc.text(title.toUpperCase(), col.x + 9, col.y)
+        doc.text(title.toUpperCase(), col.x + 9, col.y, { charSpace: 0.6 })
         col.y += small ? 13 : 16
         break
     }
@@ -152,7 +162,7 @@ export function renderResumePdf(profile: Profile, variant: TailoredResume, templ
     }
   } else {
     const align = tpl.headerStyle === 'centered' ? 'center' : 'left'
-    text(full, name, 21, { bold: true, gapAfter: 1, align, color: tpl.accent ?? INK })
+    text(full, name, 22, { bold: true, gapAfter: 1, align, color: tpl.accent ?? INK })
     text(full, variant.headline, 11.5, { color: SOFT, gapAfter: 4, align })
     if (contactInHeader) {
       text(full, contact, 9, { color: SOFT, gapAfter: 1, align })
@@ -206,14 +216,18 @@ export function renderResumePdf(profile: Profile, variant: TailoredResume, templ
       const w = src!
       if (!ensure(main, 30)) return
       const dates = workPeriodLabel(w)
+      // Bold role, soft company — two weights read faster than one bold blob.
       font(true)
       doc.setFontSize(base + 1)
       doc.setTextColor(INK)
-      const titleLine = doc.splitTextToSize(`${w.title} · ${w.company}`, main.w - 86)[0] ?? ''
-      doc.text(titleLine, main.x, main.y)
+      const roleLine: string = doc.splitTextToSize(w.title, main.w - 150)[0] ?? ''
+      doc.text(roleLine, main.x, main.y)
+      const roleW = doc.getTextWidth(roleLine)
       font(false)
-      doc.setFontSize(9)
       doc.setTextColor(SOFT)
+      const companyLine: string = doc.splitTextToSize(` · ${w.company}`, main.w - 86 - roleW)[0] ?? ''
+      doc.text(companyLine, main.x + roleW, main.y)
+      doc.setFontSize(9)
       doc.text(dates, main.x + main.w, main.y, { align: 'right' })
       main.y += tpl.density === 'compact' ? 13 : 15
       const bullets = v.bullets.length ? v.bullets : w.highlights
@@ -284,6 +298,10 @@ export function renderResumePdf(profile: Profile, variant: TailoredResume, templ
   // ---- Sidebar (page 1 only, drawn after the main flow) ----
   if (tpl.layout === 'sidebar') {
     doc.setPage(1)
+    // Soft tinted panel behind the sidebar — the touch that makes the
+    // two-column read as designed rather than merely split.
+    doc.setFillColor(pale(accent))
+    doc.roundedRect(MARGIN - 12, sidebarTop - 14, SIDEBAR_W + 24, PAGE_H - MARGIN - sidebarTop + 20, 6, 6, 'F')
     const side: Col = { x: MARGIN, w: SIDEBAR_W, y: sidebarTop, breaks: false }
     const sideItem = (label: string, items: string[]) => {
       if (!items.length) return
