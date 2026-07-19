@@ -25,7 +25,7 @@ export const overlay = {
   newQuestionsHeader: 'New questions — answer once, reused forever:',
   skippedDemographic: (n: number) =>
     `${n} demographic/survey question(s) left for you — those are yours to answer by hand.`,
-  allDone: 'Everything it knows is in. Review the page, then submit when ready.',
+  allDone: 'Everything known is in. Review the page, then submit when ready.',
   answerPlaceholder: 'Your answer… (saved to your bank)',
   pickOne: 'Pick one…',
   saveAndFill: 'Save & fill',

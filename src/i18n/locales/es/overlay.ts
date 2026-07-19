@@ -25,7 +25,7 @@ export const overlay: tLocale['overlay'] = {
   newQuestionsHeader: 'Preguntas nuevas — responde una vez, se reutilizan siempre:',
   skippedDemographic: (n: number) =>
     `Te quedan ${n} pregunta(s) demográficas o de encuesta — esas se responden a mano.`,
-  allDone: 'Todo lo que sabe ya está puesto. Revisa la página y envía cuando estés listo.',
+  allDone: 'Todo lo conocido ya está puesto. Revisa la página y envía cuando estés listo.',
   answerPlaceholder: 'Tu respuesta… (se guarda en tu banco)',
   pickOne: 'Elige una opción…',
   saveAndFill: 'Guardar y rellenar',

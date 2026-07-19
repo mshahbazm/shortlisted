@@ -32,7 +32,7 @@ export const overlay: tLocale['overlay'] = {
       'pytania demograficzne/ankietowe',
       'pytań demograficznych/ankietowych',
     )} — na te odpowiadasz ręcznie.`,
-  allDone: 'Wszystko, co wie, już wpisane. Przejrzyj stronę i wyślij, kiedy zechcesz.',
+  allDone: 'Wszystko, co znane, już wpisane. Przejrzyj stronę i wyślij, kiedy zechcesz.',
   answerPlaceholder: 'Twoja odpowiedź… (zapisze się w Twoim banku)',
   pickOne: 'Wybierz…',
   saveAndFill: 'Zapisz i wypełnij',
