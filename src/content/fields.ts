@@ -142,6 +142,26 @@ function groupQuestionLabel(radio: HTMLInputElement): string {
   return ''
 }
 
+/**
+ * Pulse a brand-colored outline on a field so the user can see exactly which
+ * element the panel is talking about. Inline styles with !important so host
+ * page CSS can't suppress it; restores the element's style afterwards.
+ */
+export function flashField(el: HTMLElement): void {
+  const isTiny = el instanceof HTMLInputElement && (el.type === 'radio' || el.type === 'checkbox')
+  const target = isTiny ? ((el.closest('fieldset, li, div') as HTMLElement) ?? el) : el
+  const prev = target.getAttribute('style')
+  target.style.setProperty('outline', '3px solid #3d11ff', 'important')
+  target.style.setProperty('outline-offset', '3px', 'important')
+  target.style.setProperty('border-radius', '6px', 'important')
+  target.style.setProperty('transition', 'outline-color 0.5s ease', 'important')
+  window.setTimeout(() => target.style.setProperty('outline-color', 'transparent', 'important'), 1600)
+  window.setTimeout(() => {
+    if (prev) target.setAttribute('style', prev)
+    else target.removeAttribute('style')
+  }, 2200)
+}
+
 // Set a value the way a user would, so React/Vue state updates too.
 export function setNativeValue(el: HTMLInputElement | HTMLTextAreaElement, value: string): void {
   const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype

@@ -6,7 +6,7 @@ import * as store from '../lib/store'
 import { getContent, type tOverlayContent } from './i18n-bridge'
 import { GENERIC_ADAPTER, detectAdapter } from './adapters'
 import { attachResume, fieldContext, fillForm, watchSubmit, applyValue, FillResult } from './engine'
-import { FormField } from './fields'
+import { FormField, labelFor } from './fields'
 import { Overlay } from './overlay'
 
 declare global {
@@ -53,6 +53,53 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
   let state: FillState | null = null
   let lastResult: FillResult | null = null
   let attachedLabel: string | null = null
+  // Last answer saved per field — stops the form listeners from re-saving what
+  // the panel just applied (applyValue fires the same change/blur events).
+  const lastSaved = new WeakMap<FormField, string>()
+
+  const answerType = (field: FormField) =>
+    field.kind === 'select' ? ('select' as const) : field.kind === 'radio' ? ('boolean' as const) : ('text' as const)
+
+  const saveAnswer = (field: FormField, answer: string) => {
+    lastSaved.set(field, answer)
+    void sendMsg({
+      type: 'saveAnswer',
+      questionRaw: field.label,
+      answer,
+      answerType: answerType(field),
+      jobUrl: location.href,
+    })
+    void sendMsg({ type: 'resolvePending', questionRaw: field.label })
+  }
+
+  const readFieldValue = (field: FormField): string => {
+    if (field.radioGroup) {
+      const checked = field.radioGroup.find((r) => r.checked)
+      return checked ? labelFor(checked) || checked.value : ''
+    }
+    const el = field.el
+    if (el instanceof HTMLInputElement && el.type === 'checkbox') return el.checked ? 'Yes' : ''
+    if (el instanceof HTMLInputElement && el.type === 'file') return ''
+    if (el instanceof HTMLSelectElement) return el.selectedOptions[0]?.textContent?.trim() || el.value
+    return el.value.trim()
+  }
+
+  // If the user answers an open question directly in the form (instead of the
+  // panel), remember it too — same bank, same one-time capture.
+  const watchUnknownFields = (fields: FormField[]) => {
+    for (const field of fields) {
+      const capture = () => {
+        const value = readFieldValue(field)
+        if (!value || value === lastSaved.get(field)) return
+        saveAnswer(field, value)
+        overlay.markAnsweredFromForm(field, value)
+      }
+      for (const el of field.radioGroup ?? [field.el]) {
+        el.addEventListener('change', capture)
+        el.addEventListener('blur', capture)
+      }
+    }
+  }
 
   const overlay = new Overlay(adapter.name, t, {
     onFill: async () => {
@@ -86,18 +133,12 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
       }
 
       overlay.renderResult(lastResult, state.resumes, attachedLabel)
+      watchUnknownFields(lastResult.unknown)
     },
 
     onAnswer: (field: FormField, answer: string) => {
+      saveAnswer(field, answer)
       applyValue(field, answer)
-      void sendMsg({
-        type: 'saveAnswer',
-        questionRaw: field.label,
-        answer,
-        answerType: field.kind === 'select' ? 'select' : field.kind === 'radio' ? 'boolean' : 'text',
-        jobUrl: location.href,
-      })
-      void sendMsg({ type: 'resolvePending', questionRaw: field.label })
     },
 
     onPickResume: async (resumeId: string) => {

@@ -1,7 +1,7 @@
 // On-page panel: fill button, results, inline answering of unknown questions.
 // Rendered in a shadow root so host-page CSS can't touch it.
 
-import { FormField } from './fields'
+import { FormField, flashField } from './fields'
 import { FillResult } from './engine'
 import type { tMerged } from '../i18n/content'
 
@@ -91,6 +91,7 @@ export class Overlay {
   private body: HTMLDivElement
   private cb: OverlayCallbacks
   private t: tOverlayContent
+  private unknownRefs = new Map<FormField, { item: HTMLElement; ta: HTMLTextAreaElement; save: HTMLButtonElement }>()
 
   constructor(atsName: string, t: tOverlayContent, cb: OverlayCallbacks) {
     this.cb = cb
@@ -235,6 +236,7 @@ export class Overlay {
     attachedResumeLabel: string | null,
   ) {
     this.body.replaceChildren()
+    this.unknownRefs.clear()
 
     const again = document.createElement('button')
     again.className = 'fillBtn'
@@ -288,7 +290,10 @@ export class Overlay {
         src.className = 'src'
         src.textContent = this.t.usedSimilarAnswer
         item.append(q, src)
-        item.onclick = () => f.field.el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        item.onclick = () => {
+          f.field.el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          flashField(f.field.el)
+        }
         this.body.append(item)
       }
     }
@@ -325,7 +330,10 @@ export class Overlay {
     q.className = 'q'
     q.textContent = field.label
     q.style.cursor = 'pointer'
-    q.onclick = () => field.el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    q.onclick = () => {
+      field.el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      flashField(field.el)
+    }
     const ta = document.createElement('textarea')
     ta.placeholder = this.t.answerPlaceholder
     const save = document.createElement('button')
@@ -340,7 +348,18 @@ export class Overlay {
       save.disabled = true
     }
     item.append(q, ta, save)
+    this.unknownRefs.set(field, { item, ta, save })
     return item
+  }
+
+  /** The user answered this question directly in the form — reflect it. */
+  markAnsweredFromForm(field: FormField, value: string) {
+    const r = this.unknownRefs.get(field)
+    if (!r) return
+    r.ta.value = value
+    r.item.style.opacity = '0.55'
+    r.save.textContent = this.t.saved
+    r.save.disabled = true
   }
 
   setBusy() {
