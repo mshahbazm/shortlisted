@@ -42,4 +42,12 @@ export const settings = {
   detectHint:
     'Shortlisted watches for job application forms on every site and appears when it recognises one. Pages are checked on your computer and nothing about them is sent anywhere. Turn this off to limit it to the job boards we support directly.',
   detectToggle: 'Recognise application forms on any site',
+
+  serverTitle: 'Cloud server',
+  serverDevHint:
+    'This is an unpacked development build, so it talks to your local server. Change it only if your server runs elsewhere.',
+  serverProdHint:
+    'Connected to Shortlisted Cloud. Leave this empty unless you have been asked to point it somewhere else.',
+  serverUrlLabel: 'Server URL',
+  serverReset: 'Use the default',
 }

@@ -320,7 +320,7 @@ export interface QueueItem {
 // AI always runs on Shortlisted Cloud — there is no provider choice.
 
 export interface Settings {
-  // Empty cloudUrl = the build-time default from lib/config.ts
+  // Empty cloudUrl = the default for this install type (see lib/config.ts)
   // (dev → localhost, prod → hosted origin); set only as an advanced override.
   cloudUrl: string
   cloudToken?: string // device token, auto-provisioned on first use
@@ -338,7 +338,7 @@ export interface Settings {
 }
 
 export const defaultSettings = (): Settings => ({
-  cloudUrl: '', // empty = build-time default (see lib/config.ts)
+  cloudUrl: '', // empty = follow the install type (see lib/config.ts)
 })
 
 // Cloud URLs that were once shipped as *defaults* and may linger in saved

@@ -44,4 +44,12 @@ export const settings: tLocale['settings'] = {
   detectHint:
     'Shortlisted wypatruje formularzy aplikacyjnych na wszystkich stronach i pojawia się, gdy rozpozna taki formularz. Strony są sprawdzane na Twoim komputerze i nic nie jest wysyłane. Wyłącz, aby ograniczyć działanie do bezpośrednio obsługiwanych portali.',
   detectToggle: 'Rozpoznawaj formularze aplikacyjne na każdej stronie',
+
+  serverTitle: 'Serwer w chmurze',
+  serverDevHint:
+    'To jest rozpakowana kompilacja deweloperska, więc łączy się z Twoim lokalnym serwerem. Zmień to tylko, jeśli Twój serwer działa gdzie indziej.',
+  serverProdHint:
+    'Połączono z Shortlisted Cloud. Zostaw puste, chyba że poproszono Cię o wskazanie innego adresu.',
+  serverUrlLabel: 'Adres URL serwera',
+  serverReset: 'Użyj domyślnego',
 }

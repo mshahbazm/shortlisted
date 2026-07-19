@@ -12,7 +12,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && bun test && vite build",
     "build:dev": "tsc --noEmit && vite build --mode development",
-    "zip": "cd dist && zip -r ../shortlisted-v$npm_package_version.zip .",
+    "zip": "cd dist-prod && zip -r ../shortlisted-v$npm_package_version.zip .",
     "test": "bun test"
   },
   "dependencies": {

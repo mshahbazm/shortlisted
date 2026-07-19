@@ -4,6 +4,7 @@ import { Section } from '../components'
 import { StorageShape, storageDefaults } from '../../lib/types'
 import { LOCALES, LOCALE_LABELS, isLocale, useContent } from '../../i18n'
 import { CloudUsage, cloudUsage, sendLoginCode, verifyLoginCode } from '../../ai/run'
+import { cloudBaseUrl, cloudUrlDefault, isDevInstall } from '../../lib/config'
 import { sendMsg } from '../../lib/messaging'
 
 export function SettingsTab() {
@@ -76,6 +77,27 @@ export function SettingsTab() {
             onChange={(e) => set({ detectEverywhere: e.target.checked })}
           />
         </label>
+      </Section>
+
+      {/* Which server we talk to, always visible. A wrong endpoint used to be
+          invisible until a request failed with a URL nobody had chosen. */}
+      <Section title={t.serverTitle} summary={cloudBaseUrl(s)}>
+        <p className="microhint">{isDevInstall() ? t.serverDevHint : t.serverProdHint}</p>
+        <label className="f">
+          <span>{t.serverUrlLabel}</span>
+          <input
+            type="text"
+            placeholder={cloudUrlDefault()}
+            value={s.cloudUrl ?? ''}
+            onChange={(e) => set({ cloudUrl: e.target.value })}
+            spellCheck={false}
+          />
+        </label>
+        {s.cloudUrl?.trim() && (
+          <button className="ghost small" onClick={() => set({ cloudUrl: '' })}>
+            {t.serverReset}
+          </button>
+        )}
       </Section>
 
       <Section title={t.backupTitle} summary={t.backupSummary}>

@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-prod/
 *.zip
 .DS_Store
 # Business docs live in the private shortlisted-cloud repo (symlinked locally)

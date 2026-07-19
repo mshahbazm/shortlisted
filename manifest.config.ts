@@ -1,23 +1,17 @@
 import { defineManifest } from '@crxjs/vite-plugin'
 
-// ATS domains we ship precise adapters for — exact form roots, submit
-// selectors and quirks. Every other site is handled by the generic engine,
-// which the detector (content/detect.ts) points at the right pages.
-export const ATS_MATCHES = [
-  'https://boards.greenhouse.io/*',
-  'https://job-boards.greenhouse.io/*',
-  'https://jobs.lever.co/*',
-  'https://jobs.ashbyhq.com/*',
-  'https://apply.workable.com/*',
-  'https://*.bamboohr.com/*',
-  'https://*.breezy.hr/*',
-  'https://*.recruitee.com/*',
-  'https://jobs.smartrecruiters.com/*',
-]
+// The ATS platforms we ship precise adapters for are listed in
+// content/adapters.ts, which matches on hostname at runtime. The manifest no
+// longer needs that list: the content script runs everywhere and the detector
+// decides, so there is nothing here to keep in step with it.
 
-export default defineManifest({
+export default defineManifest(({ mode }) => ({
   manifest_version: 3,
-  name: 'Shortlisted — job application copilot',
+  // A dev build says so in its name. Both builds can be loaded unpacked side
+  // by side, and chrome://extensions, the toolbar and the side panel all show
+  // which one you are actually looking at — the thing that is invisible when
+  // the only difference is which server the code talks to.
+  name: mode === 'production' ? 'Shortlisted — job application copilot' : 'Shortlisted (dev) — local server',
   version: '0.1.0',
   description:
     'Fills job applications from your profile, learns every new question, and tailors truthful CV versions. You review and click submit.',
@@ -56,4 +50,4 @@ export default defineManifest({
     '48': 'icons/icon48.png',
     '128': 'icons/icon128.png',
   },
-})
+}))

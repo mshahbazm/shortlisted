@@ -42,4 +42,12 @@ export const settings: tLocale['settings'] = {
   detectHint:
     'Shortlisted let op alle sites op sollicitatieformulieren en verschijnt zodra het er een herkent. Pagina’s worden op je eigen computer bekeken en er wordt niets verstuurd. Zet dit uit om het te beperken tot de vacaturesites die we direct ondersteunen.',
   detectToggle: 'Sollicitatieformulieren op elke site herkennen',
+
+  serverTitle: 'Cloudserver',
+  serverDevHint:
+    'Dit is een uitgepakte ontwikkelbuild, dus hij praat met je lokale server. Wijzig dit alleen als je server ergens anders draait.',
+  serverProdHint:
+    'Verbonden met Shortlisted Cloud. Laat dit leeg, tenzij je gevraagd is het elders heen te wijzen.',
+  serverUrlLabel: 'Server-URL',
+  serverReset: 'Standaard gebruiken',
 }

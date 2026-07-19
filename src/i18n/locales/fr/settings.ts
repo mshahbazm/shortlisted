@@ -42,4 +42,12 @@ export const settings: tLocale['settings'] = {
   detectHint:
     'Shortlisted repère les formulaires de candidature sur tous les sites et apparaît quand il en reconnaît un. L’analyse se fait sur votre ordinateur et rien n’est envoyé. Désactivez pour le limiter aux sites d’emploi que nous gérons directement.',
   detectToggle: 'Reconnaître les formulaires de candidature sur tout site',
+
+  serverTitle: 'Serveur cloud',
+  serverDevHint:
+    'Ceci est une version de développement non empaquetée : elle utilise votre serveur local. Ne le changez que si votre serveur est ailleurs.',
+  serverProdHint:
+    'Connecté à Shortlisted Cloud. Laissez vide, sauf si on vous a demandé de pointer ailleurs.',
+  serverUrlLabel: 'URL du serveur',
+  serverReset: 'Utiliser la valeur par défaut',
 }
