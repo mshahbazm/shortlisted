@@ -12,8 +12,8 @@ import * as store from '../../lib/store'
 
 export function QuestionsTab() {
   const t = useContent('questions')
-  const [pending, savePending] = useStore('pendingQuestions')
-  const [bank, saveBank] = useStore('answerBank')
+  const [pending] = useStore('pendingQuestions')
+  const [bank] = useStore('answerBank')
   const [settings] = useStore('settings')
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [editing, setEditing] = useState<string | null>(null)
@@ -31,30 +31,41 @@ export function QuestionsTab() {
     }
   }
 
+  // The background writes this bank constantly (form saves, polish, intake) —
+  // every mutation must run against the live list, never this render's copy.
   const answerPending = (id: string) => {
     const q = pending.find((p) => p.id === id)
     const answer = (drafts[id] ?? '').trim()
     if (!q || !answer) return
     const norm = normalizeQuestion(q.questionRaw)
-    const existing = bank.find((a) => a.questionNorm === norm)
-    if (existing) {
-      saveBank(bank.map((a) => (a.id === existing.id ? { ...a, answer, polished: undefined, lastUsedAt: Date.now() } : a)))
-      void repolish(existing.id, q.questionRaw, answer)
-    } else {
-      const fresh: BankAnswer = {
-        id: uid(), questionNorm: norm, questionRaw: [q.questionRaw], answer,
-        answerType: 'text', timesUsed: 0, lastUsedAt: Date.now(), sourceJobUrls: [q.jobUrl],
-      }
-      saveBank([...bank, fresh])
-      void repolish(fresh.id, q.questionRaw, answer)
-    }
-    savePending(pending.filter((p) => p.id !== id))
+    let targetId = ''
+    void store
+      .update('answerBank', (b) => {
+        const existing = b.find((a) => a.questionNorm === norm)
+        if (existing) {
+          targetId = existing.id
+          return b.map((a) => (a.id === existing.id ? { ...a, answer, polished: undefined, lastUsedAt: Date.now() } : a))
+        }
+        targetId = uid()
+        const fresh: BankAnswer = {
+          id: targetId, questionNorm: norm, questionRaw: [q.questionRaw], answer,
+          answerType: 'text', timesUsed: 0, lastUsedAt: Date.now(), sourceJobUrls: [q.jobUrl],
+        }
+        return [...b, fresh]
+      })
+      .then(() => void repolish(targetId, q.questionRaw, answer))
+    dismissPending(id)
   }
+
+  const dismissPending = (id: string) =>
+    void store.update('pendingQuestions', (p) => p.filter((x) => x.id !== id))
+
+  const removeAnswer = (id: string) => void store.update('answerBank', (b) => b.filter((x) => x.id !== id))
 
   const saveEdit = (a: BankAnswer) => {
     const answer = editText.trim()
     if (!answer) return
-    saveBank(bank.map((x) => (x.id === a.id ? { ...x, answer, polished: undefined } : x)))
+    void store.update('answerBank', (b) => b.map((x) => (x.id === a.id ? { ...x, answer, polished: undefined } : x)))
     setEditing(null)
     void repolish(a.id, a.questionRaw[0] ?? '', answer)
   }
@@ -84,7 +95,7 @@ export function QuestionsTab() {
                 <button className="primary small" onClick={() => answerPending(q.id)} disabled={!(drafts[q.id] ?? '').trim()}>
                   {t.save}
                 </button>
-                <button className="link small" onClick={() => savePending(pending.filter((p) => p.id !== q.id))}>
+                <button className="link small" onClick={() => dismissPending(q.id)}>
                   {t.dismiss}
                 </button>
               </div>
@@ -121,7 +132,7 @@ export function QuestionsTab() {
                     <div className="sub" style={{ flex: 1, fontSize: 11.5 }}>{t.askedAs(a.questionRaw[0] ?? '')}</div>
                     {a.timesUsed > 0 && <span className="chip">{t.timesUsed(a.timesUsed)}</span>}
                     <button className="link small" onClick={() => { setEditing(a.id); setEditText(a.answer) }}>{t.edit}</button>
-                    <button className="danger small" onClick={() => saveBank(bank.filter((x) => x.id !== a.id))}>✕</button>
+                    <button className="danger small" onClick={() => removeAnswer(a.id)}>✕</button>
                   </div>
                 </>
               )}

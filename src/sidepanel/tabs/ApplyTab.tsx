@@ -4,13 +4,14 @@ import { useContent } from '../../i18n'
 import { Section } from '../components'
 import { QueueItem, jobUrlKey, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
+import * as store from '../../lib/store'
 import { cloudUsageStats, runScoreFit, ScoreFitResult, UsageStatsRow } from '../../ai/run'
 import { FIT_COLORS, FitBand, fitBand, fitPercent } from '../../lib/fitBands'
 
 export function ApplyTab() {
   const t = useContent('apply')
-  const [queue, saveQueue] = useStore('queue')
-  const [apps, saveApps] = useStore('applications')
+  const [queue] = useStore('queue')
+  const [apps] = useStore('applications')
   const [settings] = useStore('settings')
   const [profile] = useStore('profile')
   const [fitScores] = useStore('fitScores')
@@ -22,13 +23,21 @@ export function ApplyTab() {
 
   const addPasted = () => {
     const urls = pasteText.split(/[\n,\s]+/).map((s) => s.trim()).filter((s) => /^https?:\/\//.test(s))
-    const existing = new Set(queue.map((q) => q.url))
-    const fresh: QueueItem[] = urls
-      .filter((u) => !existing.has(u))
-      .map((url) => ({ id: uid(), url, tags: [], status: 'todo', addedAt: Date.now() }))
-    saveQueue([...queue, ...fresh])
+    // Dedup against the LIVE queue, not this render's copy.
+    let added = 0
+    void store
+      .update('queue', (q) => {
+        const existing = new Set(q.map((x) => x.url))
+        const fresh: QueueItem[] = urls
+          .filter((u) => !existing.has(u))
+          .map((url) => ({ id: uid(), url, tags: [], status: 'todo', addedAt: Date.now() }))
+        added = fresh.length
+        return [...q, ...fresh]
+      })
+      .then(() => {
+        if (added) setNotice(t.addedJobs(added))
+      })
     setPasteText('')
-    if (fresh.length) setNotice(t.addedJobs(fresh.length))
   }
 
   const fillCurrent = async () => {
@@ -43,7 +52,7 @@ export function ApplyTab() {
   }
 
   const setStatus = (id: string, status: QueueItem['status']) =>
-    saveQueue(queue.map((q) => (q.id === id ? { ...q, status } : q)))
+    void store.update('queue', (q) => q.map((x) => (x.id === id ? { ...x, status } : x)))
 
   return (
     <div>
@@ -128,9 +137,12 @@ export function ApplyTab() {
                 <select
                   value={a.status}
                   style={{ width: 105 }}
-                  onChange={(e) =>
-                    saveApps(apps.map((x) => (x.id === a.id ? { ...x, status: e.target.value as typeof a.status } : x)))
-                  }
+                  onChange={(e) => {
+                    const status = e.target.value as typeof a.status
+                    void store.update('applications', (list) =>
+                      list.map((x) => (x.id === a.id ? { ...x, status } : x)),
+                    )
+                  }}
                 >
                   {(['applied', 'interviewing', 'offer', 'rejected'] as const).map((s) => (
                     <option key={s} value={s}>

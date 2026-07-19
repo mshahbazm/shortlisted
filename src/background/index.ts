@@ -16,6 +16,12 @@ chrome.runtime.onInstalled.addListener(() => {
   void refreshBadge()
 })
 
+// The badge must track pendingQuestions no matter WHO writes it — the side
+// panel edits the list directly, not only through messages.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.pendingQuestions) void refreshBadge()
+})
+
 // Mirror local data to the signed-in account; load the account's data
 // whenever the worker wakes.
 startCloudMirror()

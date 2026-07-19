@@ -4,6 +4,7 @@ import { useContent } from '../../i18n'
 import { Section } from '../components'
 import { Profile, ResumeVariant, base64ToBytes, bytesToBase64, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
+import * as store from '../../lib/store'
 import { renderPdfPages, renderPdfThumbnail } from '../../lib/pdfText'
 import { masterVariant, renderResumePdf } from '../../pdf/resumePdf'
 import { ALL_TAGS, ResumeTemplate, TEMPLATES, TemplateTag } from '../../pdf/templates'
@@ -31,7 +32,7 @@ function styleName(t: tMerged<'resumes'>, id: string): string {
 
 export function ResumesTab() {
   const t = useContent('resumes')
-  const [resumes, saveResumes] = useStore('resumes')
+  const [resumes] = useStore('resumes')
   const [profile] = useStore('profile')
   const [settings] = useStore('settings')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -43,18 +44,28 @@ export function ResumesTab() {
   // Which generation is waiting on a template pick.
   const [picking, setPicking] = useState<'master' | 'tailor' | null>(null)
 
-  const addResume = (r: ResumeVariant) => {
-    const others = r.isDefault ? resumes.map((x) => ({ ...x, isDefault: false })) : resumes
-    saveResumes([...others, r])
-  }
+  // Every mutation runs against the LIVE list via store.update — the list in
+  // this closure may be stale (background intake, cloud pull, a second add in
+  // quick succession), and read-modify-write against it loses entries.
+  const addResume = (build: (list: ResumeVariant[]) => ResumeVariant) =>
+    store.update('resumes', (list) => {
+      const r = build(list)
+      const others = r.isDefault ? list.map((x) => ({ ...x, isDefault: false })) : list
+      return [...others, r]
+    })
+
+  const removeResume = (id: string) => void store.update('resumes', (list) => list.filter((x) => x.id !== id))
+  const makeDefault = (id: string) =>
+    void store.update('resumes', (list) => list.map((x) => ({ ...x, isDefault: x.id === id })))
 
   const onUpload = async (file: File) => {
     const id = uid()
-    addResume({
+    const dataBase64 = bytesToBase64(await file.arrayBuffer())
+    await addResume((list) => ({
       id, label: file.name.replace(/\.pdf$/i, ''), fileName: file.name, tags: [],
-      isDefault: resumes.length === 0, createdAt: Date.now(), source: 'uploaded',
-      dataBase64: bytesToBase64(await file.arrayBuffer()),
-    })
+      isDefault: list.length === 0, createdAt: Date.now(), source: 'uploaded', dataBase64,
+    }))
+    showToast(t.cvReady)
     // Background: tag the CV for the roles it targets, fold new facts into
     // the profile (additive only).
     void sendMsg({ type: 'intakeResume', resumeId: id })
@@ -69,14 +80,14 @@ export function ResumesTab() {
       const variant = masterVariant(profile)
       const base64 = renderResumePdf(profile, variant, templateId)
       const name = `${profile.identity.firstName}-${profile.identity.lastName}-CV-${templateId}.pdf`.replace(/\s+/g, '-')
-      addResume({
+      await addResume((list) => ({
         id: uid(),
-        label: uniqueLabel(styleName(t, templateId), resumes),
+        label: uniqueLabel(styleName(t, templateId), list),
         fileName: name,
         tags: ['master', ...(profile.headline ? [profile.headline] : [])],
-        isDefault: resumes.length === 0, createdAt: Date.now(), source: 'generated',
+        isDefault: list.length === 0, createdAt: Date.now(), source: 'generated',
         templateId, dataBase64: base64, content: variant,
-      })
+      }))
       showToast(t.cvReady)
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
@@ -92,14 +103,15 @@ export function ResumesTab() {
       const result = await runTailorCv(settings, profile, jobText, setBusyStep)
       const base64 = renderResumePdf(profile, result.resume, templateId)
       const safe = result.resume.label.replace(/[^\w\- ]/g, '').replace(/\s+/g, '-').slice(0, 40)
-      addResume({
+      await addResume((list) => ({
         id: uid(),
-        label: uniqueLabel([result.resume.label, result.job.company].filter(Boolean).join(' — '), resumes),
+        label: uniqueLabel([result.resume.label, result.job.company].filter(Boolean).join(' — '), list),
         fileName: `${profile.identity.firstName}-${profile.identity.lastName}-${safe}.pdf`.replace(/\s+/g, '-'),
         tags: [result.job.role, result.job.company].filter(Boolean),
         isDefault: false, createdAt: Date.now(), source: 'generated',
         templateId, dataBase64: base64, content: result.resume,
-      })
+      }))
+      showToast(t.cvReady)
       setGaps(result.gaps)
       setJobText('')
     } catch (e) {
@@ -156,11 +168,11 @@ export function ResumesTab() {
               <button className="small link" onClick={() => void openPreview(r)}>{t.previewLabel}</button>
               <button className="small link" onClick={() => download(r)}>{t.pdf}</button>
               {!r.isDefault && (
-                <button className="small link" onClick={() => saveResumes(resumes.map((x) => ({ ...x, isDefault: x.id === r.id })))}>
+                <button className="small link" onClick={() => makeDefault(r.id)}>
                   {t.makeDefault}
                 </button>
               )}
-              <button className="small danger" onClick={() => saveResumes(resumes.filter((x) => x.id !== r.id))}>✕</button>
+              <button className="small danger" onClick={() => removeResume(r.id)}>✕</button>
             </div>
           ))}
         </div>

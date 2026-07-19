@@ -14,6 +14,7 @@ import {
   workPeriodLabel,
 } from '../../lib/types'
 import { cloudParseResumePdf, runExtractProfile } from '../../ai/run'
+import * as store from '../../lib/store'
 import { showToast } from '../toast'
 
 export function ProfileTab() {
@@ -23,12 +24,18 @@ export function ProfileTab() {
 
   const p = profile
   if (!loaded) return null
-  // Every edit on this tab persists immediately; the toast is the receipt.
+  // Every edit persists immediately; the toast is the receipt. Patches merge
+  // into the LIVE profile via store.update so a background write (CV intake
+  // adding skills, cloud pull) landing mid-edit is never clobbered.
+  const set = (patch: Partial<typeof profile>) => {
+    void store.update('profile', (cur) => ({ ...cur, ...patch }))
+    showToast(t.savedToast)
+  }
+  // Full replace — only the re-import flow, where replacing IS the intent.
   const save = (v: typeof profile) => {
     saveProfileRaw(v)
     showToast(t.savedToast)
   }
-  const set = (patch: Partial<typeof profile>) => save({ ...p, ...patch })
   const setIdentity = (k: keyof typeof p.identity, v: string) => set({ identity: { ...p.identity, [k]: v } })
   const setLinks = (k: keyof typeof p.links, v: string) => set({ links: { ...p.links, [k]: v } })
   const setFacts = (k: keyof typeof p.facts, v: string) => set({ facts: { ...p.facts, [k]: v } })
