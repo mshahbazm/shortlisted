@@ -233,6 +233,10 @@ select.langswitch:hover { color: var(--fg); }
   display: grid; grid-template-columns: repeat(2, 1fr);
   gap: 10px; margin-bottom: 12px;
 }
+/* Narrow side panel: one big preview per row. */
+@media (max-width: 439px) {
+  .tpl-grid { grid-template-columns: 1fr; }
+}
 .tpl-card {
   background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
   padding: 8px; cursor: pointer; display: flex; flex-direction: column; gap: 3px;
