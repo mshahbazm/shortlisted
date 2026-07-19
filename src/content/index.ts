@@ -199,16 +199,18 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
   // The reasoning layer, ONE batched call covering two lists:
   //  - fields the deterministic pass couldn't answer (filled from the
   //    account's stored profile + answer bank), and
-  //  - uncertain fills it wants double-checked: fuzzy bank matches and
-  //    option picks (selects/radios), where text matching can be subtly off.
-  // Exact profile fills (email, phone…) are never sent — they can't be wrong.
+  //  - EVERY auto-filled field for review. The trigger is doubt (an
+  //    unanswered field, a fuzzy match, an option pick) — but once the call
+  //    happens anyway, reviewing the certain fills too is nearly free and
+  //    catches the sneakiest error: a right value in a mis-labeled field.
   // AI values are applied but NOT banked; confirming or editing banks them.
   const runFillAssist = async (result: FillResult) => {
-    const unknown = result.unknown
-    const uncertain = result.filled.filter(
+    const unknown = result.unknown.slice(0, 40)
+    const doubts = result.filled.some(
       (f) => f.source === 'bank-fuzzy' || f.field.kind === 'select' || f.field.kind === 'radio',
     )
-    if (unknown.length + uncertain.length === 0) return
+    if (unknown.length === 0 && !doubts) return
+    const uncertain = result.filled.slice(0, 40)
     overlay.aiNote(t.aiWorking(unknown.length + uncertain.length))
     const fields: AssistField[] = unknown.map((f, i) => ({
       id: i,
