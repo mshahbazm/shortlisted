@@ -28,6 +28,8 @@ export const overlay: tLocale['overlay'] = {
   allDone: 'Todo lo conocido ya está puesto. Revisa la página y envía cuando estés listo.',
   answerPlaceholder: 'Tu respuesta… (se guarda en tu banco)',
   pickOne: 'Elige una opción…',
+  pickOnPage: 'Elegir en la página',
+  pickOnPageHint: 'Esta lista es larga — elige directamente en el formulario. Tu elección se guarda para la próxima vez.',
   cvMissing: 'Esta oferta pide un CV, pero aún no hay ninguno guardado. Añádelo una vez — se adjuntará en cada solicitud.',
   uploadCv: 'Subir CV (PDF)',
   defaultMark: 'predeterminado',

@@ -135,7 +135,8 @@ export class Overlay {
   private caretEl: HTMLButtonElement | null = null
   private unknownRefs = new Map<
     FormField,
-    { item: HTMLElement; input: HTMLTextAreaElement | HTMLSelectElement; save: HTMLButtonElement }
+    // input is null for page-pick cards (long/dynamic option lists).
+    { item: HTMLElement; input: HTMLTextAreaElement | HTMLSelectElement | null; save: HTMLButtonElement }
   >()
 
   constructor(t: tOverlayContent, cb: OverlayCallbacks) {
@@ -497,6 +498,11 @@ export class Overlay {
     }
   }
 
+  // Above this many options we stop replicating the dropdown: the page's own
+  // widget is the source of truth (dynamic lists load there, search works
+  // there), and a half-copied list would mislead.
+  private static MAX_PANEL_OPTIONS = 25
+
   private unknownItem(field: FormField): HTMLElement {
     const item = document.createElement('div')
     item.className = 'item unknown'
@@ -504,27 +510,69 @@ export class Overlay {
     q.className = 'q'
     q.textContent = field.label
     q.style.cursor = 'pointer'
-    q.onclick = () => {
+    const jumpToField = () => {
       field.el.scrollIntoView({ behavior: 'smooth', block: 'center' })
       flashField(field.el)
     }
+    q.onclick = jumpToField
+
+    const isChoice = field.kind === 'select' || field.kind === 'radio'
+    const opts = isChoice ? (optionsOf(field) ?? []) : undefined
+
+    // Long or dynamically-loaded lists: hand the pick to the page itself —
+    // the user's choice comes back through the form watcher.
+    if (opts && (opts.length === 0 || opts.length > Overlay.MAX_PANEL_OPTIONS)) {
+      const hint = document.createElement('div')
+      hint.className = 'src'
+      hint.textContent = this.t.pickOnPageHint
+      const go = document.createElement('button')
+      go.className = 'save'
+      go.textContent = this.t.pickOnPage
+      go.onclick = () => {
+        jumpToField()
+        window.setTimeout(() => {
+          field.el.focus()
+          try {
+            ;(field.el as HTMLSelectElement & { showPicker?: () => void }).showPicker?.()
+          } catch {
+            // Needs user activation on some pages — focus alone still helps.
+          }
+        }, 350)
+      }
+      item.append(q, hint, go)
+      this.unknownRefs.set(field, { item, input: null, save: go })
+      return item
+    }
+
     // Fields with fixed choices get the page's real options — free text could
     // never be applied to them. Everything else gets a textarea.
-    const opts = optionsOf(field)
     let input: HTMLTextAreaElement | HTMLSelectElement
     if (opts && opts.length > 0) {
       const sel = document.createElement('select')
-      const ph = document.createElement('option')
-      ph.value = ''
-      ph.textContent = this.t.pickOne
-      ph.disabled = true
-      ph.selected = true
-      sel.append(ph)
-      for (const o of opts) {
-        const opt = document.createElement('option')
-        opt.value = o
-        opt.textContent = o
-        sel.append(opt)
+      const rebuild = (list: string[]) => {
+        const selected = sel.value
+        const ph = document.createElement('option')
+        ph.value = ''
+        ph.textContent = this.t.pickOne
+        ph.disabled = true
+        ph.selected = true
+        sel.replaceChildren(ph)
+        for (const o of list) {
+          const opt = document.createElement('option')
+          opt.value = o
+          opt.textContent = o
+          sel.append(opt)
+        }
+        if (selected && list.includes(selected)) sel.value = selected
+      }
+      rebuild(opts)
+      // Pages populate dropdowns late — re-read the live options on focus so
+      // the panel never offers yesterday's list.
+      sel.onfocus = () => {
+        const fresh = optionsOf(field) ?? []
+        if (fresh.length && (fresh.length !== sel.options.length - 1 || fresh.some((o, i) => sel.options[i + 1]?.value !== o))) {
+          rebuild(fresh)
+        }
       }
       input = sel
     } else {
@@ -548,11 +596,23 @@ export class Overlay {
     return item
   }
 
+  /** Show a captured value on a card that has no input (page-pick cards). */
+  private showPickedValue(r: { item: HTMLElement; save: HTMLButtonElement }, value: string) {
+    let v = r.item.querySelector<HTMLElement>('.pickedVal')
+    if (!v) {
+      v = document.createElement('div')
+      v.className = 'q pickedVal'
+      r.item.insertBefore(v, r.save)
+    }
+    v.textContent = value
+  }
+
   /** The user answered this question directly in the form — reflect it. */
   markAnsweredFromForm(field: FormField, value: string) {
     const r = this.unknownRefs.get(field)
     if (!r) return
-    r.input.value = value
+    if (r.input) r.input.value = value
+    else this.showPickedValue(r, value)
     r.item.style.opacity = '0.55'
     r.save.textContent = this.t.saved
     r.save.disabled = true
@@ -562,13 +622,14 @@ export class Overlay {
   markAiFilled(field: FormField, value: string) {
     const r = this.unknownRefs.get(field)
     if (!r) return
-    r.input.value = value
+    if (r.input) r.input.value = value
+    else this.showPickedValue(r, value)
     r.item.style.borderColor = '#3d11ff'
     if (!r.item.querySelector('.ai-src')) {
       const note = document.createElement('div')
       note.className = 'src ai-src'
       note.textContent = this.t.aiFilled
-      r.item.insertBefore(note, r.input)
+      r.item.insertBefore(note, r.input ?? r.save)
     }
   }
 
