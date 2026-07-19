@@ -77,8 +77,8 @@ export const profile: tLocale['profile'] = {
   englishLevel: 'Poziom angielskiego',
 
   tellMeTitle: 'Powiedz mi coś nowego',
-  tellMeSummary: 'zwykłe słowa, zapisane we właściwym miejscu',
-  tellMePlaceholder: 'Umiejętność, język, certyfikat albo coś z poprzedniej pracy — zwykłe słowa. np. Znam też Figmę. Albo: W poprzedniej firmie kierowałem pięcioosobowym zespołem.',
+  tellMeSummary: 'nowa umiejętność, certyfikat, coś pominiętego',
+  tellMePlaceholder: 'Cokolwiek o Tobie — świeżo zdobyta umiejętność, uzyskany certyfikat, język, którym mówisz, albo coś z dawnej pracy, czego nigdy nie zapisałeś. Zwykłe słowa.',
   tellMeButton: 'Dodaj do profilu',
   tellMeNothing: 'Nic nowego — Twój profil już to obejmuje.',
   tellMeAdded: (n: number) => `Zapisano w profilu ✓ (nowe: ${n})`,

@@ -244,6 +244,7 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
       for (const f of lastResult.resumeFields) {
         if (attachResume(f, base64, file.name)) ok = true
       }
+      attachedResumeId = ok ? res.id : null
       attachedLabel = ok ? (res.resumes.find((r) => r.id === res.id)?.label ?? null) : null
       overlay.renderResult(lastResult, state.resumes, attachedLabel)
     },
@@ -449,6 +450,8 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
         company: guessCompany(),
         title: document.title.split(/[|\-–]/)[0]?.trim() ?? document.title,
         ats: adapter.name,
+        // Remember which CV actually went with this application.
+        resumeId: attachedResumeId ?? undefined,
       },
     })
   })

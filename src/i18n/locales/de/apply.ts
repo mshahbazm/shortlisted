@@ -6,8 +6,6 @@ export const apply: tLocale['apply'] = {
   openNextJob: 'Nächsten Job öffnen',
   fillCurrentTab: 'Aktuellen Tab ausfüllen',
   addedJobs: (n: number) => `${n} Job${n === 1 ? '' : 's'} hinzugefügt.`,
-  permissionDeclined:
-    'Berechtigung abgelehnt — das Ausfüllen funktioniert weiter auf den bekannten Jobseiten.',
   lookForPanel: 'Such das Shortlisted-Panel auf der Seite.',
   fitChip: (score: number) => `Fit ${score}/10`,
   andMore: (n: number) => `…und ${n} weitere`,
@@ -30,9 +28,14 @@ export const apply: tLocale['apply'] = {
   appliedTitle: 'Beworben',
   appliedSummary: (n: number) => (n ? `bisher ${n}` : 'noch nichts'),
   submitsLogged: 'Abgeschickte Bewerbungen landen automatisch hier.',
+  cvSent: 'Gesendeter Lebenslauf:',
   pageLink: 'Seite',
   statusApplied: 'beworben',
   statusInterviewing: 'im Gespräch',
   statusOffer: 'Angebot',
   statusRejected: 'abgelehnt',
+
+  fillNoTab: 'Kein aktiver Tab.',
+  fillCannotFill: 'Diese Seite kann nicht ausgefüllt werden.',
+  fillNoForm: 'Auf dieser Seite wurde kein Bewerbungsformular gefunden.',
 }

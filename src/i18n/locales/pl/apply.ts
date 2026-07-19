@@ -7,8 +7,6 @@ export const apply: tLocale['apply'] = {
   openNextJob: 'Otwórz następną ofertę',
   fillCurrentTab: 'Wypełnij bieżącą kartę',
   addedJobs: (n: number) => `Dodano ${n} ${plural(n, 'ofertę', 'oferty', 'ofert')}.`,
-  permissionDeclined:
-    'Uprawnienia odrzucone — autouzupełnianie nadal działa na znanych portalach pracy.',
   lookForPanel: 'Poszukaj panelu Shortlisted na stronie.',
   fitChip: (score: number) => `dopasowanie ${score}/10`,
   andMore: (n: number) => `…i jeszcze ${n}`,
@@ -31,9 +29,14 @@ export const apply: tLocale['apply'] = {
   appliedTitle: 'Wysłane',
   appliedSummary: (n: number) => (n ? `już ${n}` : 'jeszcze nic'),
   submitsLogged: 'Wysłane aplikacje zapisują się tu automatycznie.',
+  cvSent: 'Wysłane CV:',
   pageLink: 'strona',
   statusApplied: 'wysłana',
   statusInterviewing: 'rozmowy',
   statusOffer: 'oferta',
   statusRejected: 'odrzucona',
+
+  fillNoTab: 'Brak aktywnej karty.',
+  fillCannotFill: 'Tej strony nie można wypełnić.',
+  fillNoForm: 'Nie znaleziono formularza aplikacyjnego na tej stronie.',
 }

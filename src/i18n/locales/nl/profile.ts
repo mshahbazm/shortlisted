@@ -75,8 +75,8 @@ export const profile: tLocale['profile'] = {
   englishLevel: 'Niveau Engels',
 
   tellMeTitle: 'Vertel me iets nieuws',
-  tellMeSummary: 'gewone woorden erin, op de juiste plek gezet',
-  tellMePlaceholder: 'Een vaardigheid, taal, certificaat of iets uit een vorige baan — gewone woorden. bijv. Ik ken ook Figma. Of: Bij mijn vorige werkgever leidde ik een team van vijf.',
+  tellMeSummary: 'een nieuwe vaardigheid, een certificaat, iets wat je vergat',
+  tellMePlaceholder: 'Alles over jou — een vaardigheid die je net leerde, een behaald certificaat, een taal die je spreekt, of iets uit een oude baan dat je nooit opschreef. Gewone woorden.',
   tellMeButton: 'Aan profiel toevoegen',
   tellMeNothing: 'Niets nieuws gevonden — je profiel dekt dit al.',
   tellMeAdded: (n: number) => `In je profiel gezet ✓ (${n} nieuw)`,

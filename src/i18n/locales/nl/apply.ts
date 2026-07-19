@@ -6,7 +6,6 @@ export const apply: tLocale['apply'] = {
   openNextJob: 'Volgende vacature openen',
   fillCurrentTab: 'Huidig tabblad invullen',
   addedJobs: (n: number) => (n === 1 ? '1 vacature toegevoegd.' : `${n} vacatures toegevoegd.`),
-  permissionDeclined: 'Toestemming geweigerd — automatisch invullen werkt nog op de bekende vacaturesites.',
   lookForPanel: 'Zoek het Shortlisted-paneel op de pagina.',
   fitChip: (score: number) => `match ${score}/10`,
   andMore: (n: number) => `…en nog ${n}`,
@@ -29,9 +28,14 @@ export const apply: tLocale['apply'] = {
   appliedTitle: 'Gesolliciteerd',
   appliedSummary: (n: number) => (n ? `${n} tot nu toe` : 'nog niets'),
   submitsLogged: 'Verstuurde sollicitaties komen hier automatisch te staan.',
+  cvSent: 'Verstuurd cv:',
   pageLink: 'pagina',
   statusApplied: 'gesolliciteerd',
   statusInterviewing: 'in gesprek',
   statusOffer: 'aanbod',
   statusRejected: 'afgewezen',
+
+  fillNoTab: 'Geen actief tabblad.',
+  fillCannotFill: 'Deze pagina kan niet worden ingevuld.',
+  fillNoForm: 'Geen sollicitatieformulier gevonden op deze pagina.',
 }

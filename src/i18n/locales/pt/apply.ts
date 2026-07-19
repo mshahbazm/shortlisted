@@ -6,8 +6,6 @@ export const apply: tLocale['apply'] = {
   openNextJob: 'Abrir próxima vaga',
   fillCurrentTab: 'Preencher separador atual',
   addedJobs: (n: number) => (n === 1 ? 'Adicionada 1 vaga.' : `Adicionadas ${n} vagas.`),
-  permissionDeclined:
-    'Permissão recusada — o preenchimento automático continua a funcionar nos sites de emprego conhecidos.',
   lookForPanel: 'Procura o painel do Shortlisted na página.',
   fitChip: (score: number) => `match ${score}/10`,
   andMore: (n: number) => `…e mais ${n}`,
@@ -30,9 +28,14 @@ export const apply: tLocale['apply'] = {
   appliedTitle: 'Candidaturas',
   appliedSummary: (n: number) => (n ? `${n} até agora` : 'ainda nenhuma'),
   submitsLogged: 'Os envios ficam registados aqui automaticamente.',
+  cvSent: 'CV enviado:',
   pageLink: 'página',
   statusApplied: 'enviada',
   statusInterviewing: 'em entrevista',
   statusOffer: 'oferta',
   statusRejected: 'rejeitada',
+
+  fillNoTab: 'Nenhum separador ativo.',
+  fillCannotFill: 'Esta página não pode ser preenchida.',
+  fillNoForm: 'Não foi encontrado nenhum formulário de candidatura nesta página.',
 }

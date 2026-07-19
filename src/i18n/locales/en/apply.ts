@@ -6,7 +6,6 @@ export const apply = {
   openNextJob: 'Open next job',
   fillCurrentTab: 'Fill current tab',
   addedJobs: (n: number) => `Added ${n} job${n === 1 ? '' : 's'}.`,
-  permissionDeclined: 'Permission declined — auto-fill still works on the known job sites.',
   lookForPanel: 'Look for the Shortlisted panel on the page.',
   fitChip: (score: number) => `fit ${score}/10`,
   andMore: (n: number) => `…and ${n} more`,
@@ -30,9 +29,14 @@ export const apply = {
   appliedTitle: 'Applied',
   appliedSummary: (n: number) => (n ? `${n} so far` : 'nothing yet'),
   submitsLogged: 'Submits get logged here automatically.',
+  cvSent: 'CV sent:',
   pageLink: 'page',
   statusApplied: 'applied',
   statusInterviewing: 'interviewing',
   statusOffer: 'offer',
   statusRejected: 'rejected',
+
+  fillNoTab: 'No active tab.',
+  fillCannotFill: 'This page can’t be filled.',
+  fillNoForm: 'No application form found on this page.',
 }

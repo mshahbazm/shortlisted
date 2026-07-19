@@ -15,18 +15,7 @@ import contentScriptPath from '../content/index.ts?script'
 chrome.runtime.onInstalled.addListener(() => {
   void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
   void refreshBadge()
-  void syncDetectRegistration()
 })
-
-// Keep the all-sites detector in step with the setting and the permission —
-// either can change without the other (the user can revoke host access from
-// Chrome's own UI at any time).
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && changes.settings) void syncDetectRegistration()
-})
-chrome.permissions.onAdded.addListener(() => void syncDetectRegistration())
-chrome.permissions.onRemoved.addListener(() => void syncDetectRegistration())
-void syncDetectRegistration()
 
 // The badge must track pendingQuestions no matter WHO writes it — the side
 // panel edits the list directly, not only through messages.
@@ -49,46 +38,6 @@ void pullFromCloud().catch((e) => console.error('[shortlisted] cloud load failed
 function contentScriptFiles(): string[] {
   const fromManifest = chrome.runtime.getManifest().content_scripts?.flatMap((cs) => cs.js ?? []) ?? []
   return fromManifest.length ? [...new Set(fromManifest)] : [contentScriptPath]
-}
-
-/**
- * With "detect on every site" on, the content script is registered for all
- * http(s) pages. It scores each page locally (see content/detect.ts) and only
- * mounts the overlay where it's confident, so this is a detector everywhere,
- * not a panel everywhere. Registration is dynamic rather than in the manifest
- * so that a user who never opts in is never asked for all-sites access.
- */
-const DETECT_SCRIPT_ID = 'shortlisted-detect-all'
-
-async function syncDetectRegistration(): Promise<void> {
-  try {
-    const [settings, granted] = await Promise.all([
-      store.get('settings'),
-      chrome.permissions.contains({ origins: ['<all_urls>'] }),
-    ])
-    const wanted = !!settings.detectEverywhere && granted
-    const existing = await chrome.scripting.getRegisteredContentScripts({ ids: [DETECT_SCRIPT_ID] })
-
-    if (wanted && existing.length === 0) {
-      await chrome.scripting.registerContentScripts([
-        {
-          id: DETECT_SCRIPT_ID,
-          js: contentScriptFiles(),
-          matches: ['http://*/*', 'https://*/*'],
-          runAt: 'document_idle',
-          allFrames: true,
-        },
-      ])
-    } else if (wanted) {
-      // A registration survives extension updates, but the hashed file name in
-      // it does not — point it at the current build.
-      await chrome.scripting.updateContentScripts([{ id: DETECT_SCRIPT_ID, js: contentScriptFiles() }])
-    } else if (existing.length) {
-      await chrome.scripting.unregisterContentScripts({ ids: [DETECT_SCRIPT_ID] })
-    }
-  } catch (e) {
-    console.warn('[shortlisted] detector registration failed:', e)
-  }
 }
 
 async function injectContentScript(tabId: number): Promise<void> {
@@ -289,6 +238,8 @@ async function handle(msg: Msg): Promise<unknown> {
         const existing = apps.find((a) => a.jobUrl === msg.record.jobUrl)
         if (existing) {
           existing.appliedAt = Date.now()
+          // A different CV on a re-submit is the one that counts.
+          if (msg.record.resumeId) existing.resumeId = msg.record.resumeId
           return [...apps]
         }
         return [...apps, { ...msg.record, id: uid(), appliedAt: Date.now(), status: 'applied' as const }]

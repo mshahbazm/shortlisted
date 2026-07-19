@@ -75,8 +75,8 @@ export const profile = {
   englishLevel: 'English level',
 
   tellMeTitle: 'Tell me something new',
-  tellMeSummary: 'plain words in, filed into the right place',
-  tellMePlaceholder: 'A skill, a language, a certification, or something you did at a past job — plain words. e.g. I also know Figma. Or: I led a team of five at my previous company.',
+  tellMeSummary: 'a new skill, a certificate, anything you missed',
+  tellMePlaceholder: 'Anything about you — a skill you just learned, a certificate you earned, a language you speak, or something from an old job you never wrote down. Plain words.',
   tellMeButton: 'Add to profile',
   tellMeNothing: 'Nothing new found in that — your profile already covers it.',
   tellMeAdded: (n: number) => `Filed into your profile ✓ (${n} new)`,

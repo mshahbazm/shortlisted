@@ -2,11 +2,19 @@ import { useEffect, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { Section } from '../components'
-import { QueueItem, jobUrlKey, uid } from '../../lib/types'
+import { QueueItem, base64ToBytes, jobUrlKey, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
 import { cloudUsageStats, runScoreFit, ScoreFitResult, UsageStatsRow } from '../../ai/run'
 import { FIT_COLORS, FitBand, fitBand, fitPercent } from '../../lib/fitBands'
+
+type FillErrorCode = 'noTab' | 'cannotFill' | 'noForm'
+
+const FILL_ERRORS = {
+  noTab: 'fillNoTab',
+  cannotFill: 'fillCannotFill',
+  noForm: 'fillNoForm',
+} as const
 
 export function ApplyTab() {
   const t = useContent('apply')
@@ -16,8 +24,16 @@ export function ApplyTab() {
   const [profile] = useStore('profile')
   const [fitScores] = useStore('fitScores')
 
+  const [resumes] = useStore('resumes')
+
   const [pasteText, setPasteText] = useState('')
   const [notice, setNotice] = useState('')
+
+  // Open a stored CV in Chrome's PDF viewer — see exactly what was sent.
+  const openPdf = (r: { dataBase64: string }) => {
+    const blob = new Blob([base64ToBytes(r.dataBase64) as BlobPart], { type: 'application/pdf' })
+    window.open(URL.createObjectURL(blob), '_blank')
+  }
 
   const todo = queue.filter((q) => q.status === 'todo')
 
@@ -42,13 +58,8 @@ export function ApplyTab() {
 
   const fillCurrent = async () => {
     setNotice('')
-    const granted = await chrome.permissions.request({ origins: ['<all_urls>'] }).catch(() => false)
-    if (!granted) {
-      setNotice(t.permissionDeclined)
-      return
-    }
-    const res = await sendMsg<{ ok?: boolean; error?: string }>({ type: 'fillCurrentTab' })
-    setNotice(res?.error ?? t.lookForPanel)
+    const res = await sendMsg<{ ok?: boolean; errorCode?: FillErrorCode }>({ type: 'fillCurrentTab' })
+    setNotice(res?.errorCode ? t[FILL_ERRORS[res.errorCode]] : t.lookForPanel)
   }
 
   const setStatus = (id: string, status: QueueItem['status']) =>
@@ -133,6 +144,19 @@ export function ApplyTab() {
                     {a.company} · {new Date(a.appliedAt).toLocaleDateString()} ·{' '}
                     <a href={a.jobUrl} target="_blank" rel="noreferrer">{t.pageLink}</a>
                   </div>
+                  {/* Which CV actually went with this application. */}
+                  {(() => {
+                    const cv = a.resumeId ? resumes.find((r) => r.id === a.resumeId) : undefined
+                    if (!cv) return null
+                    return (
+                      <div className="sub">
+                        {t.cvSent}{' '}
+                        <button className="link small" style={{ padding: 0 }} onClick={() => openPdf(cv)}>
+                          {cv.label}
+                        </button>
+                      </div>
+                    )
+                  })()}
                 </div>
                 <select
                   value={a.status}

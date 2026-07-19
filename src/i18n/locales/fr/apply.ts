@@ -6,8 +6,6 @@ export const apply: tLocale['apply'] = {
   openNextJob: 'Ouvrir l’offre suivante',
   fillCurrentTab: 'Remplir l’onglet actuel',
   addedJobs: (n: number) => `${n} offre${n > 1 ? 's' : ''} ajoutée${n > 1 ? 's' : ''}.`,
-  permissionDeclined:
-    'Permission refusée — le remplissage auto marche toujours sur les sites d’emploi connus.',
   lookForPanel: 'Cherchez le panneau Shortlisted sur la page.',
   fitChip: (score: number) => `match ${score}/10`,
   andMore: (n: number) => `…et ${n} de plus`,
@@ -30,9 +28,14 @@ export const apply: tLocale['apply'] = {
   appliedTitle: 'Envoyées',
   appliedSummary: (n: number) => (n ? `${n} pour l’instant` : 'rien pour le moment'),
   submitsLogged: 'Les envois sont enregistrés ici automatiquement.',
+  cvSent: 'CV envoyé :',
   pageLink: 'page',
   statusApplied: 'envoyée',
   statusInterviewing: 'entretien',
   statusOffer: 'proposition',
   statusRejected: 'refusée',
+
+  fillNoTab: 'Aucun onglet actif.',
+  fillCannotFill: 'Cette page ne peut pas être remplie.',
+  fillNoForm: 'Aucun formulaire de candidature trouvé sur cette page.',
 }

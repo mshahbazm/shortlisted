@@ -6,7 +6,6 @@ export const apply: tLocale['apply'] = {
   openNextJob: 'Apri prossima offerta',
   fillCurrentTab: 'Compila questa scheda',
   addedJobs: (n: number) => `Aggiunt${n === 1 ? 'a 1 offerta' : `e ${n} offerte`}.`,
-  permissionDeclined: 'Permesso negato — la compilazione funziona comunque sui siti di lavoro noti.',
   lookForPanel: 'Cerca il pannello Shortlisted nella pagina.',
   fitChip: (score: number) => `affinità ${score}/10`,
   andMore: (n: number) => `…e altre ${n}`,
@@ -29,9 +28,14 @@ export const apply: tLocale['apply'] = {
   appliedTitle: 'Inviate',
   appliedSummary: (n: number) => (n ? `${n} finora` : 'ancora nessuna'),
   submitsLogged: 'Gli invii vengono registrati qui in automatico.',
+  cvSent: 'CV inviato:',
   pageLink: 'pagina',
   statusApplied: 'inviata',
   statusInterviewing: 'colloquio',
   statusOffer: 'offerta',
   statusRejected: 'rifiutata',
+
+  fillNoTab: 'Nessuna scheda attiva.',
+  fillCannotFill: 'Questa pagina non può essere compilata.',
+  fillNoForm: 'Nessun modulo di candidatura trovato in questa pagina.',
 }

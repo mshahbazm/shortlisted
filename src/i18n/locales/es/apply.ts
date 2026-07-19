@@ -6,8 +6,6 @@ export const apply: tLocale['apply'] = {
   openNextJob: 'Abrir siguiente empleo',
   fillCurrentTab: 'Rellenar pestaña actual',
   addedJobs: (n: number) => (n === 1 ? 'Se añadió 1 empleo.' : `Se añadieron ${n} empleos.`),
-  permissionDeclined:
-    'Permiso denegado — el autorrellenado sigue funcionando en los sitios de empleo conocidos.',
   lookForPanel: 'Busca el panel de Shortlisted en la página.',
   fitChip: (score: number) => `encaje ${score}/10`,
   andMore: (n: number) => `…y ${n} más`,
@@ -30,9 +28,14 @@ export const apply: tLocale['apply'] = {
   appliedTitle: 'Postulaciones',
   appliedSummary: (n: number) => (n ? `${n} hasta ahora` : 'ninguna aún'),
   submitsLogged: 'Los envíos se registran aquí solos.',
+  cvSent: 'CV enviado:',
   pageLink: 'página',
   statusApplied: 'postulado',
   statusInterviewing: 'en entrevistas',
   statusOffer: 'oferta',
   statusRejected: 'rechazado',
+
+  fillNoTab: 'No hay pestaña activa.',
+  fillCannotFill: 'Esta página no se puede rellenar.',
+  fillNoForm: 'No se encontró ningún formulario de solicitud en esta página.',
 }
