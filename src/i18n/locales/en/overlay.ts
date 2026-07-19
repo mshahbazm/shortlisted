@@ -30,6 +30,11 @@ export const overlay = {
   pickOne: 'Pick one…',
   cvMissing: 'This job asks for a CV, but none is saved yet. Add it once — it attaches on every application.',
   uploadCv: 'Upload CV (PDF)',
+  defaultMark: 'default',
+  tailorNew: 'Tailor a new CV for this job…',
+  tailorGo: 'Tailor & attach',
+  tailoringCv: 'Tailoring your CV for this job…',
+  tailoringFailed: 'Tailoring failed — try again.',
   saveAndFill: 'Save & fill',
   saved: 'Saved ✓',
 }

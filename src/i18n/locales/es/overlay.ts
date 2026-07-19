@@ -30,6 +30,11 @@ export const overlay: tLocale['overlay'] = {
   pickOne: 'Elige una opción…',
   cvMissing: 'Esta oferta pide un CV, pero aún no hay ninguno guardado. Añádelo una vez — se adjuntará en cada solicitud.',
   uploadCv: 'Subir CV (PDF)',
+  defaultMark: 'predeterminado',
+  tailorNew: 'Adaptar un CV nuevo para esta oferta…',
+  tailorGo: 'Adaptar y adjuntar',
+  tailoringCv: 'Adaptando tu CV para esta oferta…',
+  tailoringFailed: 'La adaptación falló — inténtalo de nuevo.',
   saveAndFill: 'Guardar y rellenar',
   saved: 'Guardado ✓',
 }

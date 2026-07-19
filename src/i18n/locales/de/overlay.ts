@@ -32,6 +32,11 @@ export const overlay: tLocale['overlay'] = {
   pickOne: 'Bitte auswählen…',
   cvMissing: 'Diese Stelle verlangt einen Lebenslauf, aber es ist noch keiner gespeichert. Einmal hinzufügen — er wird bei jeder Bewerbung angehängt.',
   uploadCv: 'Lebenslauf hochladen (PDF)',
+  defaultMark: 'Standard',
+  tailorNew: 'Neuen Lebenslauf für diese Stelle erstellen…',
+  tailorGo: 'Erstellen & anhängen',
+  tailoringCv: 'Lebenslauf wird für diese Stelle zugeschnitten…',
+  tailoringFailed: 'Zuschneiden fehlgeschlagen — bitte erneut versuchen.',
   saveAndFill: 'Speichern & ausfüllen',
   saved: 'Gespeichert ✓',
 }

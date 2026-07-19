@@ -14,6 +14,10 @@ export interface OverlayCallbacks {
   onPickResume: (resumeId: string) => void
   onUploadResume: (file: File) => void
   onScoreFit: () => void
+  /** Caret next to the fill button — the CV choice menu. */
+  onFillMenu: () => void
+  onPickCv: (resumeId: string) => void
+  onTailor: (templateId: string) => void
 }
 
 export interface QuickFitDisplay {
@@ -37,8 +41,28 @@ const CSS = `
     padding: 10px 12px; border-bottom: 1px solid #e7e7e4; background:#fff; }
   .head b { font-size: 13px; font-weight: 650; }
   .head .min { cursor:pointer; border:none; background:none; color:#a1a1aa; font-size:15px; }
-  .actions { flex: none; padding: 12px; border-bottom: 1px solid #e7e7e4; }
+  .actions { flex: none; padding: 12px; border-bottom: 1px solid #e7e7e4; position: relative; }
   .actions:empty { display: none; }
+  .fillRow { display: flex; gap: 6px; }
+  .fillRow .fillBtn { flex: 1; }
+  .caretBtn { flex: none; width: 36px; border: none; border-radius: 8px; background: #18181b;
+    color: #fff; font-size: 11px; cursor: pointer; }
+  .caretBtn:hover { background: #333336; }
+  .fillMenu {
+    position: absolute; left: 12px; right: 12px; top: calc(100% - 6px); z-index: 3;
+    background: #fff; border: 1px solid #e7e7e4; border-radius: 10px;
+    box-shadow: 0 10px 28px rgba(0,0,0,.14); padding: 5px; max-height: 260px; overflow-y: auto;
+  }
+  .fillMenu .mi { display: block; width: 100%; text-align: left; border: none; background: none;
+    padding: 8px 9px; border-radius: 7px; font-size: 12.5px; color: #1f1f1f; cursor: pointer; }
+  .fillMenu .mi:hover { background: #f6f6f4; }
+  .fillMenu .mi .mark { color: #a1a1aa; font-size: 11px; margin-left: 5px; }
+  .fillMenu .mi.tailor { border-top: 1px solid #e7e7e4; border-radius: 0 0 7px 7px; margin-top: 3px;
+    padding-top: 10px; color: #3d11ff; font-weight: 600; }
+  .tailorRow { display: flex; gap: 6px; padding: 6px 9px 8px; align-items: center; }
+  .tailorRow select { flex: 1; }
+  .tailorRow .go { flex: none; border: none; border-radius: 6px; background: #3d11ff; color: #fff;
+    font-weight: 600; font-size: 12px; padding: 6px 10px; cursor: pointer; }
   .body { padding: 12px; overflow-y: auto; min-height: 0; }
   .body > :first-child { margin-top: 0; }
   .fillBtn { width: 100%; padding: 9px 0; border: none; border-radius: 8px;
@@ -105,6 +129,7 @@ export class Overlay {
   private cb: OverlayCallbacks
   private t: tOverlayContent
   private langNote!: HTMLDivElement
+  private menu: HTMLDivElement | null = null
   private unknownRefs = new Map<
     FormField,
     { item: HTMLElement; input: HTMLTextAreaElement | HTMLSelectElement; save: HTMLButtonElement }
@@ -149,16 +174,87 @@ export class Overlay {
 
   renderIdle() {
     this.actions.replaceChildren()
+    this.menu = null
     this.body.replaceChildren()
-    const btn = document.createElement('button')
-    btn.className = 'fillBtn'
-    btn.textContent = this.t.fillApplication
-    btn.onclick = () => this.cb.onFill()
-    this.actions.append(btn, this.scoreButton())
+    this.actions.append(this.fillRow(this.t.fillApplication), this.scoreButton())
     const note = document.createElement('div')
     note.className = 'note'
     note.textContent = this.t.idleNote
     this.body.append(note)
+  }
+
+  /** The split fill button: main action + caret opening the CV menu. */
+  private fillRow(label: string): HTMLElement {
+    const row = document.createElement('div')
+    row.className = 'fillRow'
+    const btn = document.createElement('button')
+    btn.className = 'fillBtn'
+    btn.textContent = label
+    btn.onclick = () => this.cb.onFill()
+    const caret = document.createElement('button')
+    caret.className = 'caretBtn'
+    caret.textContent = '▾'
+    caret.onclick = () => this.cb.onFillMenu()
+    row.append(btn, caret)
+    return row
+  }
+
+  closeFillMenu() {
+    this.menu?.remove()
+    this.menu = null
+  }
+
+  /** CV choice dropdown: saved CVs to attach, or tailor a fresh one. */
+  showFillMenu(resumes: { id: string; label: string; isDefault: boolean }[], templates: { id: string; name: string }[]) {
+    if (this.menu) {
+      this.closeFillMenu()
+      return
+    }
+    const menu = document.createElement('div')
+    menu.className = 'fillMenu'
+    for (const r of resumes) {
+      const b = document.createElement('button')
+      b.className = 'mi'
+      b.textContent = r.label
+      if (r.isDefault) {
+        const mark = document.createElement('span')
+        mark.className = 'mark'
+        mark.textContent = this.t.defaultMark
+        b.append(mark)
+      }
+      b.onclick = () => {
+        this.closeFillMenu()
+        this.cb.onPickCv(r.id)
+      }
+      menu.append(b)
+    }
+    const tailor = document.createElement('button')
+    tailor.className = 'mi tailor'
+    tailor.textContent = this.t.tailorNew
+    tailor.onclick = () => {
+      if (menu.querySelector('.tailorRow')) return
+      const row = document.createElement('div')
+      row.className = 'tailorRow'
+      const sel = document.createElement('select')
+      for (const tp of templates) {
+        const o = document.createElement('option')
+        o.value = tp.id
+        o.textContent = tp.name
+        sel.append(o)
+      }
+      const go = document.createElement('button')
+      go.className = 'go'
+      go.textContent = this.t.tailorGo
+      go.onclick = () => {
+        this.closeFillMenu()
+        this.cb.onTailor(sel.value)
+      }
+      row.append(sel, go)
+      menu.append(row)
+    }
+    menu.append(tailor)
+    this.actions.append(menu)
+    this.menu = menu
   }
 
   private scoreButton(): HTMLButtonElement {
@@ -173,6 +269,7 @@ export class Overlay {
   // come back with the result.
   renderFitLoading() {
     this.actions.replaceChildren()
+    this.menu = null
     this.body.replaceChildren()
     const wrap = document.createElement('div')
     wrap.className = 'scoring'
@@ -189,12 +286,9 @@ export class Overlay {
     // Rebuild the panel: the pinned action bar on top, the score (or the
     // error) scrolling beneath it.
     this.actions.replaceChildren()
+    this.menu = null
     this.body.replaceChildren()
-    const fill = document.createElement('button')
-    fill.className = 'fillBtn'
-    fill.textContent = this.t.fillApplication
-    fill.onclick = () => this.cb.onFill()
-    this.actions.append(fill)
+    this.actions.append(this.fillRow(this.t.fillApplication))
 
     const box = document.createElement('div')
     box.id = 'fitbox'
@@ -276,14 +370,11 @@ export class Overlay {
     attachedResumeLabel: string | null,
   ) {
     this.actions.replaceChildren()
+    this.menu = null
     this.body.replaceChildren()
     this.unknownRefs.clear()
 
-    const again = document.createElement('button')
-    again.className = 'fillBtn'
-    again.textContent = this.t.fillAgain
-    again.onclick = () => this.cb.onFill()
-    this.actions.append(again, this.scoreButton())
+    this.actions.append(this.fillRow(this.t.fillAgain), this.scoreButton())
 
     const stat = document.createElement('div')
     stat.className = 'stat'
@@ -489,6 +580,7 @@ export class Overlay {
 
   setBusy() {
     this.actions.replaceChildren()
+    this.menu = null
     this.body.replaceChildren()
     const note = document.createElement('div')
     note.className = 'note'

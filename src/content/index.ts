@@ -7,6 +7,7 @@ import { getContent, type tOverlayContent } from './i18n-bridge'
 import { GENERIC_ADAPTER, detectAdapter } from './adapters'
 import { attachResume, fieldContext, fillForm, watchSubmit, applyValue, FillResult } from './engine'
 import { bytesToBase64 } from '../lib/types'
+import { TEMPLATES } from '../pdf/templates'
 import { FormField, labelFor, optionsOf } from './fields'
 import { Overlay } from './overlay'
 import type { AssistField, AssistResultItem, CorrectionItem, VerifyField } from '../ai/capabilities/fill-assist'
@@ -108,41 +109,53 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
     }
   }
 
+  // The CV the user explicitly chose from the fill menu — beats the default.
+  let preferredResumeId: string | null = null
+
+  const doFill = async () => {
+    overlay.setBusy()
+    state = await sendMsg<FillState>({ type: 'getFillState' })
+    lastResult = fillForm(adapter, state)
+    await afterFill()
+  }
+
+  const afterFill = async () => {
+    if (!state || !lastResult) return
+    // Report fresh unknowns to the pending queue (side panel badge).
+    if (lastResult.unknown.length) {
+      const msg: Msg = {
+        type: 'capturePending',
+        questions: lastResult.unknown.map((f) => ({
+          questionRaw: f.label,
+          fieldCtx: fieldContext(f, adapter.name),
+          jobUrl: location.href,
+        })),
+      }
+      void sendMsg(msg)
+    }
+    // Count reuse on bank hits.
+    for (const f of lastResult.filled) {
+      if (f.bankAnswerId) void sendMsg({ type: 'markAnswerUsed', answerId: f.bankAnswerId, jobUrl: location.href })
+    }
+
+    // Attach the chosen CV (menu pick beats default) if there's a resume field.
+    attachedLabel = null
+    const chosen =
+      (preferredResumeId && state.resumes.find((r) => r.id === preferredResumeId)) ||
+      state.resumes.find((r) => r.isDefault) ||
+      state.resumes[0]
+    if (chosen && lastResult.resumeFields.length) {
+      const ok = await attachById(chosen.id)
+      if (ok) attachedLabel = chosen.label
+    }
+
+    overlay.renderResult(lastResult, state.resumes, attachedLabel)
+    watchUnknownFields(lastResult.unknown)
+    void runFillAssist(lastResult)
+  }
+
   const overlay = new Overlay(t, {
-    onFill: async () => {
-      overlay.setBusy()
-      state = await sendMsg<FillState>({ type: 'getFillState' })
-      lastResult = fillForm(adapter, state)
-
-      // Report fresh unknowns to the pending queue (side panel badge).
-      if (lastResult.unknown.length) {
-        const msg: Msg = {
-          type: 'capturePending',
-          questions: lastResult.unknown.map((f) => ({
-            questionRaw: f.label,
-            fieldCtx: fieldContext(f, adapter.name),
-            jobUrl: location.href,
-          })),
-        }
-        void sendMsg(msg)
-      }
-      // Count reuse on bank hits.
-      for (const f of lastResult.filled) {
-        if (f.bankAnswerId) void sendMsg({ type: 'markAnswerUsed', answerId: f.bankAnswerId, jobUrl: location.href })
-      }
-
-      // Auto-attach the default CV if there's a resume field.
-      attachedLabel = null
-      const defaultResume = state.resumes.find((r) => r.isDefault) ?? state.resumes[0]
-      if (defaultResume && lastResult.resumeFields.length) {
-        const ok = await attachById(defaultResume.id)
-        if (ok) attachedLabel = defaultResume.label
-      }
-
-      overlay.renderResult(lastResult, state.resumes, attachedLabel)
-      watchUnknownFields(lastResult.unknown)
-      void runFillAssist(lastResult)
-    },
+    onFill: () => void doFill(),
 
     onAnswer: (field: FormField, answer: string) => {
       saveAnswer(field, answer)
@@ -172,6 +185,50 @@ function boot(adapter: ReturnType<typeof detectAdapter> & {}, t: tOverlayContent
         const r = state.resumes.find((x) => x.id === resumeId)
         attachedLabel = r?.label ?? null
         overlay.renderResult(lastResult, state.resumes, attachedLabel)
+      }
+    },
+
+    onFillMenu: async () => {
+      if (!state) state = await sendMsg<FillState>({ type: 'getFillState' })
+      overlay.showFillMenu(
+        state.resumes.map(({ id, label, isDefault }) => ({ id, label, isDefault })),
+        TEMPLATES.map(({ id, name }) => ({ id, name })),
+      )
+    },
+
+    onPickCv: async (resumeId: string) => {
+      preferredResumeId = resumeId
+      if (lastResult && state) {
+        // Already filled: just swap the attachment.
+        const ok = await attachById(resumeId)
+        const r = state.resumes.find((x) => x.id === resumeId)
+        attachedLabel = ok ? (r?.label ?? null) : null
+        overlay.renderResult(lastResult, state.resumes, attachedLabel)
+      } else {
+        void doFill()
+      }
+    },
+
+    onTailor: async (templateId: string) => {
+      overlay.aiNote(t.tailoringCv)
+      const res = await sendMsg<{ id?: string; label?: string; error?: string }>({
+        type: 'tailorAttach',
+        jobText: jobPageText(),
+        templateId,
+      })
+      if (!res?.id) {
+        overlay.aiNote(res?.error ?? t.tailoringFailed)
+        return
+      }
+      overlay.aiNote('')
+      preferredResumeId = res.id
+      if (lastResult) {
+        state = await sendMsg<FillState>({ type: 'getFillState' })
+        const ok = await attachById(res.id)
+        attachedLabel = ok ? (res.label ?? null) : null
+        overlay.renderResult(lastResult, state.resumes, attachedLabel)
+      } else {
+        void doFill()
       }
     },
 

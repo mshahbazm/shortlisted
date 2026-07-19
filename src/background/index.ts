@@ -5,7 +5,8 @@ import { Msg } from '../lib/messaging'
 import * as store from '../lib/store'
 import { BankAnswer, PendingQuestion, Profile, ResumeVariant, jobUrlKey, uid } from '../lib/types'
 import { normalizeQuestion, similarity } from '../lib/questions'
-import { cloudFillAssist, cloudResumeIntake, polishAnswer, runQuickScore } from '../ai/run'
+import { cloudFillAssist, cloudResumeIntake, polishAnswer, runQuickScore, runTailorCv } from '../ai/run'
+import { renderResumePdf } from '../pdf/resumePdf'
 import { pullFromCloud, startCloudMirror } from './cloudMirror'
 // CRXJS: gives us the emitted content-script path for scripting.executeScript.
 import contentScriptPath from '../content/index.ts?script'
@@ -87,6 +88,35 @@ async function handle(msg: Msg): Promise<unknown> {
     case 'intakeResume': {
       void intakeResume(msg.resumeId)
       return { ok: true }
+    }
+
+    // "Tailor a new CV for this job" from the on-page panel: tailor against
+    // the page's job text, render in the chosen template, save it to the CV
+    // list (NOT as default), hand back the id so the panel can attach it.
+    case 'tailorAttach': {
+      const [settings, profile] = await Promise.all([store.get('settings'), store.get('profile')])
+      if (!settings.accountEmail) return { error: 'Sign in first.' }
+      try {
+        const result = await runTailorCv(settings, profile, msg.jobText)
+        const base64 = renderResumePdf(profile, result.resume, msg.templateId)
+        const safe = result.resume.label.replace(/[^\w\- ]/g, '').replace(/\s+/g, '-').slice(0, 40)
+        const entry: ResumeVariant = {
+          id: uid(),
+          label: result.resume.label,
+          fileName: `${profile.identity.firstName}-${profile.identity.lastName}-${safe}.pdf`.replace(/\s+/g, '-'),
+          tags: [result.job.role, result.job.company].filter(Boolean),
+          isDefault: false,
+          createdAt: Date.now(),
+          source: 'generated',
+          templateId: msg.templateId,
+          dataBase64: base64,
+          content: result.resume,
+        }
+        await store.update('resumes', (list) => [...list, entry])
+        return { id: entry.id, label: entry.label }
+      } catch (e) {
+        return { error: e instanceof Error ? e.message : 'Tailoring failed.' }
+      }
     }
 
     case 'saveAnswer': {

@@ -32,6 +32,11 @@ export const overlay: tLocale['overlay'] = {
   pickOne: 'Choisissez…',
   cvMissing: 'Cette offre demande un CV, mais aucun n’est enregistré. Ajoutez-le une fois — il sera joint à chaque candidature.',
   uploadCv: 'Téléverser un CV (PDF)',
+  defaultMark: 'par défaut',
+  tailorNew: 'Adapter un nouveau CV pour cette offre…',
+  tailorGo: 'Adapter et joindre',
+  tailoringCv: 'Adaptation de votre CV pour cette offre…',
+  tailoringFailed: 'L’adaptation a échoué — réessayez.',
   saveAndFill: 'Enregistrer et remplir',
   saved: 'Enregistré ✓',
 }
