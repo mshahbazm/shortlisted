@@ -553,6 +553,49 @@ button.link.amber { color: var(--amber); }
 .ec-warn { font-size: 12px; color: var(--amber); line-height: 1.45; }
 label.fl { display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; font-weight: 600; color: var(--muted); }
 
+/* Repeatable fields. A token list and a list of boxes, replacing "comma
+   separated" and "one per line" — formats the user had to learn, and could
+   get wrong in ways nothing reported. */
+.chipedit { display: flex; flex-direction: column; gap: 8px; }
+.chipedit-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.echip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; color: var(--fg); background: var(--hover);
+  border: 1px solid var(--border); border-radius: 999px; padding: 4px 6px 4px 10px;
+}
+.echip button {
+  display: grid; place-items: center; width: 17px; height: 17px; flex: none;
+  border: none; background: none; padding: 0; cursor: pointer;
+  color: var(--faint); border-radius: 50%;
+}
+.echip button .ic { width: 11px; height: 11px; }
+.echip button:hover { background: var(--active); color: var(--red); }
+
+.listedit { display: flex; flex-direction: column; gap: 8px; }
+.lrow { display: flex; align-items: flex-start; gap: 6px; }
+.lrow textarea { min-height: 52px; }
+.lrow-x {
+  flex: none; width: 30px; height: 30px; margin-top: 5px;
+  display: grid; place-items: center;
+  border: none; background: none; padding: 0; cursor: pointer;
+  color: var(--faint); border-radius: 7px;
+}
+.lrow-x:hover { background: var(--hover); color: var(--red); }
+.lrow-x .ic { width: 13px; height: 13px; }
+
+/* Rows of a few fields that belong together — a language and its level, a
+   certificate and who issued it. */
+.subrow {
+  display: flex; align-items: flex-start; gap: 6px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--border);
+}
+.subrow:last-of-type { border-bottom: none; }
+.subrow-f { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+
+/* A link slot and its clear button. */
+.linkrow { display: flex; align-items: center; gap: 4px; }
+.linkrow .kv { flex: 1; min-width: 0; }
+
 /* ---------- 9. fit + run ---------- */
 
 .fithero { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 4px 0 0; }

@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { KV } from '../components'
-import { Body, Composer, Icon, Row, ScreenHead, Sheet, TopBar, useStack } from '../ui'
+import { Body, ChipInput, Composer, Icon, ListEditor, Row, ScreenHead, Sheet, TopBar, useStack } from '../ui'
 import { QuestionsTab } from './QuestionsTab'
 import {
   EducationEntry,
@@ -149,39 +149,117 @@ export function ProfileTab({
   if (nav.screen === 'extras') {
     return (
       <Pushed title={t.extrasTitle} nav={nav} t={t}>
-        <label className="f"><span>{t.careerHighlightsLabel}</span>
-          <textarea
-            rows={3}
-            placeholder={t.careerHighlightsPlaceholder}
-            value={p.highlights.join('\n')}
-            onChange={(e) => set({ highlights: e.target.value.split('\n').filter((l) => l.trim()).slice(0, 3) })}
-          /></label>
-        <label className="f"><span>{t.languagesLabel}</span>
-          <textarea
-            rows={2}
-            placeholder={t.languagesPlaceholder}
-            value={p.languages.map((l) => `${l.name} — ${l.proficiency.replaceAll('_', ' ')}`).join('\n')}
-            onChange={(e) => set({ languages: parseLanguages(e.target.value) })}
-          /></label>
-        <label className="f"><span>{t.certificationsLabel}</span>
-          <textarea
-            rows={2}
-            placeholder={t.certificationsPlaceholder}
-            value={p.certifications.map((c) => [c.name, c.issuingOrganization, c.year].filter(Boolean).join(' — ')).join('\n')}
-            onChange={(e) => set({ certifications: parseCertifications(e.target.value) })}
-          /></label>
+        <div className="p-sec">
+          <div className="p-sec-h"><span>{t.careerHighlights}</span><span className="band-n">{p.highlights.length} / 3</span></div>
+          <ListEditor
+            items={p.highlights}
+            onChange={(v) => set({ highlights: v.slice(0, 3) })}
+            placeholder={t.highlightPlaceholder}
+            addLabel={t.addHighlight}
+            removeLabel={t.removeItem}
+            max={3}
+          />
+        </div>
+
+        <div className="p-sec">
+          <div className="p-sec-h"><span>{t.languagesTitle}</span></div>
+          {p.languages.map((l, i) => (
+            <div key={i} className="subrow">
+              <div className="subrow-f">
+                <input
+                  className="fin" type="text" value={l.name} placeholder={t.languageName}
+                  onChange={(e) => set({
+                    languages: p.languages.map((x, j) => (j === i
+                      ? { ...x, name: e.target.value, langCode: e.target.value.slice(0, 2).toLowerCase() }
+                      : x)),
+                  })}
+                />
+                <select
+                  value={l.proficiency}
+                  onChange={(e) => set({
+                    languages: p.languages.map((x, j) =>
+                      (j === i ? { ...x, proficiency: e.target.value as LanguageProficiency } : x)),
+                  })}
+                >
+                  {LEVELS.map(([value, key]) => (
+                    <option key={value} value={value}>{t[key]}</option>
+                  ))}
+                </select>
+              </div>
+              <button
+                className="lrow-x" aria-label={t.removeItem}
+                onClick={() => set({ languages: p.languages.filter((_, j) => j !== i) })}
+              >
+                <Icon name="close" />
+              </button>
+            </div>
+          ))}
+          <button
+            className="ghost wide small"
+            onClick={() => set({
+              languages: [...p.languages, { langCode: '', name: '', proficiency: 'professional_working' }],
+            })}
+          >
+            <Icon name="plus" /> {t.addLanguage}
+          </button>
+        </div>
+
+        <div className="p-sec">
+          <div className="p-sec-h"><span>{t.certificationsTitle}</span></div>
+          {p.certifications.map((c, i) => {
+            const setCert = (patch: Partial<typeof c>) =>
+              set({ certifications: p.certifications.map((x, j) => (j === i ? { ...x, ...patch } : x)) })
+            return (
+              <div key={i} className="subrow">
+                <div className="subrow-f">
+                  <input className="fin" type="text" value={c.name} placeholder={t.certName}
+                    onChange={(e) => setCert({ name: e.target.value })} />
+                  <div className="field-row">
+                    <input className="fin" type="text" value={c.issuingOrganization ?? ''} placeholder={t.issuer}
+                      onChange={(e) => setCert({ issuingOrganization: e.target.value || undefined })} />
+                    <input className="fin" type="text" inputMode="numeric" value={c.year ?? ''} placeholder={t.yearLabel}
+                      onChange={(e) => setCert({ year: Number(e.target.value) || undefined })} />
+                  </div>
+                </div>
+                <button
+                  className="lrow-x" aria-label={t.removeItem}
+                  onClick={() => set({ certifications: p.certifications.filter((_, j) => j !== i) })}
+                >
+                  <Icon name="close" />
+                </button>
+              </div>
+            )
+          })}
+          <button
+            className="ghost wide small"
+            onClick={() => set({ certifications: [...p.certifications, { name: '' }] })}
+          >
+            <Icon name="plus" /> {t.addCertification}
+          </button>
+        </div>
       </Pushed>
     )
   }
 
   if (nav.screen === 'links') {
     const setLinks = (k: keyof typeof p.links, v: string) => set({ links: { ...p.links, [k]: v } })
+    const slots: [keyof typeof p.links, string][] = [
+      ['website', t.website], ['github', t.github], ['linkedin', t.linkedin], ['portfolio', t.portfolio],
+    ]
     return (
       <Pushed title={t.linksTitle} nav={nav} t={t}>
-        <KV k={t.website} v={p.links.website ?? ''} url invalidHint={t.invalidUrl} onChange={(v) => setLinks('website', v)} />
-        <KV k={t.github} v={p.links.github ?? ''} url invalidHint={t.invalidUrl} onChange={(v) => setLinks('github', v)} />
-        <KV k={t.linkedin} v={p.links.linkedin ?? ''} url invalidHint={t.invalidUrl} onChange={(v) => setLinks('linkedin', v)} />
-        <KV k={t.portfolio} v={p.links.portfolio ?? ''} url invalidHint={t.invalidUrl} onChange={(v) => setLinks('portfolio', v)} />
+        {/* Fixed slots, so removing one means clearing it — but there was no
+            way to do that at all short of selecting the text and deleting. */}
+        {slots.map(([key, label]) => (
+          <div key={key} className="linkrow">
+            <KV k={label} v={p.links[key] ?? ''} url invalidHint={t.invalidUrl} onChange={(v) => setLinks(key, v)} />
+            {p.links[key] && (
+              <button className="lrow-x" aria-label={`${t.clearLink} ${label}`} onClick={() => setLinks(key, '')}>
+                <Icon name="close" />
+              </button>
+            )}
+          </div>
+        ))}
       </Pushed>
     )
   }
@@ -605,23 +683,37 @@ function AboutEditor({ p, set, t }: { p: Profile; set: (patch: Partial<Profile>)
       <KV k={t.countryIso} v={p.identity.country ?? ''} placeholder="PK" onChange={(v) => setIdentity('country', v)} />
       <KV k={t.headline} v={p.headline} placeholder={t.headlinePlaceholder} onChange={(v) => set({ headline: v })} />
       <KV k={t.summary} v={p.summary} multiline onChange={(v) => set({ summary: v })} />
-      <KV
-        k={t.skills} multiline v={skillNames(p).join(', ')} placeholder={t.skillsPlaceholder}
-        onChange={(v) => {
-          const byName = new Map(p.skills.map((s) => [s.name.toLowerCase(), s]))
-          set({
-            skills: v.split(',').map((s) => s.trim()).filter(Boolean)
-              .map((n) => byName.get(n.toLowerCase()) ?? { name: n }),
-          })
-        }}
-      />
-      <KV
-        k={t.industries} v={p.industries.join(', ')} placeholder={t.industriesPlaceholder}
-        onChange={(v) => set({ industries: v.split(',').map((s) => s.trim()).filter(Boolean) })}
-      />
+      <label className="fl">{t.skills}
+        <ChipInput
+          items={skillNames(p)}
+          placeholder={t.skillPlaceholder}
+          removeLabel={t.removeItem}
+          onChange={(names) => {
+            // Keep proficiency/category on skills that survive the edit.
+            const byName = new Map(p.skills.map((x) => [x.name.toLowerCase(), x]))
+            set({ skills: names.map((n) => byName.get(n.toLowerCase()) ?? { name: n }) })
+          }}
+        />
+      </label>
+      <label className="fl">{t.industries}
+        <ChipInput
+          items={p.industries}
+          placeholder={t.industryPlaceholder}
+          removeLabel={t.removeItem}
+          onChange={(v) => set({ industries: v })}
+        />
+      </label>
     </>
   )
 }
+
+const LEVELS: [LanguageProficiency, 'lvlElementary' | 'lvlLimited' | 'lvlProfessional' | 'lvlFull' | 'lvlNative'][] = [
+  ['elementary', 'lvlElementary'],
+  ['limited_working', 'lvlLimited'],
+  ['professional_working', 'lvlProfessional'],
+  ['full_professional', 'lvlFull'],
+  ['native_bilingual', 'lvlNative'],
+]
 
 const LANG_LEVELS: [RegExp, LanguageProficiency][] = [
   [/native|bilingual|mother/i, 'native_bilingual'],
@@ -696,11 +788,22 @@ function WorkEditor({
             onBlur={(e) => setEnd(e.target.value)} /></label>
       </div>
       <label className="fl">{t.techUsed}
-        <input className="fin" type="text" value={entry.skills.join(', ')}
-          onChange={(e) => onChange({ ...entry, skills: e.target.value.split(',').map((x) => x.trim()).filter(Boolean) })} /></label>
+        <ChipInput
+          items={entry.skills}
+          placeholder={t.techPlaceholder}
+          removeLabel={t.removeItem}
+          onChange={(skills) => onChange({ ...entry, skills })}
+        />
+      </label>
       <label className="fl">{t.workHighlights}
-        <textarea rows={5} value={entry.highlights.join('\n')}
-          onChange={(e) => onChange({ ...entry, highlights: e.target.value.split('\n').filter((l) => l.trim()) })} /></label>
+        <ListEditor
+          items={entry.highlights}
+          onChange={(highlights) => onChange({ ...entry, highlights })}
+          placeholder={t.highlightPlaceholder}
+          addLabel={t.addHighlight}
+          removeLabel={t.removeItem}
+        />
+      </label>
       <button className="plain wide danger" onClick={() => setConfirming(true)}>{t.remove}</button>
       {confirming && (
         <ConfirmRemove

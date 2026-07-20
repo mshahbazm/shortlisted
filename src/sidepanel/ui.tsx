@@ -19,6 +19,7 @@ const ICONS = {
   check: 'm3.5 8.5 3 3 6-7',
   up: 'M8 12.5V4M4.5 7.5 8 4l3.5 3.5',
   pen: 'M11.2 2.4 13.6 4.8 5.6 12.8 2.4 13.6l.8-3.2z',
+  close: 'M4 4l8 8M12 4l-8 8',
 } as const
 
 export type IconName = keyof typeof ICONS | 'gear' | 'bolt' | 'doc' | 'briefcase'
@@ -322,6 +323,134 @@ export function Composer({
         </button>
       )}
       {hint && !text.trim() && <div className="comp-h">{hint}</div>}
+    </div>
+  )
+}
+
+/* ---------- repeatable fields ---------- */
+
+/** Short tokens — skills, industries, the tech used in a role.
+ *
+ *  Replaces "comma separated", which makes the user learn a format and then
+ *  makes a typo in it silently merge two skills into one. Enter or comma
+ *  commits, backspace on an empty box takes the last one back, and blur
+ *  commits too so a half-typed entry is not lost by tapping elsewhere. */
+export function ChipInput({
+  items,
+  onChange,
+  placeholder,
+  removeLabel,
+}: {
+  items: string[]
+  onChange: (next: string[]) => void
+  placeholder: string
+  removeLabel: string
+}) {
+  const [draft, setDraft] = useState('')
+
+  const commit = () => {
+    const value = draft.trim().replace(/,$/, '').trim()
+    setDraft('')
+    if (!value) return
+    if (items.some((i) => i.toLowerCase() === value.toLowerCase())) return
+    onChange([...items, value])
+  }
+
+  return (
+    <div className="chipedit">
+      {items.length > 0 && (
+        <div className="chipedit-list">
+          {items.map((item, i) => (
+            <span key={`${item}-${i}`} className="echip">
+              {item}
+              <button
+                aria-label={`${removeLabel} ${item}`}
+                onClick={() => onChange(items.filter((_, j) => j !== i))}
+              >
+                <Icon name="close" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <input
+        className="fin"
+        type="text"
+        value={draft}
+        placeholder={placeholder}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault()
+            commit()
+          } else if (e.key === 'Backspace' && !draft && items.length) {
+            onChange(items.slice(0, -1))
+          }
+        }}
+      />
+    </div>
+  )
+}
+
+/** Sentence-length items — the achievements under a role, career highlights.
+ *
+ *  One box per item instead of one textarea holding all of them, so nobody has
+ *  to know that a line break is what separates them. A new row is focused on
+ *  add; an emptied row is dropped on blur rather than left as a blank line. */
+export function ListEditor({
+  items,
+  onChange,
+  placeholder,
+  addLabel,
+  removeLabel,
+  max,
+}: {
+  items: string[]
+  onChange: (next: string[]) => void
+  placeholder: string
+  addLabel: string
+  removeLabel: string
+  /** Cap, where one exists — career highlights are capped at three. */
+  max?: number
+}) {
+  const [focusAt, setFocusAt] = useState(-1)
+  const atMax = max !== undefined && items.length >= max
+
+  const setAt = (i: number, value: string) => onChange(items.map((x, j) => (j === i ? value : x)))
+  const removeAt = (i: number) => onChange(items.filter((_, j) => j !== i))
+
+  return (
+    <div className="listedit">
+      {items.map((item, i) => (
+        <div key={i} className="lrow">
+          <textarea
+            rows={2}
+            value={item}
+            placeholder={placeholder}
+            autoFocus={i === focusAt}
+            onChange={(e) => setAt(i, e.target.value)}
+            onBlur={() => {
+              if (!item.trim()) removeAt(i)
+              setFocusAt(-1)
+            }}
+          />
+          <button className="lrow-x" aria-label={removeLabel} onClick={() => removeAt(i)}>
+            <Icon name="close" />
+          </button>
+        </div>
+      ))}
+      {!atMax && (
+        <button
+          className="ghost wide small"
+          onClick={() => {
+            setFocusAt(items.length)
+            onChange([...items, ''])
+          }}
+        >
+          <Icon name="plus" /> {addLabel}
+        </button>
+      )}
     </div>
   )
 }

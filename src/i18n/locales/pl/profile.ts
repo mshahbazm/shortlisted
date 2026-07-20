@@ -11,9 +11,7 @@ export const profile: tLocale['profile'] = {
   headlinePlaceholder: 'np. AI Agent Engineer',
   summary: 'Podsumowanie',
   skills: 'Umiejętności',
-  skillsPlaceholder: 'Po przecinku',
   industries: 'Branże',
-  industriesPlaceholder: 'FinTech, SaaS…',
   locationPlaceholder: 'Miasto, kraj',
 
   linksTitle: 'Linki',
@@ -41,15 +39,6 @@ export const profile: tLocale['profile'] = {
   toYear: 'Do (rok)',
 
   extrasTitle: 'Osiągnięcia, języki, certyfikaty',
-  careerHighlightsLabel:
-    'Najważniejsze osiągnięcia — maks. 3, krótkie i konkretne (góra CV)',
-  careerHighlightsPlaceholder:
-    '8 lat budowania systemów agentów AI\nProwadzenie zespołów do 5 inżynierów\nZbudowany pipeline zbierający 64 tys. ofert',
-  languagesLabel: 'Języki — jeden na linię, „Język — poziom” (poziom opcjonalny)',
-  languagesPlaceholder: 'angielski — biegły\npolski — ojczysty',
-  certificationsLabel: 'Certyfikaty — jeden na linię, „Nazwa — Wystawca — Rok”',
-  certificationsPlaceholder: 'AWS Solutions Architect — AWS — 2022',
-
   standardAnswersTitle: 'Standardowe odpowiedzi',
   answeredOf: (filled: number, total: number) => `uzupełniono ${filled} z ${total}`,
   standardAnswersHint: 'Pytają o to w prawie każdej aplikacji — odpowiedz raz tutaj.',
@@ -117,4 +106,22 @@ export const profile: tLocale['profile'] = {
   removeRoleTitle: 'Usunąć to stanowisko?',
   removeEducationTitle: 'Usunąć to wykształcenie?',
   removeWarning: 'Tego nie da się cofnąć — trzeba by wpisać wszystko od nowa. Gotowe CV zachowują to, z czego powstały.',
+  addHighlight: 'Dodaj osiągnięcie',
+  addLanguage: 'Dodaj język',
+  addCertification: 'Dodaj certyfikat',
+  removeItem: 'Usuń',
+  skillPlaceholder: 'Wpisz umiejętność i naciśnij Enter',
+  industryPlaceholder: 'Wpisz branżę i naciśnij Enter',
+  techPlaceholder: 'Wpisz narzędzie i naciśnij Enter',
+  highlightPlaceholder: 'Co zrobiłeś i co się dzięki temu zmieniło',
+  languageName: 'Język',
+  certName: 'Certyfikat',
+  issuer: 'Wydany przez',
+  yearLabel: 'Rok',
+  clearLink: 'Wyczyść',
+  lvlElementary: 'Podstawowy',
+  lvlLimited: 'Konwersacyjny',
+  lvlProfessional: 'Zawodowy',
+  lvlFull: 'Biegły',
+  lvlNative: 'Ojczysty',
 }
