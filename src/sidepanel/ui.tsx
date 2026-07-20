@@ -260,7 +260,12 @@ export function Feature({
       <span className={`feat-ic ${accent ? 'accent' : ''}`}>
         <Icon name={icon} />
       </span>
-      <span className="feat-t">{title}</span>
+      {/* The chevron sits on the title row rather than in a corner, so a sub
+          that wraps to two lines cannot collide with it. */}
+      <span className="feat-t">
+        {title}
+        <Icon name="chev" />
+      </span>
       <span className="feat-s">{sub}</span>
     </button>
   )

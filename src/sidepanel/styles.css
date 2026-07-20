@@ -344,7 +344,18 @@ button.link.amber { color: var(--amber); }
   display: grid; place-items: center; background: var(--hover); color: var(--muted);
 }
 .feat-ic.accent { background: var(--accent-soft); color: var(--accent); }
-.feat-t { font-size: 13.5px; font-weight: 650; letter-spacing: -0.01em; }
+/* Title row carries the chevron: these tiles open a screen, and without one
+   they read as toggles rather than links. */
+.feat-t {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  font-size: 13.5px; font-weight: 650; letter-spacing: -0.01em;
+}
+.feat-t .ic { color: var(--faint); }
+.feat:hover .feat-t .ic { color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) {
+  .feat-t .ic { transition: transform 0.13s, color 0.13s; }
+  .feat:hover .feat-t .ic { transform: translateX(2px); }
+}
 .feat-s { font-size: 11.5px; color: var(--muted); line-height: 1.4; }
 
 /* The manual override, for when detection was wrong. Deliberately the quietest
