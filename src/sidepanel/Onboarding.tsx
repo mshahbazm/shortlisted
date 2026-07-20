@@ -250,8 +250,8 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
             </div>
             <div className="mt-0.5 text-[12.5px] text-muted">{pdfBusy ? t.readingCloudSub : t.uploadSubIdle}</div>
           </button>
-          <input className={FIELD}
-            ref={fileRef} type="file" accept="application/pdf" style={{ display: 'none' }}
+          <input
+            ref={fileRef} type="file" accept="application/pdf" className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0]
               if (f) void onPdf(f)
@@ -263,7 +263,6 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
             value={cvText}
             onChange={(e) => setCvText(e.target.value)}
             spellCheck={false}
-            style={{ minHeight: 110 }}
           />
           {err && <p className="my-2 text-[13px] text-bad">{err}</p>}
           <div className="mt-[22px] flex items-center gap-2.5">

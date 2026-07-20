@@ -9,7 +9,7 @@ import { useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { cn } from '../../lib/cn'
-import { Body, Button, FitChip, Icon, Row, ScreenHead, Segments, Sheet, TopBar, useStack } from '../ui'
+import { Bar, Body, Button, FitChip, Icon, Row, ScreenHead, Segments, Sheet, TopBar, useStack } from '../ui'
 import * as store from '../../lib/store'
 import { QueueItem, jobUrlKey, uid } from '../../lib/types'
 import { showToast } from '../toast'
@@ -83,7 +83,7 @@ export function JobsTab() {
           backLabel={t.back}
           right={t.runProgress(runAt + 1, todo.length)}
         />
-        <div className="h-[3px] flex-none bg-active"><i style={{ width: `${((runAt + 1) / todo.length) * 100}%` }} /></div>
+        <Bar percent={((runAt + 1) / todo.length) * 100} className="h-[3px] flex-none rounded-none" />
         <Body center screen={`run-${runAt}`}>
           <div className="flex flex-col items-center gap-[5px] rounded-[14px] border border-line px-[18px] py-5 text-center">
             {score !== undefined && (

@@ -760,6 +760,20 @@ export function FitChip({ score }: { score?: number }) {
 
 /* ---------- small repeated pieces ---------- */
 
+/** A filled progress bar — profile strength, credits left, an apply run.
+ *
+ *  The fill is a child element, which is exactly what the migration lost: the
+ *  old CSS coloured it with `.meter-bar i`, and converting the parent to
+ *  utilities left two bars rendering an invisible fill. Keeping both halves in
+ *  one component is what stops that happening again. */
+export function Bar({ percent, className }: { percent: number; className?: string }) {
+  return (
+    <div className={cn('h-1.5 overflow-hidden rounded-[3px] bg-active', className)}>
+      <i className="block h-full rounded-[3px] bg-accent" style={{ width: `${percent}%` }} />
+    </div>
+  )
+}
+
 const CHIP_TONE = {
   plain: 'bg-[#f5f5f3] text-muted',
   amber: 'bg-warn-bg text-warn',

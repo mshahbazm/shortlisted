@@ -68,7 +68,7 @@ export async function systemAgent<T = unknown>(opts: AgentOptions): Promise<Agen
   }
 }
 
-export function parseWithRepair<T>(raw: string): T | null {
+function parseWithRepair<T>(raw: string): T | null {
   const attempts: string[] = []
   let text = raw.trim()
   // Strip markdown fences.

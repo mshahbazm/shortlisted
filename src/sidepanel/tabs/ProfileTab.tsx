@@ -11,7 +11,7 @@ import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { cn } from '../../lib/cn'
 import { KV } from '../components'
-import { Body, Button, Chip, ChipInput, Composer, Cost, Count, Icon, IconButton, ListEditor, Row, ScreenHead, Segments, Select, Sheet, TopBar, useStack } from '../ui'
+import { Bar, Body, Button, Chip, ChipInput, Composer, Cost, Count, Icon, IconButton, ListEditor, Row, ScreenHead, Segments, Select, Sheet, TopBar, useStack } from '../ui'
 import { QuestionsTab } from './QuestionsTab'
 import {
   EducationEntry,
@@ -360,7 +360,7 @@ export function ProfileTab({
             <span>{t.strengthTitle}</span>
             <b>{percent}%</b>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-[3px] bg-active"><i style={{ width: `${percent}%` }} /></div>
+          <Bar percent={percent} />
           {gaps.length > 0 && (
             <div className="mt-0.5 flex flex-wrap gap-1.5">
               {gaps.map((g) => (
@@ -916,7 +916,7 @@ function ImportBox({
         <Icon name="up" /> {busy ? t.readingPdf : t.uploadPdf}
       </Button>
       <input
-        ref={fileRef} type="file" accept="application/pdf" style={{ display: 'none' }}
+        ref={fileRef} type="file" accept="application/pdf" className="hidden"
         onChange={async (e) => {
           const f = e.target.files?.[0]
           e.target.value = ''

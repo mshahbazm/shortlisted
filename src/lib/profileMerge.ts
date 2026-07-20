@@ -156,17 +156,3 @@ export function applyIntakeFacts(p: Profile, facts: IntakeNewFacts): Profile {
   return mergeIntakeFacts(p, facts).profile
 }
 
-/**
- * How many facts the model PROPOSED. Not what a merge would store — highlights
- * for a job that isn't on file cannot land anywhere. Use mergeIntakeFacts's
- * `applied` for anything the user reads.
- */
-export function countIntakeFacts(facts: IntakeNewFacts): number {
-  return (
-    facts.newSkills.length +
-    facts.newLanguages.length +
-    facts.newCertifications.length +
-    facts.newWorkHighlights.length +
-    Object.values(facts.newLinks).filter(Boolean).length
-  )
-}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
-import { Body, Button, FIELD, Row, Rows, ScreenHead, Select, useStack } from '../ui'
+import { Bar, Body, Button, FIELD, Row, Rows, ScreenHead, Select, useStack } from '../ui'
 import { cn } from '../../lib/cn'
 import { StorageShape, storageDefaults } from '../../lib/types'
 import { LOCALES, LOCALE_LABELS, isLocale, useContent } from '../../i18n'
@@ -47,7 +47,7 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
 
   const importInput = (
     <input
-      ref={importRef} type="file" accept="application/json" style={{ display: 'none' }}
+      ref={importRef} type="file" accept="application/json" className="hidden"
       onChange={(e) => {
         const f = e.target.files?.[0]
         if (f) void importAll(f)
@@ -346,9 +346,7 @@ function AccountPanel() {
                 <span>{t.creditsLeft}</span>
                 <b>{left} {t.creditsOf} {usage.creditsLimit}</b>
               </div>
-              <div className="h-1.5 overflow-hidden rounded-[3px] bg-active">
-                <i className="block h-full rounded-[3px] bg-accent" style={{ width: `${pct}%` }} />
-              </div>
+              <Bar percent={pct} />
             </div>
           )}
 

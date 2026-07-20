@@ -187,7 +187,7 @@ export function ResumesTab() {
 
   const hiddenFileInput = (
     <input
-      ref={fileRef} type="file" accept="application/pdf" style={{ display: 'none' }}
+      ref={fileRef} type="file" accept="application/pdf" className="hidden"
       onChange={(e) => {
         const f = e.target.files?.[0]
         if (f) void onUpload(f)
@@ -493,7 +493,7 @@ function ContentsEditor({ r, profile, onClose }: { r: ResumeVariant; profile: Pr
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4" onClick={onClose}>
       <div className="max-h-[90vh] w-full max-w-[680px] overflow-y-auto rounded-xl bg-bg p-4 shadow-[0_16px_48px_rgba(0,0,0,0.2)]" onClick={(e) => e.stopPropagation()}>
         <h3>{r.label}</h3>
-        <p className="mt-1.5 text-xs leading-[1.45] text-faint" style={{ margin: '0 0 10px' }}>{t.contentsHint}</p>
+        <p className="mt-0 mb-2.5 text-xs leading-[1.45] text-faint">{t.contentsHint}</p>
         <div className="mb-1 text-[11px] font-bold tracking-[0.04em] text-muted uppercase">{t.contentsWork}</div>
         {profile.work.map((w) => {
           const on = content.work.some((x) => x.sourceId === w.id)
@@ -509,7 +509,7 @@ function ContentsEditor({ r, profile, onClose }: { r: ResumeVariant; profile: Pr
             </label>
           )
         })}
-        <div className="mb-1 text-[11px] font-bold tracking-[0.04em] text-muted uppercase" style={{ marginTop: 12 }}>{t.contentsSkills}</div>
+        <div className="mt-3 mb-1 text-[11px] font-bold tracking-[0.04em] text-muted uppercase">{t.contentsSkills}</div>
         <div className="grid grid-cols-2">
           {allSkills.map((name) => (
             <label key={name} className="flex cursor-pointer items-center gap-2 rounded-md px-0.5 py-1 text-[13px] hover:bg-hover">

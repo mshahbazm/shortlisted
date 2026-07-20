@@ -297,7 +297,7 @@ const SECTION_RES: [RegExp, string][] = [
   [/^\s*(languages)\s*:?\s*$/im, 'languages'],
 ]
 
-export function prepareCvText(raw: string): string {
+function prepareCvText(raw: string): string {
   let text = raw
     .replace(/\r\n?/g, '\n')
     .replace(/\t/g, ' ')
