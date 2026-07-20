@@ -19,8 +19,6 @@ export const home: tLocale['home'] = {
   tailorACvSub: 'Toegespitst op deze vacature, niets verzonnen',
   tailorACvSubGeneric: 'Toegespitst op één vacature, niets verzonnen',
   oneCredit: '1 credit',
-  noCreditsLeft: 'Geen credits meer',
-
   questionsWaiting: (n: number) => `${n} vra${n === 1 ? 'ag wacht' : 'gen wachten'} op je`,
   questionsTitle: 'Openstaande vragen',
   questionsLede:
@@ -48,7 +46,6 @@ export const home: tLocale['home'] = {
     'Shortlisted weet dat je gesolliciteerd hebt omdat het het formulier invulde — alles daarna zet je zelf erbij.',
   cvSent: 'Verstuurd cv',
   statusApplied: 'Gesolliciteerd',
-  statusHeardBack: 'Reactie gehad',
   statusInterviewing: 'In gesprek',
   statusOffer: 'Aanbod',
   statusRejected: 'Afgewezen',
@@ -85,13 +82,7 @@ export const home: tLocale['home'] = {
   updateProfile: 'Profiel bijwerken',
   saveTheJob: 'Vacature bewaren',
 
-  filledTitle: (filled: number, total: number) => `${filled} van de ${total} velden ingevuld`,
-  filledWithCv: (cv: string) => `Je cv ${cv} is bijgevoegd. Kijk het na en verstuur het formulier zelf.`,
-  filledNoCv: 'Kijk het na en verstuur het formulier zelf.',
-  couldntAnswer: (n: number) => `${n} kon ik niet beantwoorden`,
   saveAndFill: 'Opslaan & invullen',
-  reusedEverywhere: 'Bewaard bij je standaardantwoorden — bijna elk formulier vraagt hierom.',
-
   lookForPanel: 'Zoek het Shortlisted-paneel op de pagina.',
   fillNoTab: 'Geen actief tabblad.',
   fillCannotFill: 'Deze pagina kan niet ingevuld worden.',

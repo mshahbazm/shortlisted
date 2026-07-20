@@ -7,8 +7,6 @@ export const settings: tLocale['settings'] = {
   languageTitle: 'Idioma',
   languageAuto: 'Automático (idioma del navegador)',
 
-  accountTitle: 'Cuenta',
-  notSignedIn: 'sin iniciar sesión',
   accountIntro:
     'Inicia sesión con tu correo para desbloquear la IA y guardar tus datos en tu cuenta. Gratis: 10 créditos. Pro ($9/mes): 100 créditos al mes. Un CV adaptado ≈ 1 crédito.',
   emailPlaceholder: 'tu@ejemplo.com',
@@ -21,10 +19,7 @@ export const settings: tLocale['settings'] = {
   checking: 'Comprobando…',
   resendCode: 'Reenviar código',
   signedIn: 'Sesión iniciada.',
-  signedInAs: (email: string) => `Sesión iniciada como ${email}`,
   checkCredits: 'Ver mis créditos',
-  usageLine: (plan: string, used: number, limit: number, monthly: boolean) =>
-    `${plan} · ${used} de ${limit} créditos usados${monthly ? ' este mes' : ' (en total)'}`,
   planFree: 'Gratis',
   planPro: 'Pro',
   signOutDevice: 'Cerrar sesión en este dispositivo',
@@ -36,7 +31,6 @@ export const settings: tLocale['settings'] = {
   imported: 'Importado.',
   importFailed: (msg: string) => `Error al importar: ${msg}`,
 
-  detectTitle: 'Detección de ofertas',
   detectOn: 'activado — todos los sitios',
   detectOff: 'desactivado — solo portales conocidos',
   detectHint:

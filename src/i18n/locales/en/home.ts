@@ -26,9 +26,6 @@ export const home = {
   tailorACvSub: 'Re-angled for this job, nothing invented',
   tailorACvSubGeneric: 'Re-angled for one job, nothing invented',
   oneCredit: '1 credit',
-  noCreditsLeft: 'No credits left',
-
-  // --- pending questions ---
   questionsWaiting: (n: number) => `${n} question${n === 1 ? '' : 's'} waiting on you`,
   questionsTitle: 'Questions waiting',
   questionsLede:
@@ -58,7 +55,6 @@ export const home = {
   noInboxBody: 'Shortlisted knows you applied because it filled the form — anything after that is yours to mark.',
   cvSent: 'CV sent',
   statusApplied: 'Applied',
-  statusHeardBack: 'Heard back',
   statusInterviewing: 'Interviewing',
   statusOffer: 'Offer',
   statusRejected: 'No',
@@ -98,15 +94,7 @@ export const home = {
   updateProfile: 'Update profile',
   saveTheJob: 'Save the job',
 
-  // --- fill result ---
-  filledTitle: (filled: number, total: number) => `${filled} of ${total} fields filled`,
-  filledWithCv: (cv: string) => `Your CV ${cv} is attached. Look it over, then submit the form yourself.`,
-  filledNoCv: 'Look it over, then submit the form yourself.',
-  couldntAnswer: (n: number) => `${n} I couldn’t answer`,
   saveAndFill: 'Save & fill',
-  reusedEverywhere: 'Saved to your standard answers — asked on nearly every form.',
-
-  // --- fill errors: codes come from the background, wording lives here ---
   lookForPanel: 'Look for the Shortlisted panel on the page.',
   fillNoTab: 'No active tab.',
   fillCannotFill: 'This page can’t be filled.',

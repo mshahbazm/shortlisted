@@ -9,23 +9,13 @@ export const resumes: tLocale['resumes'] = {
   emptyList: 'Nie ma jeszcze żadnego CV — dodaj poniżej.',
 
   tailorTitle: 'Dopasuj do oferty',
-  tailorSummary: 'wklej ogłoszenie, dostań uczciwy wariant',
-  tailorMyCv: 'Dopasuj moje CV',
   working: 'Pracuję…',
   fillProfileHint:
     'Najpierw uzupełnij profil — CV powstaje tylko z tego, co naprawdę w nim jest.',
-  gapsIntro:
-    'Ta oferta wymaga rzeczy, których nie ma w Twoim profilu (NIE trafiły do CV — uczciwość to tu podstawa):',
-
   tailorNotePlaceholder: "Coś dodać lub podkreślić? np. Mam też doświadczenie z Webflow — strony klientów w Agencji X.",
   tailorNoteHint: 'Opcjonalnie. Nowe fakty podane tutaj zapiszą się też w Twoim profilu.',
-  addTitle: 'Dodaj CV',
-  addSummary: 'wgraj PDF albo wygeneruj z profilu',
   uploading: 'Przesyłanie…',
   uploadPdf: 'Wgraj PDF',
-  generateFromProfile: 'Wygeneruj z profilu',
-  masterCvLabel: 'Główne CV',
-
   contentsLabel: 'Zawartość',
   contentsHint: 'Zaznacz, co pokazuje to CV — odtworzy się natychmiast. Wszystko pochodzi z Twojego profilu.',
   contentsWork: 'Doświadczenie',
@@ -67,4 +57,5 @@ export const resumes: tLocale['resumes'] = {
   deleteLabel: 'Usuń',
   gapsShort: 'Ta oferta wymaga rzeczy, których nie ma w profilu',
   gapsKeptOff: 'Zostaje poza CV — uczciwość to funkcja. Przygotuj odpowiedzi.',
+  tailoredBody: 'Ustawione pod to, co pasuje do tej oferty. Każda linijka pochodzi z Twojego profilu.',
 }

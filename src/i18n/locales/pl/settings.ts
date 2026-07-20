@@ -7,8 +7,6 @@ export const settings: tLocale['settings'] = {
   languageTitle: 'Język',
   languageAuto: 'Automatycznie (język przeglądarki)',
 
-  accountTitle: 'Konto',
-  notSignedIn: 'niezalogowano',
   accountIntro:
     'Zaloguj się e-mailem, aby odblokować AI i trzymać swoje dane na koncie. Free: 10 kredytów. Pro (9 $/mies.): 100 kredytów miesięcznie. Jedno dopasowane CV ≈ 1 kredyt.',
   emailPlaceholder: 'ty@przyklad.pl',
@@ -21,12 +19,7 @@ export const settings: tLocale['settings'] = {
   checking: 'Sprawdzanie…',
   resendCode: 'Wyślij kod ponownie',
   signedIn: 'Zalogowano.',
-  signedInAs: (email: string) => `Zalogowano jako ${email}`,
   checkCredits: 'Sprawdź moje kredyty',
-  usageLine: (plan: string, used: number, limit: number, monthly: boolean) =>
-    `${plan} · zużyto ${used} z ${limit} ${limit === 1 ? 'kredytu' : 'kredytów'}${
-      monthly ? ' w tym miesiącu' : ' (łącznie)'
-    }`,
   planFree: 'Free',
   planPro: 'Pro',
   signOutDevice: 'Wyloguj na tym urządzeniu',
@@ -38,7 +31,6 @@ export const settings: tLocale['settings'] = {
   imported: 'Zaimportowano.',
   importFailed: (msg: string) => `Import nie powiódł się: ${msg}`,
 
-  detectTitle: 'Wykrywanie ofert',
   detectOn: 'włączone — wszystkie strony',
   detectOff: 'wyłączone — tylko znane portale',
   detectHint:

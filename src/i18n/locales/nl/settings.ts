@@ -7,8 +7,6 @@ export const settings: tLocale['settings'] = {
   languageTitle: 'Taal',
   languageAuto: 'Automatisch (browsertaal)',
 
-  accountTitle: 'Account',
-  notSignedIn: 'niet ingelogd',
   accountIntro:
     'Log in met je e-mail om AI te ontgrendelen en je gegevens in je account te bewaren. Gratis: 10 credits. Pro ($9/mnd): 100 credits per maand. Eén cv op maat ≈ 1 credit.',
   emailPlaceholder: 'jij@voorbeeld.nl',
@@ -21,10 +19,7 @@ export const settings: tLocale['settings'] = {
   checking: 'Controleren…',
   resendCode: 'Code opnieuw sturen',
   signedIn: 'Ingelogd.',
-  signedInAs: (email: string) => `Ingelogd als ${email}`,
   checkCredits: 'Mijn credits checken',
-  usageLine: (plan: string, used: number, limit: number, monthly: boolean) =>
-    `${plan} · ${used} van ${limit} credits gebruikt${monthly ? ' deze maand' : ' (totaal)'}`,
   planFree: 'Gratis',
   planPro: 'Pro',
   signOutDevice: 'Uitloggen op dit apparaat',
@@ -36,7 +31,6 @@ export const settings: tLocale['settings'] = {
   imported: 'Geïmporteerd.',
   importFailed: (msg: string) => `Importeren mislukt: ${msg}`,
 
-  detectTitle: 'Vacaturedetectie',
   detectOn: 'aan — alle sites',
   detectOff: 'uit — alleen bekende vacaturesites',
   detectHint:

@@ -267,7 +267,11 @@ export function HomeTab({
               {t.openAndFill}
             </button>
             <div className="run-alt">
-              <span />
+              {score !== undefined ? (
+                <button className="link" onClick={() => nav.push('fit')}>{t.seeFullScore}</button>
+              ) : (
+                <span />
+              )}
               <button className="link muted" onClick={() => setRunAt(runAt + 1)}>{t.skipThisOne}</button>
             </div>
           </div>
@@ -313,6 +317,7 @@ export function HomeTab({
             disabled={profile.work.length === 0}
             run={(jobText, onStep) => runScoreFit(settings, profile, jobText, onStep)}
             onUpdateProfile={onGoProfile}
+            onSaveJob={saveCurrentJob}
           />
         </Body>
       </>
@@ -637,6 +642,7 @@ function FitPanel({
   disabled,
   run,
   onUpdateProfile,
+  onSaveJob,
 }: {
   t: ReturnType<typeof useContent<'home'>>
   result: ScoreFitResult | null
@@ -644,6 +650,7 @@ function FitPanel({
   disabled: boolean
   run: (jobText: string, onStep: (s: string) => void) => Promise<ScoreFitResult>
   onUpdateProfile: () => void
+  onSaveJob: () => void
 }) {
   const [jobText, setJobText] = useState('')
   const [step, setStep] = useState('')
@@ -698,7 +705,10 @@ function FitPanel({
             <button className="link amber" onClick={onUpdateProfile}>{t.gapsAddPrompt} &rarr;</button>
           </div>
         )}
-        <button className="ghost wide" onClick={() => onResult(null)}>{t.scoreMyFit}</button>
+        <div className="duo tight">
+          <button className="ghost" onClick={() => onResult(null)}>{t.scoreMyFit}</button>
+          <button className="primary" onClick={onSaveJob}>{t.saveTheJob}</button>
+        </div>
       </>
     )
   }

@@ -11,7 +11,6 @@ export const common = {
   skip: 'Skip',
   dismiss: 'Dismiss',
   empty: 'empty',
-  emptyValue: 'Empty',
   firstName: 'First name',
   lastName: 'Last name',
   email: 'Email',

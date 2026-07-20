@@ -19,8 +19,6 @@ export const home: tLocale['home'] = {
   tailorACvSub: 'Ricentrato su questa offerta, senza inventare nulla',
   tailorACvSubGeneric: 'Ricentrato su un’offerta, senza inventare nulla',
   oneCredit: '1 credito',
-  noCreditsLeft: 'Crediti esauriti',
-
   questionsWaiting: (n: number) => `${n} domand${n === 1 ? 'a ti aspetta' : 'e ti aspettano'}`,
   questionsTitle: 'Domande in sospeso',
   questionsLede:
@@ -48,7 +46,6 @@ export const home: tLocale['home'] = {
     'Shortlisted sa che ti sei candidato perché ha compilato il modulo — tutto quello che viene dopo lo segni tu.',
   cvSent: 'CV inviato',
   statusApplied: 'Inviata',
-  statusHeardBack: 'Hanno risposto',
   statusInterviewing: 'Ai colloqui',
   statusOffer: 'Offerta',
   statusRejected: 'Rifiutata',
@@ -85,13 +82,7 @@ export const home: tLocale['home'] = {
   updateProfile: 'Aggiorna il profilo',
   saveTheJob: 'Salva l’offerta',
 
-  filledTitle: (filled: number, total: number) => `${filled} campi su ${total} compilati`,
-  filledWithCv: (cv: string) => `Il tuo CV ${cv} è allegato. Dagli un’occhiata, poi invia tu il modulo.`,
-  filledNoCv: 'Dagli un’occhiata, poi invia tu il modulo.',
-  couldntAnswer: (n: number) => `${n} a cui non ho saputo rispondere`,
   saveAndFill: 'Salva e compila',
-  reusedEverywhere: 'Salvata nelle tue risposte standard — la chiede quasi ogni modulo.',
-
   lookForPanel: 'Cerca il pannello Shortlisted nella pagina.',
   fillNoTab: 'Nessuna scheda attiva.',
   fillCannotFill: 'Questa pagina non si può compilare.',

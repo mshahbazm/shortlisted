@@ -20,8 +20,6 @@ export const home: tLocale['home'] = {
   tailorACvSub: 'Ustawione pod tę ofertę, nic zmyślonego',
   tailorACvSubGeneric: 'Ustawione pod jedną ofertę, nic zmyślonego',
   oneCredit: '1 kredyt',
-  noCreditsLeft: 'Brak kredytów',
-
   questionsWaiting: (n: number) => `${n} ${plural(n, 'pytanie czeka', 'pytania czekają', 'pytań czeka')} na Ciebie`,
   questionsTitle: 'Oczekujące pytania',
   questionsLede:
@@ -49,7 +47,6 @@ export const home: tLocale['home'] = {
     'Shortlisted wie, że aplikowałeś, bo wypełnił formularz — wszystko po tym zaznaczasz sam.',
   cvSent: 'Wysłane CV',
   statusApplied: 'Wysłana',
-  statusHeardBack: 'Odezwali się',
   statusInterviewing: 'Rozmowy',
   statusOffer: 'Oferta',
   statusRejected: 'Odmowa',
@@ -86,14 +83,7 @@ export const home: tLocale['home'] = {
   updateProfile: 'Zaktualizuj profil',
   saveTheJob: 'Zapisz ofertę',
 
-  filledTitle: (filled: number, total: number) =>
-    `Wypełniono ${filled} z ${total} ${plural(total, 'pola', 'pól', 'pól')}`,
-  filledWithCv: (cv: string) => `Twoje CV ${cv} jest dołączone. Sprawdź je i wyślij formularz sam.`,
-  filledNoCv: 'Sprawdź wszystko i wyślij formularz sam.',
-  couldntAnswer: (n: number) => `${n} bez odpowiedzi`,
   saveAndFill: 'Zapisz i wypełnij',
-  reusedEverywhere: 'Zapisane w Twoich standardowych odpowiedziach — pyta o to prawie każdy formularz.',
-
   lookForPanel: 'Poszukaj panelu Shortlisted na stronie.',
   fillNoTab: 'Brak aktywnej karty.',
   fillCannotFill: 'Tej strony nie da się wypełnić.',

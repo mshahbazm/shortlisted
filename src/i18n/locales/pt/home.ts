@@ -19,8 +19,6 @@ export const home: tLocale['home'] = {
   tailorACvSub: 'Focado nesta vaga, sem inventar nada',
   tailorACvSubGeneric: 'Focado numa vaga, sem inventar nada',
   oneCredit: '1 crédito',
-  noCreditsLeft: 'Sem créditos',
-
   questionsWaiting: (n: number) => `${n} pergunta${n === 1 ? '' : 's'} à tua espera`,
   questionsTitle: 'Perguntas pendentes',
   questionsLede:
@@ -48,7 +46,6 @@ export const home: tLocale['home'] = {
     'O Shortlisted sabe que te candidataste porque preencheu o formulário — o que vier depois marcas tu.',
   cvSent: 'CV enviado',
   statusApplied: 'Enviada',
-  statusHeardBack: 'Responderam',
   statusInterviewing: 'Em entrevistas',
   statusOffer: 'Proposta',
   statusRejected: 'Recusada',
@@ -85,13 +82,7 @@ export const home: tLocale['home'] = {
   updateProfile: 'Atualizar perfil',
   saveTheJob: 'Guardar a vaga',
 
-  filledTitle: (filled: number, total: number) => `${filled} de ${total} campos preenchidos`,
-  filledWithCv: (cv: string) => `O teu CV ${cv} vai anexado. Dá uma vista de olhos e envia tu o formulário.`,
-  filledNoCv: 'Dá uma vista de olhos e envia tu o formulário.',
-  couldntAnswer: (n: number) => `${n} que não soube responder`,
   saveAndFill: 'Guardar e preencher',
-  reusedEverywhere: 'Guardada nas tuas respostas padrão — quase todos os formulários perguntam isto.',
-
   lookForPanel: 'Procura o painel do Shortlisted na página.',
   fillNoTab: 'Nenhum separador ativo.',
   fillCannotFill: 'Esta página não pode ser preenchida.',

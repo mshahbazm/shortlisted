@@ -9,21 +9,12 @@ export const resumes = {
   emptyList: 'No CVs yet — add one below.',
 
   tailorTitle: 'Tailor for a job',
-  tailorSummary: 'paste a posting, get an honest variant',
-  tailorMyCv: 'Tailor my CV',
   working: 'Working…',
   fillProfileHint: "Fill your profile first — the CV is built only from what's really there.",
-  gapsIntro: "This job asks for things your profile doesn't show (kept OFF the CV — honesty is the feature):",
-
   tailorNotePlaceholder: "Anything to add or emphasize? e.g. I also have Webflow experience — built client sites at Agency X.",
   tailorNoteHint: 'Optional. New facts you state here are also saved to your profile.',
-  addTitle: 'Add a CV',
-  addSummary: 'upload a PDF, or generate from profile',
   uploading: 'Uploading…',
   uploadPdf: 'Upload PDF',
-  generateFromProfile: 'Generate from profile',
-  masterCvLabel: 'Master CV',
-
   contentsLabel: 'Contents',
   contentsHint: 'Tick what this CV shows — it re-renders instantly. Everything comes from your profile.',
   contentsWork: 'Experience',
@@ -65,4 +56,5 @@ export const resumes = {
   deleteLabel: 'Delete',
   gapsShort: 'This job asks for things your profile doesn’t show',
   gapsKeptOff: 'Kept off the CV — honesty is the feature. Worth preparing answers for.',
+  tailoredBody: 'Re-angled around what fits this job. Every line traces back to something already in your profile.',
 }

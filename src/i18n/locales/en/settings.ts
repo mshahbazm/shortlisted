@@ -7,8 +7,6 @@ export const settings = {
   languageTitle: 'Language',
   languageAuto: 'Auto (browser language)',
 
-  accountTitle: 'Account',
-  notSignedIn: 'not signed in',
   accountIntro:
     'Sign in with your email to unlock AI and keep your data in your account. Free: 10 credits. Pro ($9/mo): 100 credits/month. One tailored CV ≈ 1 credit.',
   emailPlaceholder: 'you@example.com',
@@ -21,10 +19,7 @@ export const settings = {
   checking: 'Checking…',
   resendCode: 'Resend code',
   signedIn: 'Signed in.',
-  signedInAs: (email: string) => `Signed in as ${email}`,
   checkCredits: 'Check my credits',
-  usageLine: (plan: string, used: number, limit: number, monthly: boolean) =>
-    `${plan} · ${used} of ${limit} credits used${monthly ? ' this month' : ' (lifetime)'}`,
   planFree: 'Free',
   planPro: 'Pro',
   signOutDevice: 'Sign out on this device',
@@ -36,7 +31,6 @@ export const settings = {
   imported: 'Imported.',
   importFailed: (msg: string) => `Import failed: ${msg}`,
 
-  detectTitle: 'Job detection',
   detectOn: 'on — every site',
   detectOff: 'off — known job boards only',
   detectHint:

@@ -19,8 +19,6 @@ export const home: tLocale['home'] = {
   tailorACvSub: 'Auf diesen Job zugeschnitten, nichts erfunden',
   tailorACvSubGeneric: 'Auf einen Job zugeschnitten, nichts erfunden',
   oneCredit: '1 Credit',
-  noCreditsLeft: 'Keine Credits übrig',
-
   questionsWaiting: (n: number) => `${n} Frage${n === 1 ? '' : 'n'} wartet auf dich`,
   questionsTitle: 'Offene Fragen',
   questionsLede:
@@ -48,7 +46,6 @@ export const home: tLocale['home'] = {
     'Shortlisted weiß, dass du dich beworben hast, weil es das Formular ausgefüllt hat — alles danach trägst du selbst ein.',
   cvSent: 'Gesendeter Lebenslauf',
   statusApplied: 'Beworben',
-  statusHeardBack: 'Rückmeldung',
   statusInterviewing: 'Im Gespräch',
   statusOffer: 'Angebot',
   statusRejected: 'Abgelehnt',
@@ -85,13 +82,7 @@ export const home: tLocale['home'] = {
   updateProfile: 'Profil aktualisieren',
   saveTheJob: 'Job speichern',
 
-  filledTitle: (filled: number, total: number) => `${filled} von ${total} Feldern ausgefüllt`,
-  filledWithCv: (cv: string) => `Dein Lebenslauf ${cv} ist angehängt. Sieh drüber und schick das Formular selbst ab.`,
-  filledNoCv: 'Sieh drüber und schick das Formular selbst ab.',
-  couldntAnswer: (n: number) => `${n} konnte ich nicht beantworten`,
   saveAndFill: 'Speichern & ausfüllen',
-  reusedEverywhere: 'In deinen Standardantworten gespeichert — danach fragt fast jedes Formular.',
-
   lookForPanel: 'Such das Shortlisted-Panel auf der Seite.',
   fillNoTab: 'Kein aktiver Tab.',
   fillCannotFill: 'Diese Seite kann nicht ausgefüllt werden.',

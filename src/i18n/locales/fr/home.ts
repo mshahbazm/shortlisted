@@ -19,8 +19,6 @@ export const home: tLocale['home'] = {
   tailorACvSub: 'Recentré sur cette offre, rien d’inventé',
   tailorACvSubGeneric: 'Recentré sur une offre, rien d’inventé',
   oneCredit: '1 crédit',
-  noCreditsLeft: 'Plus de crédits',
-
   questionsWaiting: (n: number) => `${n} question${n === 1 ? '' : 's'} vous attend${n === 1 ? '' : 'ent'}`,
   questionsTitle: 'Questions en attente',
   questionsLede:
@@ -48,7 +46,6 @@ export const home: tLocale['home'] = {
     'Shortlisted sait que vous avez postulé parce qu’il a rempli le formulaire — tout ce qui suit, c’est à vous de l’indiquer.',
   cvSent: 'CV envoyé',
   statusApplied: 'Envoyée',
-  statusHeardBack: 'Réponse reçue',
   statusInterviewing: 'En entretien',
   statusOffer: 'Offre',
   statusRejected: 'Refusée',
@@ -85,13 +82,7 @@ export const home: tLocale['home'] = {
   updateProfile: 'Mettre à jour le profil',
   saveTheJob: 'Enregistrer l’offre',
 
-  filledTitle: (filled: number, total: number) => `${filled} champs remplis sur ${total}`,
-  filledWithCv: (cv: string) => `Votre CV ${cv} est joint. Relisez, puis envoyez le formulaire vous-même.`,
-  filledNoCv: 'Relisez, puis envoyez le formulaire vous-même.',
-  couldntAnswer: (n: number) => `${n} auxquelles je n’ai pas su répondre`,
   saveAndFill: 'Enregistrer et remplir',
-  reusedEverywhere: 'Enregistré dans vos réponses types — presque tous les formulaires le demandent.',
-
   lookForPanel: 'Cherchez le panneau Shortlisted sur la page.',
   fillNoTab: 'Aucun onglet actif.',
   fillCannotFill: 'Cette page ne peut pas être remplie.',

@@ -11,7 +11,6 @@ export const common: tLocale['common'] = {
   skip: 'Überspringen',
   dismiss: 'Ausblenden',
   empty: 'leer',
-  emptyValue: 'Leer',
   firstName: 'Vorname',
   lastName: 'Nachname',
   email: 'E-Mail',

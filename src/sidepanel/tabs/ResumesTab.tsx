@@ -45,6 +45,8 @@ export function ResumesTab() {
   const [busyStep, setBusyStep] = useState('')
   const [err, setErr] = useState('')
   const [gaps, setGaps] = useState<string[]>([])
+  /** Label of the CV that tailoring just produced — drives the result screen. */
+  const [justMade, setJustMade] = useState('')
   // Which generation is waiting on a template pick.
   const [picking, setPicking] = useState<'master' | 'tailor' | null>(null)
 
@@ -136,6 +138,10 @@ export function ResumesTab() {
       setGaps(result.gaps)
       setJobText('')
       setTailorNote('')
+      // A credit was just spent — show what came back rather than dropping the
+      // user on a list and hoping they spot the new row.
+      setJustMade(roleCompanyLabel(result.resume.label, result.job.company))
+      nav.push('done')
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
     } finally {
@@ -181,6 +187,42 @@ export function ResumesTab() {
       }}
     />
   )
+
+  // What a spent credit bought. The gaps live here rather than on the list,
+  // because this is the moment the honesty claim actually lands.
+  if (nav.screen === 'done') {
+    const made = resumes.find((r) => r.label === justMade)
+    return (
+      <>
+        <ScreenHead title={t.cvReady} onBack={() => nav.reset()} backLabel={t.back} />
+        <Body screen={nav.screen}>
+          <div className="done">
+            <div className="done-ring"><Icon name="check" /></div>
+            <div className="done-t">{justMade}</div>
+            <div className="done-s">{t.tailoredBody}</div>
+          </div>
+          <div className="duo tight">
+            <button className="ghost" disabled={!made} onClick={() => made && void openPreview(made)}>
+              {t.previewLabel}
+            </button>
+            <button className="primary" disabled={!made} onClick={() => { if (made) makeDefault(made.id); nav.reset() }}>
+              {t.makeDefault}
+            </button>
+          </div>
+          {gaps.length > 0 && (
+            <div className="gaps">
+              <div className="gaps-h">{t.gapsShort}</div>
+              <div className="gaps-s">{t.gapsKeptOff}</div>
+              <div className="gaps-c">
+                {gaps.map((g, i) => <span key={i} className="minichip amber">{g}</span>)}
+              </div>
+            </div>
+          )}
+        </Body>
+        {preview && <PreviewSheet preview={preview} onClose={() => setPreview(null)} t={t} />}
+      </>
+    )
+  }
 
   // Step one of tailoring: the posting. The style picker is step two, and only
   // then does a credit get spent.
@@ -262,15 +304,6 @@ export function ResumesTab() {
           </div>
         )}
 
-        {gaps.length > 0 && (
-          <div className="gaps">
-            <div className="gaps-h">{t.gapsShort}</div>
-            <div className="gaps-s">{t.gapsKeptOff}</div>
-            <div className="gaps-c">
-              {gaps.map((g, i) => <span key={i} className="minichip amber">{g}</span>)}
-            </div>
-          </div>
-        )}
       </Body>
 
       {/* One button, then the question — so nobody spends a credit by accident. */}
@@ -308,19 +341,32 @@ export function ResumesTab() {
         return r?.content ? <ContentsEditor r={r} profile={profile} onClose={() => setEditingCv(null)} /> : null
       })()}
 
-      {preview && (
-        <div className="tpl-overlay" onClick={() => setPreview(null)}>
-          <div className="pv-sheet" onClick={(e) => e.stopPropagation()}>
-            <h3>{preview.label}</h3>
-            {preview.pages.length === 0 && <p className="progress">{t.working}</p>}
-            {preview.pages.map((p, i) => (
-              <img key={i} src={p} alt="" />
-            ))}
-            <button className="ghost small" onClick={() => setPreview(null)}>{t.done}</button>
-          </div>
-        </div>
-      )}
+      {preview && <PreviewSheet preview={preview} onClose={() => setPreview(null)} t={t} />}
     </>
+  )
+}
+
+/** Rendered pages of a stored CV — what you preview is exactly what gets sent. */
+function PreviewSheet({
+  preview,
+  onClose,
+  t,
+}: {
+  preview: { label: string; pages: string[] }
+  onClose: () => void
+  t: tMerged<'resumes'>
+}) {
+  return (
+    <div className="tpl-overlay" onClick={onClose}>
+      <div className="pv-sheet" onClick={(e) => e.stopPropagation()}>
+        <h3>{preview.label}</h3>
+        {preview.pages.length === 0 && <p className="progress">{t.working}</p>}
+        {preview.pages.map((p, i) => (
+          <img key={i} src={p} alt="" />
+        ))}
+        <button className="ghost wide" onClick={onClose}>{t.done}</button>
+      </div>
+    </div>
   )
 }
 
@@ -350,11 +396,11 @@ function TemplatePicker({
     <div className="tpl-overlay" onClick={onCancel}>
       <div className="tpl-sheet" onClick={(e) => e.stopPropagation()}>
         <h3>{t.pickStyleTitle}</h3>
-        <p className="microhint">{t.pickStyleHint}</p>
-        <div className="tpl-tags">
-          <button className={`chip ${tag === null ? 'blue' : ''}`} onClick={() => setTag(null)}>{t.allStyles}</button>
+        <p className="lede">{t.pickStyleHint}</p>
+        <div className="filters">
+          <button className={`fchip ${tag === null ? 'on' : ''}`} onClick={() => setTag(null)}>{t.allStyles}</button>
           {ALL_TAGS.map((tg) => (
-            <button key={tg} className={`chip ${tag === tg ? 'blue' : ''}`} onClick={() => setTag(tg)}>
+            <button key={tg} className={`fchip ${tag === tg ? 'on' : ''}`} onClick={() => setTag(tg)}>
               {tagLabel[tg]}
             </button>
           ))}
@@ -368,7 +414,7 @@ function TemplatePicker({
             </button>
           ))}
         </div>
-        <button className="ghost small" onClick={onCancel}>{t.cancel}</button>
+        <button className="ghost wide" onClick={onCancel}>{t.cancel}</button>
       </div>
     </div>
   )

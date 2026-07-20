@@ -9,23 +9,13 @@ export const resumes: tLocale['resumes'] = {
   emptyList: 'Noch keine Lebensläufe — füg unten einen hinzu.',
 
   tailorTitle: 'Auf einen Job zuschneiden',
-  tailorSummary: 'Anzeige einfügen, ehrliche Variante bekommen',
-  tailorMyCv: 'Lebenslauf zuschneiden',
   working: 'Arbeite…',
   fillProfileHint:
     'Füll zuerst dein Profil aus — der Lebenslauf entsteht nur aus dem, was wirklich drinsteht.',
-  gapsIntro:
-    'Dieser Job verlangt Dinge, die dein Profil nicht zeigt (bleiben aus dem Lebenslauf RAUS — Ehrlichkeit ist das Feature):',
-
   tailorNotePlaceholder: "Etwas zu ergänzen oder zu betonen? z. B. Ich habe auch Webflow-Erfahrung — Kundenseiten bei Agentur X gebaut.",
   tailorNoteHint: 'Optional. Neue Fakten, die du hier nennst, werden auch in deinem Profil gespeichert.',
-  addTitle: 'Lebenslauf hinzufügen',
-  addSummary: 'PDF hochladen oder aus dem Profil generieren',
   uploading: 'Wird hochgeladen…',
   uploadPdf: 'PDF hochladen',
-  generateFromProfile: 'Aus dem Profil generieren',
-  masterCvLabel: 'Master-Lebenslauf',
-
   contentsLabel: 'Inhalt',
   contentsHint: 'Hak an, was dieser Lebenslauf zeigt — er wird sofort neu erstellt. Alles kommt aus deinem Profil.',
   contentsWork: 'Erfahrung',
@@ -67,4 +57,5 @@ export const resumes: tLocale['resumes'] = {
   deleteLabel: 'Löschen',
   gapsShort: 'Dieser Job verlangt Dinge, die dein Profil nicht zeigt',
   gapsKeptOff: 'Bleibt aus dem Lebenslauf raus — Ehrlichkeit ist das Feature. Bereite Antworten vor.',
+  tailoredBody: 'Neu ausgerichtet auf das, was zu diesem Job passt. Jede Zeile lässt sich auf dein Profil zurückführen.',
 }

@@ -4,7 +4,6 @@ export const profile = {
   yourProfile: 'Your profile',
   hint: 'Everything the extension fills comes from here.',
 
-  basicsTitle: 'Basics',
   city: 'City',
   countryIso: 'Country (ISO-2)',
   headline: 'Headline',
@@ -19,15 +18,12 @@ export const profile = {
   linksTitle: 'Links',
   savedToast: 'Saved ✓',
   invalidUrl: 'That doesn’t look like a valid link — check it and try again.',
-  linksAdded: (n: number) => `${n} added`,
   website: 'Website',
   github: 'GitHub',
   linkedin: 'LinkedIn',
   portfolio: 'Portfolio',
 
   workTitle: 'Work experience',
-  workSummary: (title: string, company: string, more: number) =>
-    `${title} at ${company}${more > 0 ? ` +${more}` : ''}`,
   addRole: '+ Add role',
   roleTitle: 'Title',
   company: 'Company',
@@ -38,7 +34,6 @@ export const profile = {
   untitled: 'Untitled',
 
   educationTitle: 'Education',
-  educationCount: (n: number) => `${n} entr${n === 1 ? 'y' : 'ies'}`,
   addEducation: '+ Add education',
   degree: 'Degree',
   fieldOfStudy: 'Field of study',
@@ -47,7 +42,6 @@ export const profile = {
   toYear: 'To (year)',
 
   extrasTitle: 'Highlights, languages, certifications',
-  extrasCount: (n: number) => `${n} item${n === 1 ? '' : 's'}`,
   careerHighlightsLabel: 'Career highlights — up to 3, short and concrete (top of the CV)',
   careerHighlightsPlaceholder:
     '8 years building AI agent systems\nLed teams of up to 5 engineers\nShipped a 64k-job harvesting pipeline',
@@ -87,7 +81,6 @@ export const profile = {
   tellMeNothing: 'Nothing new found in that — your profile already covers it.',
   tellMeAdded: (n: number) => `Filed into your profile ✓ (${n} new)`,
   reimportTitle: 'Re-import from CV',
-  reimportSummary: 'upload PDF or paste text, AI rebuilds the profile',
   uploadPdf: 'Upload PDF',
   readingPdf: 'Reading PDF…',
   reading: 'Reading…',
@@ -116,5 +109,4 @@ export const profile = {
   moreCount: 'more',
   nothingYet: 'Nothing here yet',
   oneCredit: '1 credit',
-  pasteText: 'Paste text',
 }

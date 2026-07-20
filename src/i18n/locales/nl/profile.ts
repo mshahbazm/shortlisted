@@ -4,7 +4,6 @@ export const profile: tLocale['profile'] = {
   yourProfile: 'Jouw profiel',
   hint: 'Alles wat de extensie invult, komt hiervandaan.',
 
-  basicsTitle: 'Basis',
   city: 'Stad',
   countryIso: 'Land (ISO-2)',
   headline: 'Functietitel',
@@ -19,15 +18,12 @@ export const profile: tLocale['profile'] = {
   linksTitle: 'Links',
   savedToast: 'Opgeslagen ✓',
   invalidUrl: 'Dat lijkt geen geldige link — controleer en probeer opnieuw.',
-  linksAdded: (n: number) => `${n} toegevoegd`,
   website: 'Website',
   github: 'GitHub',
   linkedin: 'LinkedIn',
   portfolio: 'Portfolio',
 
   workTitle: 'Werkervaring',
-  workSummary: (title: string, company: string, more: number) =>
-    `${title} bij ${company}${more > 0 ? ` +${more}` : ''}`,
   addRole: '+ Functie toevoegen',
   roleTitle: 'Titel',
   company: 'Bedrijf',
@@ -38,7 +34,6 @@ export const profile: tLocale['profile'] = {
   untitled: 'Naamloos',
 
   educationTitle: 'Opleiding',
-  educationCount: (n: number) => (n === 1 ? '1 opleiding' : `${n} opleidingen`),
   addEducation: '+ Opleiding toevoegen',
   degree: 'Diploma',
   fieldOfStudy: 'Studierichting',
@@ -47,7 +42,6 @@ export const profile: tLocale['profile'] = {
   toYear: 'Tot (jaar)',
 
   extrasTitle: 'Hoogtepunten, talen, certificaten',
-  extrasCount: (n: number) => (n === 1 ? '1 item' : `${n} items`),
   careerHighlightsLabel: 'Carrièrehoogtepunten — max 3, kort en concreet (bovenaan het cv)',
   careerHighlightsPlaceholder:
     '8 jaar AI-agentsystemen gebouwd\nTeams tot 5 engineers geleid\nEen pipeline voor 64k vacatures opgeleverd',
@@ -87,7 +81,6 @@ export const profile: tLocale['profile'] = {
   tellMeNothing: 'Niets nieuws gevonden — je profiel dekt dit al.',
   tellMeAdded: (n: number) => `In je profiel gezet ✓ (${n} nieuw)`,
   reimportTitle: 'Opnieuw importeren uit cv',
-  reimportSummary: 'upload een PDF of plak tekst, AI bouwt het profiel opnieuw op',
   uploadPdf: 'PDF uploaden',
   readingPdf: 'PDF lezen…',
   reading: 'Lezen…',
@@ -116,5 +109,4 @@ export const profile: tLocale['profile'] = {
   moreCount: 'meer',
   nothingYet: 'Hier nog niets',
   oneCredit: '1 credit',
-  pasteText: 'Tekst plakken',
 }

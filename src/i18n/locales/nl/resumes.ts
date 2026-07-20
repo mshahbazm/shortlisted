@@ -9,22 +9,12 @@ export const resumes: tLocale['resumes'] = {
   emptyList: "Nog geen cv's — voeg er hieronder een toe.",
 
   tailorTitle: 'Aanpassen voor een vacature',
-  tailorSummary: 'plak een vacature, krijg een eerlijke variant',
-  tailorMyCv: 'Pas mijn cv aan',
   working: 'Bezig…',
   fillProfileHint: 'Vul eerst je profiel in — het cv wordt alleen gebouwd uit wat er echt in staat.',
-  gapsIntro:
-    'Deze vacature vraagt om dingen die je profiel niet laat zien (bewust NIET op het cv gezet — eerlijkheid is de feature):',
-
   tailorNotePlaceholder: "Iets toe te voegen of te benadrukken? bijv. Ik heb ook Webflow-ervaring — klantsites gebouwd bij Bureau X.",
   tailorNoteHint: 'Optioneel. Nieuwe feiten die je hier noemt, worden ook in je profiel opgeslagen.',
-  addTitle: 'Cv toevoegen',
-  addSummary: 'upload een PDF, of genereer uit je profiel',
   uploading: 'Uploaden…',
   uploadPdf: 'PDF uploaden',
-  generateFromProfile: 'Genereren uit profiel',
-  masterCvLabel: 'Basis-cv',
-
   contentsLabel: 'Inhoud',
   contentsHint: 'Vink aan wat dit cv toont — het wordt direct opnieuw gemaakt. Alles komt uit je profiel.',
   contentsWork: 'Ervaring',
@@ -66,4 +56,5 @@ export const resumes: tLocale['resumes'] = {
   deleteLabel: 'Verwijderen',
   gapsShort: 'Deze vacature vraagt dingen die je profiel niet laat zien',
   gapsKeptOff: 'Blijft van het cv af — eerlijkheid is de functie. Bereid je antwoorden voor.',
+  tailoredBody: 'Toegespitst op wat bij deze vacature past. Elke regel is terug te voeren op je profiel.',
 }

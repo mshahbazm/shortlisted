@@ -5,7 +5,6 @@ export const profile: tLocale['profile'] = {
   yourProfile: 'Twój profil',
   hint: 'Wszystko, co rozszerzenie wypełnia, bierze się stąd.',
 
-  basicsTitle: 'Podstawy',
   city: 'Miasto',
   countryIso: 'Kraj (ISO-2)',
   headline: 'Nagłówek',
@@ -20,15 +19,12 @@ export const profile: tLocale['profile'] = {
   linksTitle: 'Linki',
   savedToast: 'Zapisano ✓',
   invalidUrl: 'Ten link nie wygląda na poprawny — sprawdź go i spróbuj ponownie.',
-  linksAdded: (n: number) => `dodano ${n}`,
   website: 'Strona WWW',
   github: 'GitHub',
   linkedin: 'LinkedIn',
   portfolio: 'Portfolio',
 
   workTitle: 'Doświadczenie zawodowe',
-  workSummary: (title: string, company: string, more: number) =>
-    `${title} w ${company}${more > 0 ? ` +${more}` : ''}`,
   addRole: '+ Dodaj stanowisko',
   roleTitle: 'Stanowisko',
   company: 'Firma',
@@ -39,7 +35,6 @@ export const profile: tLocale['profile'] = {
   untitled: 'Bez nazwy',
 
   educationTitle: 'Wykształcenie',
-  educationCount: (n: number) => `${n} ${plural(n, 'wpis', 'wpisy', 'wpisów')}`,
   addEducation: '+ Dodaj wykształcenie',
   degree: 'Tytuł / stopień',
   fieldOfStudy: 'Kierunek',
@@ -48,7 +43,6 @@ export const profile: tLocale['profile'] = {
   toYear: 'Do (rok)',
 
   extrasTitle: 'Osiągnięcia, języki, certyfikaty',
-  extrasCount: (n: number) => `${n} ${plural(n, 'pozycja', 'pozycje', 'pozycji')}`,
   careerHighlightsLabel:
     'Najważniejsze osiągnięcia — maks. 3, krótkie i konkretne (góra CV)',
   careerHighlightsPlaceholder:
@@ -89,7 +83,6 @@ export const profile: tLocale['profile'] = {
   tellMeNothing: 'Nic nowego — Twój profil już to obejmuje.',
   tellMeAdded: (n: number) => `Zapisano w profilu ✓ (nowe: ${n})`,
   reimportTitle: 'Zaimportuj ponownie z CV',
-  reimportSummary: 'wgraj PDF albo wklej tekst — AI odbuduje profil',
   uploadPdf: 'Prześlij PDF',
   readingPdf: 'Czytam PDF…',
   reading: 'Czytam…',
@@ -118,5 +111,4 @@ export const profile: tLocale['profile'] = {
   moreCount: 'więcej',
   nothingYet: 'Jeszcze nic tutaj',
   oneCredit: '1 kredyt',
-  pasteText: 'Wklej tekst',
 }

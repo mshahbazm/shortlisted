@@ -4,7 +4,6 @@ export const profile: tLocale['profile'] = {
   yourProfile: 'Il tuo profilo',
   hint: "Tutto ciò che l'estensione compila parte da qui.",
 
-  basicsTitle: 'Dati base',
   city: 'Città',
   countryIso: 'Paese (ISO-2)',
   headline: 'Titolo professionale',
@@ -19,15 +18,12 @@ export const profile: tLocale['profile'] = {
   linksTitle: 'Link',
   savedToast: 'Salvato ✓',
   invalidUrl: 'Questo link non sembra valido — controllalo e riprova.',
-  linksAdded: (n: number) => `${n} aggiunt${n === 1 ? 'o' : 'i'}`,
   website: 'Sito web',
   github: 'GitHub',
   linkedin: 'LinkedIn',
   portfolio: 'Portfolio',
 
   workTitle: 'Esperienza lavorativa',
-  workSummary: (title: string, company: string, more: number) =>
-    `${title} presso ${company}${more > 0 ? ` +${more}` : ''}`,
   addRole: '+ Aggiungi ruolo',
   roleTitle: 'Titolo',
   company: 'Azienda',
@@ -38,7 +34,6 @@ export const profile: tLocale['profile'] = {
   untitled: 'Senza titolo',
 
   educationTitle: 'Istruzione',
-  educationCount: (n: number) => `${n} ${n === 1 ? 'voce' : 'voci'}`,
   addEducation: '+ Aggiungi istruzione',
   degree: 'Titolo di studio',
   fieldOfStudy: 'Campo di studi',
@@ -47,7 +42,6 @@ export const profile: tLocale['profile'] = {
   toYear: 'A (anno)',
 
   extrasTitle: 'Risultati, lingue, certificazioni',
-  extrasCount: (n: number) => `${n} element${n === 1 ? 'o' : 'i'}`,
   careerHighlightsLabel: 'Risultati di carriera — max 3, brevi e concreti (in cima al CV)',
   careerHighlightsPlaceholder:
     '8 anni a costruire sistemi di agenti AI\nGuidato team fino a 5 ingegneri\nRealizzata una pipeline da 64k offerte',
@@ -87,7 +81,6 @@ export const profile: tLocale['profile'] = {
   tellMeNothing: 'Niente di nuovo — il tuo profilo lo copre già.',
   tellMeAdded: (n: number) => `Salvato nel profilo ✓ (${n} novità)`,
   reimportTitle: 'Reimporta dal CV',
-  reimportSummary: "carica un PDF o incolla il testo, l'AI ricostruisce il profilo",
   uploadPdf: 'Carica PDF',
   readingPdf: 'Lettura PDF…',
   reading: 'Lettura…',
@@ -116,5 +109,4 @@ export const profile: tLocale['profile'] = {
   moreCount: 'altri',
   nothingYet: 'Ancora niente qui',
   oneCredit: '1 credito',
-  pasteText: 'Incolla il testo',
 }
