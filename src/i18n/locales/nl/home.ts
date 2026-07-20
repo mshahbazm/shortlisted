@@ -101,5 +101,4 @@ export const home: tLocale['home'] = {
   applyingHere: 'Solliciteer je op deze pagina?',
   notRecognised: 'Ik herkende hier geen sollicitatieformulier, maar ik kan wel invullen wat er staat.',
   fillThisPage: 'Deze pagina invullen',
-  fillPartial: 'Gratis · ik vul in wat ik kan en laat de rest staan',
 }

@@ -309,8 +309,8 @@ button.link.amber { color: var(--amber); }
    wash, no live dot, no primary button — visual weight has to match how much
    we actually know, or the panel announces a webmail inbox as a job form. */
 .ctx.ask { background: var(--bg); border-style: dashed; }
-.ctx.ask .ctx-job { font-size: 15px; }
-.ctx.ask .ctx-co { margin-bottom: 8px; }
+.ctx.ask .ctx-job { font-size: 16px; }
+.ctx.ask .ctx-co { margin-bottom: 9px; }
 .ctx-l {
   display: flex; align-items: center; gap: 7px; margin-bottom: 5px;
   font-size: 11px; font-weight: 650; letter-spacing: 0.05em;

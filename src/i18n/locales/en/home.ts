@@ -113,5 +113,4 @@ export const home = {
   applyingHere: 'Applying on this page?',
   notRecognised: 'I didn’t recognise an application form here, but I can still fill what’s on the page.',
   fillThisPage: 'Fill this page',
-  fillPartial: 'Free · I’ll fill what I can and leave the rest',
 }

@@ -376,12 +376,14 @@ function ContextSlot({
   if (page.hasFields) {
     return (
       <div className="ctx ask">
-        <div className="ctx-l">{t.onThisPage}</div>
+        {/* The uncertainty belongs in the headline, not in the button. We are
+            unsure whether this is an application; we are not unsure about our
+            ability to fill it once the user says it is. */}
         <div className="ctx-job">{t.applyingHere}</div>
         <div className="ctx-co">{hostOf(page.url)} · {t.fieldCount(page.fieldCount)}</div>
         <div className="ctx-note plain">{t.notRecognised}</div>
-        <button className="ghost wide" onClick={onFill}>{t.fillThisPage}</button>
-        <div className="ctx-foot">{t.fillPartial}</div>
+        <button className="primary big" onClick={onFill}>{t.fillThisPage}</button>
+        <div className="ctx-foot">{t.fillFoot}</div>
       </div>
     )
   }

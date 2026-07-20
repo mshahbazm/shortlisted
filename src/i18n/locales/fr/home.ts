@@ -101,5 +101,4 @@ export const home: tLocale['home'] = {
   applyingHere: 'Vous postulez sur cette page ?',
   notRecognised: 'Je n’ai pas reconnu de formulaire de candidature ici, mais je peux quand même remplir ce qui s’y trouve.',
   fillThisPage: 'Remplir cette page',
-  fillPartial: 'Gratuit · je remplis ce que je peux et laisse le reste',
 }

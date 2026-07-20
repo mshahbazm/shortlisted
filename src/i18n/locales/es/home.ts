@@ -101,5 +101,4 @@ export const home: tLocale['home'] = {
   applyingHere: '¿Estás postulando en esta página?',
   notRecognised: 'No he reconocido un formulario de solicitud aquí, pero aun así puedo rellenar lo que hay.',
   fillThisPage: 'Rellenar esta página',
-  fillPartial: 'Gratis · relleno lo que puedo y dejo el resto',
 }
