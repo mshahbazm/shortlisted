@@ -241,7 +241,7 @@ export function ResumesTab() {
       </Section>
 
       <Section title={t.addTitle} summary={t.addSummary}>
-        <div className="row">
+        <div className="field-row">
           <button className="ghost small" onClick={() => fileRef.current?.click()} disabled={!!busyStep}>{t.uploadPdf}</button>
           <button className="ghost small" onClick={() => setPicking('master')} disabled={!hasProfile || !!busyStep}>
             {busyStep ? t.working : t.generateFromProfile}

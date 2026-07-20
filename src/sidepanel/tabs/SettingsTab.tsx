@@ -101,7 +101,7 @@ export function SettingsTab() {
       </Section>
 
       <Section title={t.backupTitle} summary={t.backupSummary}>
-        <div className="row">
+        <div className="field-row">
           <button className="ghost small" onClick={exportAll}>{t.exportJson}</button>
           <button className="ghost small" onClick={() => importRef.current?.click()}>{t.importJson}</button>
         </div>
@@ -199,7 +199,7 @@ function AccountPanel() {
                   type="text" inputMode="numeric" placeholder={t.codePlaceholder} value={otp}
                   onChange={(e) => setOtp(e.target.value)} autoFocus
                 /></label>
-              <div className="row">
+              <div className="field-row">
                 <button className="primary small" disabled={busy || !otp.trim()} onClick={verify}>
                   {busy ? t.checking : t.signIn}
                 </button>
@@ -213,7 +213,7 @@ function AccountPanel() {
       {signedIn && (
         <>
           <p className="microhint">{t.signedInAs(settings.accountEmail!)}</p>
-          <div className="row" style={{ marginTop: 8 }}>
+          <div className="field-row" style={{ marginTop: 8 }}>
             <button className="ghost small" onClick={refresh}>{t.checkCredits}</button>
           </div>
           {usage && (

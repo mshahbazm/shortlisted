@@ -1,7 +1,7 @@
 // Service worker: message routing, pending-questions badge, on-demand
 // injection for "Fill this page" on non-ATS sites.
 
-import { Msg } from '../lib/messaging'
+import { Msg, PageContext } from '../lib/messaging'
 import * as store from '../lib/store'
 import { BankAnswer, PendingQuestion, ResumeVariant, jobUrlKey, roleCompanyLabel, uid } from '../lib/types'
 import { applyIntakeFacts } from '../lib/profileMerge'
@@ -293,6 +293,21 @@ async function handle(msg: Msg): Promise<unknown> {
       } catch {
         // No frame answered: nothing on this page holds a form.
         return { errorCode: 'noForm' }
+      }
+    }
+
+    // Read-only sibling of fillCurrentTab, for Home's context slot. It
+    // deliberately does NOT inject the content script: asking what is on a page
+    // must never be the thing that puts us on it. No content script means no
+    // answer, which Home reads as "nothing to offer here" — the right default.
+    case 'pageContext': {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+      if (!tab?.id || !tab.url) return null
+      if (/^(chrome|edge|about|chrome-extension|devtools|view-source):/.test(tab.url)) return null
+      try {
+        return await chrome.tabs.sendMessage<Msg, PageContext>(tab.id, { type: 'getPageContext' })
+      } catch {
+        return null
       }
     }
 

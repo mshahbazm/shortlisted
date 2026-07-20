@@ -91,7 +91,7 @@ export function QuestionsTab() {
                 onChange={(e) => setDrafts({ ...drafts, [q.id]: e.target.value })}
               />
               <div className="spacer" />
-              <div className="row">
+              <div className="field-row">
                 <button className="primary small" onClick={() => answerPending(q.id)} disabled={!(drafts[q.id] ?? '').trim()}>
                   {t.save}
                 </button>
@@ -118,7 +118,7 @@ export function QuestionsTab() {
                   <div className="spacer" />
                   <textarea rows={3} value={editText} onChange={(e) => setEditText(e.target.value)} autoFocus />
                   <div className="spacer" />
-                  <div className="row">
+                  <div className="field-row">
                     <button className="primary small" onClick={() => saveEdit(a)} disabled={!editText.trim()}>
                       {t.save}
                     </button>

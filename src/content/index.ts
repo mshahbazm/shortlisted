@@ -3,7 +3,7 @@
 // appears only on a confident score. "Fill current tab" in the side panel
 // forces it open regardless.
 
-import { FillState, Msg, sendMsg } from '../lib/messaging'
+import { FillState, Msg, PageContext, sendMsg } from '../lib/messaging'
 import * as store from '../lib/store'
 import { getContent, type tOverlayContent } from './i18n-bridge'
 import { GENERIC_ADAPTER, detectAdapter } from './adapters'
@@ -94,6 +94,24 @@ function main() {
   const hasFillable = () => !!document.querySelector('input:not([type=hidden]), textarea, select')
 
   chrome.runtime.onMessage.addListener((msg: Msg, _sender, sendResponse) => {
+    // Describe the page for the side panel's Home screen. Read-only: nothing
+    // mounts, nothing fills. An iframe answers only when it holds fields, so an
+    // embedded ATS form beats the empty page around it; the top frame always
+    // answers so a job description with no form is still reported.
+    if (msg.type === 'getPageContext') {
+      if (window !== window.top && !hasFillable()) return
+      const ctx: PageContext = {
+        hasForm: hasFillable(),
+        bubbleOpen: !!document.getElementById('shortlisted-overlay-host'),
+        isJobPage: detectJobForm().confident,
+        title: document.title.split(/[|\-–]/)[0]?.trim() ?? document.title,
+        company: guessCompany(),
+        ats: adapter.name,
+        fieldCount: document.querySelectorAll('input:not([type=hidden]), textarea, select').length,
+      }
+      sendResponse(ctx)
+      return true
+    }
     if (msg.type !== 'triggerFill') return
     if (!hasFillable()) return
     void (async () => {

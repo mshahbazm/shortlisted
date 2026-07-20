@@ -72,7 +72,7 @@ export function ApplyTab() {
         <div className="stat"><b>{apps.length}</b><span>{t.applied}</span></div>
       </div>
 
-      <div className="row" style={{ marginBottom: 16 }}>
+      <div className="field-row" style={{ marginBottom: 16 }}>
         <button
           className="primary"
           disabled={todo.length === 0}

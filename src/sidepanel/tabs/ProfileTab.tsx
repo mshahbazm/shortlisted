@@ -296,13 +296,13 @@ function WorkRow({ entry, onChange, onRemove }: { entry: WorkEntry; onChange: (w
   return (
     <div style={{ padding: '6px 0 12px' }}>
       {incomplete && <p className="microhint">{t.workNeedsDetail}</p>}
-      <div className="row">
+      <div className="field-row">
         <label className="f"><span>{t.roleTitle}</span>
           <input type="text" value={entry.title} onChange={(e) => onChange({ ...entry, title: e.target.value })} /></label>
         <label className="f"><span>{t.company}</span>
           <input type="text" value={entry.company} onChange={(e) => onChange({ ...entry, company: e.target.value })} /></label>
       </div>
-      <div className="row">
+      <div className="field-row">
         <label className="f"><span>{t.fromYm}</span>
           <input type="text" placeholder="2021-03" defaultValue={ymString(entry.startYear, entry.startMonth)} onBlur={(e) => setStart(e.target.value)} /></label>
         <label className="f"><span>{t.toYm}</span>
@@ -320,7 +320,7 @@ function WorkRow({ entry, onChange, onRemove }: { entry: WorkEntry; onChange: (w
           value={entry.highlights.join('\n')}
           onChange={(e) => onChange({ ...entry, highlights: e.target.value.split('\n').filter((l) => l.trim()) })}
         /></label>
-      <div className="row">
+      <div className="field-row">
         <button className="ghost small" onClick={() => setOpen(false)}>{t.done}</button>
         <button className="danger small" onClick={onRemove}>{t.remove}</button>
       </div>
@@ -341,7 +341,7 @@ function EduRow({ entry, onChange, onRemove }: { entry: EducationEntry; onChange
   }
   return (
     <div style={{ padding: '6px 0 12px' }}>
-      <div className="row">
+      <div className="field-row">
         <label className="f"><span>{t.degree}</span>
           <input type="text" value={entry.degree} onChange={(e) => onChange({ ...entry, degree: e.target.value })} /></label>
         <label className="f"><span>{t.fieldOfStudy}</span>
@@ -349,13 +349,13 @@ function EduRow({ entry, onChange, onRemove }: { entry: EducationEntry; onChange
       </div>
       <label className="f"><span>{t.school}</span>
         <input type="text" value={entry.school} onChange={(e) => onChange({ ...entry, school: e.target.value })} /></label>
-      <div className="row">
+      <div className="field-row">
         <label className="f"><span>{t.fromYear}</span>
           <input type="text" defaultValue={entry.startYear ?? ''} onBlur={(e) => onChange({ ...entry, startYear: Number(e.target.value) || undefined })} /></label>
         <label className="f"><span>{t.toYear}</span>
           <input type="text" defaultValue={entry.endYear ?? ''} onBlur={(e) => onChange({ ...entry, endYear: Number(e.target.value) || undefined })} /></label>
       </div>
-      <div className="row">
+      <div className="field-row">
         <button className="ghost small" onClick={() => setOpen(false)}>{t.done}</button>
         <button className="danger small" onClick={onRemove}>{t.remove}</button>
       </div>

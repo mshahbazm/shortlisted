@@ -280,7 +280,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
         <>
           <h1>{t.reviewTitle}</h1>
           <p className="lead">{t.reviewLead(profile.work.length, profile.skills.length)}</p>
-          <div className="row">
+          <div className="field-row">
             <label className="f"><span>{t.firstName}</span>
               <input type="text" value={profile.identity.firstName} onChange={(e) => setIdentity('firstName', e.target.value)} /></label>
             <label className="f"><span>{t.lastName}</span>
@@ -288,7 +288,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
           </div>
           <label className="f"><span>{t.email}</span>
             <input type="text" value={profile.identity.email} onChange={(e) => setIdentity('email', e.target.value)} /></label>
-          <div className="row">
+          <div className="field-row">
             <label className="f"><span>{t.phone}</span>
               <input type="text" value={profile.identity.phone} onChange={(e) => setIdentity('phone', e.target.value)} /></label>
             <label className="f"><span>{t.location}</span>
