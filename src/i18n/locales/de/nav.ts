@@ -1,9 +1,9 @@
 import type { tLocale } from '../en'
 
 export const nav: tLocale['nav'] = {
-  apply: 'Bewerben',
+  home: 'Start',
   profile: 'Profil',
   cvs: 'CVs',
-  answers: 'Antworten',
   settings: 'Einstellungen',
+  back: 'Zurück',
 }

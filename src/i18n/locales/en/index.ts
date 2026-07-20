@@ -3,6 +3,7 @@ import { common } from './common'
 import { nav } from './nav'
 import { onboarding } from './onboarding'
 import { apply } from './apply'
+import { home } from './home'
 import { profile } from './profile'
 import { resumes } from './resumes'
 import { questions } from './questions'
@@ -17,6 +18,7 @@ export const en = {
   nav,
   onboarding,
   apply,
+  home,
   profile,
   resumes,
   questions,

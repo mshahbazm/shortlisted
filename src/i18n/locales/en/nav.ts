@@ -1,9 +1,9 @@
 // Side panel tab labels.
 
 export const nav = {
-  apply: 'Apply',
+  home: 'Home',
   profile: 'Profile',
   cvs: 'CVs',
-  answers: 'Answers',
   settings: 'Settings',
+  back: 'Back',
 }
