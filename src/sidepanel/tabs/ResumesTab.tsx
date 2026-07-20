@@ -47,6 +47,9 @@ export function ResumesTab() {
   const [gaps, setGaps] = useState<string[]>([])
   /** Label of the CV that tailoring just produced — drives the result screen. */
   const [justMade, setJustMade] = useState('')
+  /** CV awaiting a delete confirmation. Tailored ones cost a credit to
+   *  remake, and Delete sits in a row of harmless links. */
+  const [deleting, setDeleting] = useState<string | null>(null)
   // Which generation is waiting on a template pick.
   const [picking, setPicking] = useState<'master' | 'tailor' | null>(null)
 
@@ -297,7 +300,7 @@ export function ResumesTab() {
                   <button className="link" onClick={() => download(r)}>{t.pdf}</button>
                   {r.content && <button className="link" onClick={() => setEditingCv(r.id)}>{t.contentsLabel}</button>}
                   {!r.isDefault && <button className="link" onClick={() => makeDefault(r.id)}>{t.makeDefault}</button>}
-                  <button className="link muted" onClick={() => removeResume(r.id)}>{t.deleteLabel}</button>
+                  <button className="link muted" onClick={() => setDeleting(r.id)}>{t.deleteLabel}</button>
                 </div>
               </div>
             ))}
@@ -329,6 +332,25 @@ export function ResumesTab() {
           <button className="bigchoice" onClick={() => { setSheetOpen(false); fileRef.current?.click() }}>
             <span className="bc-t">{t.fromUploadTitle} <span className="cost free">{t.freeLabel}</span></span>
             <span className="bc-s">{t.fromUploadSub}</span>
+          </button>
+        </Sheet>
+      )}
+
+      {deleting && (
+        <Sheet
+          title={t.removeCvTitle}
+          sub={t.removeCvWarning}
+          closeLabel={t.cancel}
+          onClose={() => setDeleting(null)}
+        >
+          <button
+            className="destructive wide"
+            onClick={() => {
+              removeResume(deleting)
+              setDeleting(null)
+            }}
+          >
+            {t.deleteLabel}
           </button>
         </Sheet>
       )}

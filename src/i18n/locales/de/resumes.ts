@@ -58,4 +58,6 @@ export const resumes: tLocale['resumes'] = {
   gapsShort: 'Dieser Job verlangt Dinge, die dein Profil nicht zeigt',
   gapsKeptOff: 'Bleibt aus dem Lebenslauf raus — Ehrlichkeit ist das Feature. Bereite Antworten vor.',
   tailoredBody: 'Neu ausgerichtet auf das, was zu diesem Job passt. Jede Zeile lässt sich auf dein Profil zurückführen.',
+  removeCvTitle: 'Diesen Lebenslauf löschen?',
+  removeCvWarning: 'Ein zugeschnittener Lebenslauf kostet erneut einen Credit. Bereits verschickte Bewerbungen behalten ihre Kopie.',
 }

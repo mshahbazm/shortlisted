@@ -58,4 +58,6 @@ export const resumes: tLocale['resumes'] = {
   gapsShort: 'Cette offre demande des choses absentes de votre profil',
   gapsKeptOff: 'Écarté du CV — l’honnêteté est la fonctionnalité. Préparez vos réponses.',
   tailoredBody: 'Recentré sur ce qui correspond à cette offre. Chaque ligne remonte à votre profil.',
+  removeCvTitle: 'Supprimer ce CV ?',
+  removeCvWarning: 'Un CV adapté coûte un crédit à refaire. Les candidatures déjà envoyées gardent l’exemplaire joint.',
 }

@@ -57,4 +57,6 @@ export const resumes = {
   gapsShort: 'This job asks for things your profile doesn’t show',
   gapsKeptOff: 'Kept off the CV — honesty is the feature. Worth preparing answers for.',
   tailoredBody: 'Re-angled around what fits this job. Every line traces back to something already in your profile.',
+  removeCvTitle: 'Delete this CV?',
+  removeCvWarning: 'A tailored CV costs a credit to make again. Applications you already sent keep the copy that went with them.',
 }

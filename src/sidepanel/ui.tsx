@@ -333,8 +333,13 @@ export function Composer({
  *
  *  Replaces "comma separated", which makes the user learn a format and then
  *  makes a typo in it silently merge two skills into one. Enter or comma
- *  commits, backspace on an empty box takes the last one back, and blur
- *  commits too so a half-typed entry is not lost by tapping elsewhere. */
+ *  commits, and blur commits too so a half-typed entry is not lost by tapping
+ *  elsewhere.
+ *
+ *  Backspace only ever edits text. Token inputs conventionally let backspace on
+ *  an empty box delete the previous token, but that destroys something the user
+ *  never pointed at, off the very key they were already pressing to erase what
+ *  they had typed. Removing a token is the x on the token. */
 export function ChipInput({
   items,
   onChange,
@@ -384,8 +389,6 @@ export function ChipInput({
           if (e.key === 'Enter' || e.key === ',') {
             e.preventDefault()
             commit()
-          } else if (e.key === 'Backspace' && !draft && items.length) {
-            onChange(items.slice(0, -1))
           }
         }}
       />

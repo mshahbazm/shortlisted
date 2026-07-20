@@ -57,4 +57,6 @@ export const resumes: tLocale['resumes'] = {
   gapsShort: 'Deze vacature vraagt dingen die je profiel niet laat zien',
   gapsKeptOff: 'Blijft van het cv af — eerlijkheid is de functie. Bereid je antwoorden voor.',
   tailoredBody: 'Toegespitst op wat bij deze vacature past. Elke regel is terug te voeren op je profiel.',
+  removeCvTitle: 'Dit cv verwijderen?',
+  removeCvWarning: 'Een cv op maat kost opnieuw een credit. Al verstuurde sollicitaties houden het exemplaar dat meeging.',
 }
