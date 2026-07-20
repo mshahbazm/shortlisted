@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '../lib/cn'
-import { Button, FIELD } from './ui'
+import { Button, FIELD, Select } from './ui'
 import { useStore } from './hooks'
 import { LOCALES, LOCALE_LABELS, isLocale, useContent } from '../i18n'
 import { cloudPdfText, runExtractProfile, sendLoginCode, verifyLoginCode } from '../ai/run'
@@ -402,18 +402,14 @@ function LocaleSwitcher() {
   const [settings] = useStore('settings')
   const t = useContent('settings')
   return (
-    <select
-      className="w-auto min-h-0 cursor-pointer border-0 bg-transparent px-1.5 py-1 text-xs text-muted hover:text-fg"
+    <Select
+      className="mx-auto w-auto border-0 bg-transparent px-1.5 py-1 text-xs text-muted hover:text-fg"
       value={isLocale(settings.locale) ? settings.locale : 'auto'}
-      onChange={(e) => {
-        const v = e.target.value
-        void store.update('settings', (s) => ({ ...s, locale: v === 'auto' ? undefined : v }))
-      }}
-    >
-      <option value="auto">🌐 {t.languageAuto}</option>
-      {LOCALES.map((code) => (
-        <option key={code} value={code}>{LOCALE_LABELS[code]}</option>
-      ))}
-    </select>
+      onChange={(v) => void store.update('settings', (s) => ({ ...s, locale: v === 'auto' ? undefined : v }))}
+      options={[
+        { value: 'auto', label: `🌐 ${t.languageAuto}` },
+        ...LOCALES.map((code) => ({ value: code, label: LOCALE_LABELS[code] })),
+      ]}
+    />
   )
 }

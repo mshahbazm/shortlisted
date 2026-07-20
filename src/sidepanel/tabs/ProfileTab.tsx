@@ -11,7 +11,7 @@ import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { cn } from '../../lib/cn'
 import { KV } from '../components'
-import { Body, Button, Chip, ChipInput, Composer, Cost, Count, Icon, IconButton, ListEditor, Row, ScreenHead, Segments, Sheet, TopBar, useStack } from '../ui'
+import { Body, Button, Chip, ChipInput, Composer, Cost, Count, Icon, IconButton, ListEditor, Row, ScreenHead, Segments, Select, Sheet, TopBar, useStack } from '../ui'
 import { QuestionsTab } from './QuestionsTab'
 import {
   EducationEntry,
@@ -195,17 +195,15 @@ export function ProfileTab({
                     : x)),
                 })}
               />
-              <select
+              <Select
                 value={l.proficiency}
-                onChange={(e) => set({
-                  languages: p.languages.map((x, j) =>
-                    (j === i ? { ...x, proficiency: e.target.value as LanguageProficiency } : x)),
-                })}
-              >
-                {LEVELS.map(([value, key]) => (
-                  <option key={value} value={value}>{t[key]}</option>
-                ))}
-              </select>
+                onChange={(v) =>
+                  set({
+                    languages: p.languages.map((x, j) => (j === i ? { ...x, proficiency: v } : x)),
+                  })
+                }
+                options={LEVELS.map(([value, key]) => ({ value, label: t[key] }))}
+              />
             </div>
             <button
               className="grid size-[30px] shrink-0 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-faint hover:bg-hover hover:text-bad" aria-label={t.removeItem}

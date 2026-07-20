@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
-import { Body, Button, FIELD, Row, Rows, ScreenHead, useStack } from '../ui'
+import { Body, Button, FIELD, Row, Rows, ScreenHead, Select, useStack } from '../ui'
 import { cn } from '../../lib/cn'
 import { StorageShape, storageDefaults } from '../../lib/types'
 import { LOCALES, LOCALE_LABELS, isLocale, useContent } from '../../i18n'
@@ -10,7 +10,6 @@ import { sendMsg } from '../../lib/messaging'
 
 const LEDE = 'm-0 text-[12.5px] leading-normal text-muted'
 const LABEL = 'flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted'
-const SELECT = cn(FIELD, 'appearance-none bg-[url(data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M4%206.5%208%2010.5l4-4%22%20fill%3D%22none%22%20stroke%3D%22%236f6f78%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E)] bg-[length:15px_15px] bg-[position:right_11px_center] bg-no-repeat pr-[34px]')
 
 export function SettingsTab({ onClose }: { onClose: () => void }) {
   const t = useContent('settings')
@@ -60,16 +59,14 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
   if (nav.screen === 'language') {
     return (
       <Screen title={t.languageTitle} onBack={nav.back} t={t}>
-        <select
-          className={SELECT}
+        <Select
           value={isLocale(s.locale) ? s.locale : 'auto'}
-          onChange={(e) => set({ locale: e.target.value === 'auto' ? undefined : e.target.value })}
-        >
-          <option value="auto">{t.languageAuto}</option>
-          {LOCALES.map((code) => (
-            <option key={code} value={code}>{LOCALE_LABELS[code]}</option>
-          ))}
-        </select>
+          onChange={(v) => set({ locale: v === 'auto' ? undefined : v })}
+          options={[
+            { value: 'auto', label: t.languageAuto },
+            ...LOCALES.map((code) => ({ value: code, label: LOCALE_LABELS[code] })),
+          ]}
+        />
       </Screen>
     )
   }

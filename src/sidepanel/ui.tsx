@@ -9,6 +9,8 @@
 // inline, which is how the rest of this codebase is written.
 
 import { ReactNode, useEffect, useRef, useState } from 'react'
+import { Dialog } from '@base-ui-components/react/dialog'
+import { Select as BaseSelect } from '@base-ui-components/react/select'
 import { cn } from '../lib/cn'
 
 /* ---------- icons ---------- */
@@ -615,10 +617,15 @@ export function Composer({
 /* ---------- sheet ---------- */
 
 /** Bottom sheet. Asks a question before an action spends a credit or deletes
- *  something. Closes on scrim click or Escape.
+ *  something.
  *
- *  Focus is NOT trapped — that is what the Base UI dialog is for, and replacing
- *  this is the next step. */
+ *  Built on Base UI's Dialog rather than a div and a keydown listener, which is
+ *  what this was. The hand-rolled version closed on Escape and on the scrim,
+ *  and that was all: focus stayed wherever it had been, so a keyboard user
+ *  tabbed straight out of the open sheet into the screen behind it, and a
+ *  screen reader was never told a dialog had opened. Focus trapping, restoring
+ *  focus on close, aria-modal, and locking the background scroll all come from
+ *  the primitive. */
 export function Sheet({
   title,
   sub,
@@ -632,31 +639,98 @@ export function Sheet({
   onClose: () => void
   closeLabel: string
 }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
-
   return (
-    <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-[rgba(24,24,27,0.32)]" onClick={onClose} />
-      <div
-        role="dialog"
-        aria-label={title}
+    <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className="fixed inset-0 z-50 bg-[rgba(24,24,27,0.32)]" />
+        <Dialog.Popup
+          className={cn(
+            'fixed inset-x-0 bottom-0 z-50 mx-auto flex w-full max-w-[640px] flex-col gap-2.5',
+            'rounded-t-2xl bg-bg px-3.5 pt-[18px] pb-4 shadow-[0_-8px_30px_rgba(0,0,0,0.16)]',
+            'focus:outline-none',
+          )}
+        >
+          <Dialog.Title className="text-[17px] font-[650] tracking-[-0.015em]">{title}</Dialog.Title>
+          {sub && (
+            <Dialog.Description className="-mt-1.5 mb-1 text-[12.5px] text-muted">{sub}</Dialog.Description>
+          )}
+          {children}
+          {/* The safe choice, where a mis-tap is most likely to land. */}
+          <Dialog.Close
+            render={
+              <Button variant="plain" wide>
+                {closeLabel}
+              </Button>
+            }
+          />
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
+  )
+}
+
+/* ---------- select ---------- */
+
+/** A dropdown that is a real listbox.
+ *
+ *  A native <select> cannot be styled consistently across platforms — the
+ *  chevron we drew was a background image sitting behind the browser's own
+ *  control. Base UI renders a button and a listbox we own completely, with the
+ *  arrow keys, typeahead, and aria-activedescendant that a native select gives
+ *  you for free and a div never does. */
+export function Select<T extends string>({
+  value,
+  onChange,
+  options,
+  className,
+}: {
+  value: T
+  onChange: (v: T) => void
+  options: { value: T; label: string }[]
+  className?: string
+}) {
+  const current = options.find((o) => o.value === value)
+  return (
+    <BaseSelect.Root value={value} onValueChange={(v) => onChange(v as T)}>
+      <BaseSelect.Trigger
         className={cn(
-          'absolute inset-x-0 bottom-0 mx-auto flex w-full max-w-[640px] flex-col gap-2.5',
-          'rounded-t-2xl bg-bg px-3.5 pt-[18px] pb-4 shadow-[0_-8px_30px_rgba(0,0,0,0.16)]',
+          'flex w-full cursor-pointer items-center justify-between gap-2 rounded-field border border-line',
+          'bg-bg px-3 py-2.5 text-left text-[13.5px] text-fg',
+          'focus-visible:border-accent focus-visible:ring-[3px] focus-visible:ring-accent-soft focus-visible:outline-none',
+          className,
         )}
       >
-        <div className="text-[17px] font-[650] tracking-[-0.015em]">{title}</div>
-        {sub && <div className="-mt-1.5 mb-1 text-[12.5px] text-muted">{sub}</div>}
-        {children}
-        <Button variant="plain" wide onClick={onClose}>
-          {closeLabel}
-        </Button>
-      </div>
-    </div>
+        <BaseSelect.Value>{current?.label ?? value}</BaseSelect.Value>
+        <BaseSelect.Icon>
+          <Icon name="chev" className="rotate-90 text-muted" />
+        </BaseSelect.Icon>
+      </BaseSelect.Trigger>
+      <BaseSelect.Portal>
+        <BaseSelect.Positioner sideOffset={4} className="z-50">
+          <BaseSelect.Popup className="max-h-[40vh] min-w-[var(--anchor-width)] overflow-y-auto rounded-card border border-line bg-bg p-1 shadow-lift-hover">
+            {options.map((o) => (
+              <BaseSelect.Item
+                key={o.value}
+                value={o.value}
+                className={cn(
+                  'flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-[13px] outline-none',
+                  'data-[highlighted]:bg-hover data-[selected]:font-semibold',
+                )}
+              >
+                <BaseSelect.ItemIndicator className="flex size-3.5 shrink-0 items-center justify-center text-accent">
+                  <Icon name="check" className="size-3.5" />
+                </BaseSelect.ItemIndicator>
+                <BaseSelect.ItemText
+                  className={cn(!options.some((x) => x.value === value) && 'ml-0')}
+                >
+                  {o.label}
+                </BaseSelect.ItemText>
+              </BaseSelect.Item>
+            ))}
+          </BaseSelect.Popup>
+        </BaseSelect.Positioner>
+      </BaseSelect.Portal>
+    </BaseSelect.Root>
   )
 }
 
