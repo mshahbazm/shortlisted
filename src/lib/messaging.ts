@@ -18,6 +18,8 @@ export interface PageContext {
   bubbleOpen: boolean
   /** The detector is confident this is a job page. */
   isJobPage: boolean
+  /** The page's own URL — the queue is keyed by it, so "Save to list" needs it. */
+  url: string
   title: string
   company: string
   ats: string

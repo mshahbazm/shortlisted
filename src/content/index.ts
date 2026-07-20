@@ -104,6 +104,7 @@ function main() {
         hasForm: hasFillable(),
         bubbleOpen: !!document.getElementById('shortlisted-overlay-host'),
         isJobPage: detectJobForm().confident,
+        url: location.href,
         title: document.title.split(/[|\-–]/)[0]?.trim() ?? document.title,
         company: guessCompany(),
         ats: adapter.name,

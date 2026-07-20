@@ -36,4 +36,6 @@ export const common: tLocale['common'] = {
   tplSlate: 'Seitenleiste Grau',
   tplAmber: 'Warmer Akzent',
   tplMint: 'Frisches Grün',
+  back: 'Zurück',
+  settings: 'Einstellungen',
 }

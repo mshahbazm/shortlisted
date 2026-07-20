@@ -36,4 +36,6 @@ export const common: tLocale['common'] = {
   tplSlate: 'Barra lateral pizarra',
   tplAmber: 'Acento cálido',
   tplMint: 'Verde fresco',
+  back: 'Atrás',
+  settings: 'Ajustes',
 }

@@ -86,9 +86,7 @@ export function App() {
       <div className="shell">
         {tab === 'home' && <HomeTab onGoProfile={goProfile} onOpenSettings={() => setSettingsOpen(true)} />}
         {tab === 'profile' && (
-          <div className="p-body">
-            <ProfileTab focusTellMe={focusTellMe} />
-          </div>
+          <ProfileTab focusTellMe={focusTellMe} onOpenSettings={() => setSettingsOpen(true)} />
         )}
         {tab === 'cvs' && (
           <div className="p-body">

@@ -98,6 +98,4 @@ export const home: tLocale['home'] = {
   fillNoForm: 'Geen sollicitatieformulier gevonden op deze pagina.',
 
   credits: (n: number) => `${n} credits`,
-  settingsLabel: 'Instellingen',
-  back: 'Terug',
 }

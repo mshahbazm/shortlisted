@@ -37,4 +37,6 @@ export const common = {
   tplSlate: 'Sidebar slate',
   tplAmber: 'Warm accent',
   tplMint: 'Fresh green',
+  back: 'Back',
+  settings: 'Settings',
 }

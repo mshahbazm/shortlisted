@@ -100,6 +100,4 @@ export const home: tLocale['home'] = {
   fillNoForm: 'Nie znaleziono formularza aplikacyjnego na tej stronie.',
 
   credits: (n: number) => `${n} ${plural(n, 'kredyt', 'kredyty', 'kredytów')}`,
-  settingsLabel: 'Ustawienia',
-  back: 'Wstecz',
 }

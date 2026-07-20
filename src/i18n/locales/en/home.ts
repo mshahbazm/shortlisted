@@ -113,6 +113,4 @@ export const home = {
   fillNoForm: 'No application form found on this page.',
 
   credits: (n: number) => `${n} credits`,
-  settingsLabel: 'Settings',
-  back: 'Back',
 }

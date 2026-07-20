@@ -36,4 +36,6 @@ export const common: tLocale['common'] = {
   tplSlate: 'Zijbalk leigrijs',
   tplAmber: 'Warm accent',
   tplMint: 'Fris groen',
+  back: 'Terug',
+  settings: 'Instellingen',
 }

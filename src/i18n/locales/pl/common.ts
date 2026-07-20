@@ -36,4 +36,6 @@ export const common: tLocale['common'] = {
   tplSlate: 'Boczna kolumna grafitowa',
   tplAmber: 'Ciepły akcent',
   tplMint: 'Świeża zieleń',
+  back: 'Wstecz',
+  settings: 'Ustawienia',
 }

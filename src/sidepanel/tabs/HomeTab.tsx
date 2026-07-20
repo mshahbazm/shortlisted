@@ -105,13 +105,24 @@ export function HomeTab({
 
   const saveCurrentJob = () => {
     if (!page) return
-    void store.update('queue', (q) => {
-      if (q.some((x) => x.url === location.href)) return q
-      return q
-    })
-    // The panel can't read the tab's URL directly; the context carries what we
-    // know, and the background records the URL when the tab is opened.
-    showToast(t.saveToList)
+    // Dedup against the LIVE queue, not this render's copy.
+    void store.update('queue', (q) =>
+      q.some((x) => x.url === page.url)
+        ? q
+        : [
+            ...q,
+            {
+              id: uid(),
+              url: page.url,
+              title: page.title,
+              company: page.company,
+              tags: [],
+              status: 'todo' as const,
+              addedAt: Date.now(),
+            },
+          ],
+    )
+    showToast(t.addedJobs(1))
   }
 
   const addPasted = (text: string) => {
@@ -319,7 +330,7 @@ export function HomeTab({
             {credits !== undefined && (
               <button className="credits" onClick={onOpenSettings}>{t.credits(credits)}</button>
             )}
-            <button className="iconbtn" onClick={onOpenSettings} aria-label={t.settingsLabel}>
+            <button className="iconbtn" onClick={onOpenSettings} aria-label={t.settings}>
               <Icon name="gear" />
             </button>
           </>

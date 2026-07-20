@@ -1,11 +1,22 @@
+// Profile.
+//
+// The root screen SHOWS the profile rather than listing doors to it: a strength
+// meter with tappable gaps, the composer, what employers ask, and then every
+// band of real data rendered in place. Editing happens on pushed screens, so
+// nothing here is hidden behind a disclosure triangle — a profile screen that
+// hides the profile is just a menu.
+
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
-import { KV, Section } from '../components'
+import { KV } from '../components'
+import { Body, Composer, Icon, Row, ScreenHead, TopBar, useStack } from '../ui'
+import { QuestionsTab } from './QuestionsTab'
 import {
   EducationEntry,
   LanguageEntry,
   LanguageProficiency,
+  Profile,
   WorkEntry,
   parseYm,
   skillNames,
@@ -15,96 +26,70 @@ import {
 } from '../../lib/types'
 import { cloudParseResumePdf, cloudProfileNote, runExtractProfile } from '../../ai/run'
 import * as store from '../../lib/store'
+import { GapKey, profileStrength } from '../../lib/profileStrength'
 import { mergeIntakeFacts, needsCompletion } from '../../lib/profileMerge'
 import { showToast } from '../toast'
 
-export function ProfileTab({ focusTellMe = false }: { focusTellMe?: boolean }) {
+type T = ReturnType<typeof useContent<'profile'>>
+
+export function ProfileTab({
+  focusTellMe = false,
+  onOpenSettings,
+}: {
+  focusTellMe?: boolean
+  onOpenSettings: () => void
+}) {
   const t = useContent('profile')
+  const nav = useStack()
   const [profile, saveProfileRaw, loaded] = useStore('profile')
   const [settings] = useStore('settings')
-  // "Tell me something" — free words in, filed into the right profile slots.
-  const [note, setNote] = useState('')
-  const [noteBusy, setNoteBusy] = useState(false)
-  const [noteMsg, setNoteMsg] = useState('')
-  const tellMeRef = useRef<HTMLTextAreaElement>(null)
+  const [bank] = useStore('answerBank')
 
-  // Arriving via "Update profile" on a fit report: bring the box into view,
-  // cursor ready.
+  const p = profile
+
+  // Arriving via "Update profile" on a fit report: the composer is the thing
+  // they were sent here to use, so put the cursor in it.
+  const composerRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!focusTellMe || !loaded) return
     const id = window.setTimeout(() => {
-      tellMeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      tellMeRef.current?.focus()
+      composerRef.current?.querySelector('input')?.focus()
     }, 150)
     return () => window.clearTimeout(id)
   }, [focusTellMe, loaded])
 
-  const p = profile
   if (!loaded) return null
+
   // Every edit persists immediately; the toast is the receipt. Patches merge
   // into the LIVE profile via store.update so a background write (CV intake
   // adding skills, cloud pull) landing mid-edit is never clobbered.
-  const set = (patch: Partial<typeof profile>) => {
+  const set = (patch: Partial<Profile>) => {
     void store.update('profile', (cur) => ({ ...cur, ...patch }))
     showToast(t.savedToast)
   }
   // Full replace — only the re-import flow, where replacing IS the intent.
-  const save = (v: typeof profile) => {
+  const save = (v: Profile) => {
     saveProfileRaw(v)
     showToast(t.savedToast)
   }
-  const setIdentity = (k: keyof typeof p.identity, v: string) => set({ identity: { ...p.identity, [k]: v } })
-  const setLinks = (k: keyof typeof p.links, v: string) => set({ links: { ...p.links, [k]: v } })
-  const setFacts = (k: keyof typeof p.facts, v: string) => set({ facts: { ...p.facts, [k]: v } })
 
   const name = [p.identity.firstName, p.identity.lastName].filter(Boolean).join(' ')
+  const { percent, gaps } = profileStrength(p)
   const factsFilled = Object.values(p.facts).filter((v) => v && String(v).trim()).length
-  const extras = p.languages.length + p.certifications.length + p.highlights.length
 
-  return (
-    <div>
-      <h2>{name || t.yourProfile}</h2>
-      <p className="hint">
-        {p.headline || t.hint}
-      </p>
+  /* ---------- pushed screens ---------- */
 
-      <Section title={t.basicsTitle} summary={[name, p.identity.email].filter(Boolean).join(' · ') || t.empty} defaultOpen={!name}>
-        <KV k={t.firstName} v={p.identity.firstName} onChange={(v) => setIdentity('firstName', v)} />
-        <KV k={t.lastName} v={p.identity.lastName} onChange={(v) => setIdentity('lastName', v)} />
-        <KV k={t.email} v={p.identity.email} onChange={(v) => setIdentity('email', v)} />
-        <KV k={t.phone} v={p.identity.phone} placeholder="+92 …" onChange={(v) => setIdentity('phone', v)} />
-        <KV k={t.location} v={p.identity.location} placeholder={t.locationPlaceholder} onChange={(v) => setIdentity('location', v)} />
-        <KV k={t.city} v={p.identity.city ?? ''} onChange={(v) => setIdentity('city', v)} />
-        <KV k={t.countryIso} v={p.identity.country ?? ''} placeholder="PK" onChange={(v) => setIdentity('country', v)} />
-        <KV k={t.headline} v={p.headline} placeholder={t.headlinePlaceholder} onChange={(v) => set({ headline: v })} />
-        <KV k={t.summary} v={p.summary} multiline onChange={(v) => set({ summary: v })} />
-        <KV
-          k={t.skills} multiline v={skillNames(p).join(', ')} placeholder={t.skillsPlaceholder}
-          onChange={(v) => {
-            const byName = new Map(p.skills.map((s) => [s.name.toLowerCase(), s]))
-            set({
-              skills: v.split(',').map((s) => s.trim()).filter(Boolean)
-                .map((n) => byName.get(n.toLowerCase()) ?? { name: n }),
-            })
-          }}
-        />
-        <KV
-          k={t.industries} v={p.industries.join(', ')} placeholder={t.industriesPlaceholder}
-          onChange={(v) => set({ industries: v.split(',').map((s) => s.trim()).filter(Boolean) })}
-        />
-      </Section>
+  if (nav.screen === 'about') {
+    return (
+      <Pushed title={t.aboutYou} nav={nav} t={t}>
+        <AboutEditor p={p} set={set} t={t} />
+      </Pushed>
+    )
+  }
 
-      <Section title={t.linksTitle} summary={t.linksAdded(Object.values(p.links).filter(Boolean).length)}>
-        <KV k={t.website} v={p.links.website ?? ''} url invalidHint={t.invalidUrl} onChange={(v) => setLinks('website', v)} />
-        <KV k={t.github} v={p.links.github ?? ''} url invalidHint={t.invalidUrl} onChange={(v) => setLinks('github', v)} />
-        <KV k={t.linkedin} v={p.links.linkedin ?? ''} url invalidHint={t.invalidUrl} onChange={(v) => setLinks('linkedin', v)} />
-        <KV k={t.portfolio} v={p.links.portfolio ?? ''} url invalidHint={t.invalidUrl} onChange={(v) => setLinks('portfolio', v)} />
-      </Section>
-
-      <Section
-        title={t.workTitle}
-        summary={p.work.length ? t.workSummary(p.work[0].title, p.work[0].company, p.work.length - 1) : t.empty}
-      >
+  if (nav.screen === 'work') {
+    return (
+      <Pushed title={t.workTitle} nav={nav} t={t}>
         {p.work.map((w, i) => (
           <WorkRow
             key={w.id}
@@ -114,16 +99,20 @@ export function ProfileTab({ focusTellMe = false }: { focusTellMe?: boolean }) {
           />
         ))}
         <button
-          className="ghost small"
+          className="ghost wide"
           onClick={() =>
             set({ work: [...p.work, { id: uid(), company: '', title: '', isCurrent: true, skills: [], highlights: [] }] })
           }
         >
-          {t.addRole}
+          <Icon name="plus" /> {t.addRole}
         </button>
-      </Section>
+      </Pushed>
+    )
+  }
 
-      <Section title={t.educationTitle} summary={p.education.length ? t.educationCount(p.education.length) : t.empty}>
+  if (nav.screen === 'education') {
+    return (
+      <Pushed title={t.educationTitle} nav={nav} t={t}>
         {p.education.map((e, i) => (
           <EduRow
             key={e.id}
@@ -133,14 +122,18 @@ export function ProfileTab({ focusTellMe = false }: { focusTellMe?: boolean }) {
           />
         ))}
         <button
-          className="ghost small"
+          className="ghost wide"
           onClick={() => set({ education: [...p.education, { id: uid(), school: '', degree: '' }] })}
         >
-          {t.addEducation}
+          <Icon name="plus" /> {t.addEducation}
         </button>
-      </Section>
+      </Pushed>
+    )
+  }
 
-      <Section title={t.extrasTitle} summary={extras ? t.extrasCount(extras) : t.empty}>
+  if (nav.screen === 'extras') {
+    return (
+      <Pushed title={t.extrasTitle} nav={nav} t={t}>
         <label className="f"><span>{t.careerHighlightsLabel}</span>
           <textarea
             rows={3}
@@ -160,19 +153,29 @@ export function ProfileTab({ focusTellMe = false }: { focusTellMe?: boolean }) {
             rows={2}
             placeholder={t.certificationsPlaceholder}
             value={p.certifications.map((c) => [c.name, c.issuingOrganization, c.year].filter(Boolean).join(' — ')).join('\n')}
-            onChange={(e) =>
-              set({
-                certifications: e.target.value.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
-                  const [name, issuer, year] = l.split('—').map((s) => s.trim())
-                  return { name: name ?? l, issuingOrganization: issuer || undefined, year: year ? Number(year) || undefined : undefined }
-                }),
-              })
-            }
+            onChange={(e) => set({ certifications: parseCertifications(e.target.value) })}
           /></label>
-      </Section>
+      </Pushed>
+    )
+  }
 
-      <Section title={t.standardAnswersTitle} summary={t.answeredOf(factsFilled, 9)}>
-        <p className="microhint" style={{ marginBottom: 8 }}>{t.standardAnswersHint}</p>
+  if (nav.screen === 'links') {
+    const setLinks = (k: keyof typeof p.links, v: string) => set({ links: { ...p.links, [k]: v } })
+    return (
+      <Pushed title={t.linksTitle} nav={nav} t={t}>
+        <KV k={t.website} v={p.links.website ?? ''} url invalidHint={t.invalidUrl} onChange={(v) => setLinks('website', v)} />
+        <KV k={t.github} v={p.links.github ?? ''} url invalidHint={t.invalidUrl} onChange={(v) => setLinks('github', v)} />
+        <KV k={t.linkedin} v={p.links.linkedin ?? ''} url invalidHint={t.invalidUrl} onChange={(v) => setLinks('linkedin', v)} />
+        <KV k={t.portfolio} v={p.links.portfolio ?? ''} url invalidHint={t.invalidUrl} onChange={(v) => setLinks('portfolio', v)} />
+      </Pushed>
+    )
+  }
+
+  if (nav.screen === 'facts') {
+    const setFacts = (k: keyof typeof p.facts, v: string) => set({ facts: { ...p.facts, [k]: v } })
+    return (
+      <Pushed title={t.standardAnswersTitle} nav={nav} t={t} right={t.answeredOf(factsFilled, 9)}>
+        <p className="lede">{t.standardAnswersHint}</p>
         <KV k={t.salaryExpectation} v={p.facts.salaryExpectation ?? ''} onChange={(v) => setFacts('salaryExpectation', v)} />
         <KV k={t.noticePeriod} v={p.facts.noticePeriod ?? ''} placeholder={t.noticePlaceholder} onChange={(v) => setFacts('noticePeriod', v)} />
         <KV k={t.yearsOfExperience} v={p.facts.yearsOfExperience ?? ''} placeholder={t.yearsPlaceholder} onChange={(v) => setFacts('yearsOfExperience', v)} />
@@ -182,74 +185,384 @@ export function ProfileTab({ focusTellMe = false }: { focusTellMe?: boolean }) {
         <KV k={t.relocation} v={p.facts.relocation ?? ''} onChange={(v) => setFacts('relocation', v)} />
         <KV k={t.hoursOverlap} v={p.facts.hoursOverlap ?? ''} placeholder={t.hoursPlaceholder} onChange={(v) => setFacts('hoursOverlap', v)} />
         <KV k={t.englishLevel} v={p.facts.englishLevel ?? ''} onChange={(v) => setFacts('englishLevel', v)} />
-      </Section>
+      </Pushed>
+    )
+  }
 
-      <Section key={focusTellMe ? 'tellme-open' : 'tellme'} title={t.tellMeTitle} summary={t.tellMeSummary} defaultOpen={focusTellMe}>
-        <textarea
-          ref={tellMeRef}
-          rows={2}
-          placeholder={t.tellMePlaceholder}
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-        />
-        <div className="spacer" />
-        <button
-          className="primary small"
-          disabled={noteBusy || note.trim().length < 8}
-          onClick={() => {
-            setNoteBusy(true)
-            setNoteMsg('')
-            void cloudProfileNote(settings, note.trim())
-              .then(async (facts) => {
-                // Report what the merge actually stored, never what the model
-                // proposed: a highlight for a job that isn't on file has
-                // nowhere to go, and claiming it saved is how a fact appears
-                // to vanish.
-                let applied = 0
-                let unplaced = 0
-                let incomplete: string[] = []
-                await store.update('profile', (cur) => {
-                  const r = mergeIntakeFacts(cur, facts)
-                  applied = r.applied
-                  unplaced = r.unplacedHighlights
-                  incomplete = r.incompleteWork
-                  return r.profile
-                })
-                if (applied === 0) {
-                  setNoteMsg(unplaced > 0 ? t.tellMeNoSuchJob : t.tellMeNothing)
-                  return
-                }
-                setNote('')
-                // A job created from a sentence usually lacks a title or dates.
-                // Say so here rather than letting it look finished.
-                const parts = [t.tellMeAdded(applied)]
-                if (incomplete.length) parts.push(t.tellMeFinishJob(incomplete.join(', ')))
-                else if (unplaced > 0) parts.push(t.tellMeNoSuchJob)
-                setNoteMsg(parts.join(' '))
-                showToast(t.savedToast)
-              })
-              .catch((e) => setNoteMsg(e instanceof Error ? e.message : String(e)))
-              .finally(() => setNoteBusy(false))
-          }}
-        >
-          {noteBusy ? '…' : t.tellMeButton}
-        </button>
-        {noteMsg && <p className="microhint" style={{ marginTop: 8 }}>{noteMsg}</p>}
-      </Section>
+  if (nav.screen === 'bank') {
+    return (
+      <>
+        <ScreenHead title={t.answerBankTitle} onBack={nav.back} backLabel={t.back} />
+        <Body screen={nav.screen}>
+          <QuestionsTab />
+        </Body>
+      </>
+    )
+  }
 
-      <Section title={t.reimportTitle} summary={t.reimportSummary}>
+  if (nav.screen === 'reimport') {
+    return (
+      <Pushed title={t.reimportTitle} nav={nav} t={t}>
+        <p className="lede">{t.reimportBody}</p>
         <ImportBox
           cloudPdf={async (file) => {
             const { profile: extracted } = await cloudParseResumePdf(settings, await file.arrayBuffer())
             save({ ...extracted, facts: p.facts })
+            nav.back()
           }}
           onImport={async (text) => {
             const extracted = await runExtractProfile(settings, text)
             save({ ...extracted, facts: p.facts })
+            nav.back()
           }}
         />
-      </Section>
+      </Pushed>
+    )
+  }
+
+  /* ---------- root ---------- */
+
+  const skills = skillNames(p)
+
+  return (
+    <>
+      <TopBar
+        title={t.yourProfile}
+        right={
+          <button className="iconbtn" onClick={onOpenSettings} aria-label={t.settings}>
+            <Icon name="gear" />
+          </button>
+        }
+      />
+      <Body screen={nav.screen}>
+        {/* 1. Where you stand */}
+        <div className="ident">
+          <div className="ident-n">{name || t.yourProfile}</div>
+          <div className="ident-h">{p.headline || t.hint}</div>
+        </div>
+
+        <div className="meter">
+          <div className="meter-top">
+            <span>{t.strengthTitle}</span>
+            <b>{percent}%</b>
+          </div>
+          <div className="meter-bar"><i style={{ width: `${percent}%` }} /></div>
+          {gaps.length > 0 && (
+            <div className="meter-gaps">
+              {gaps.map((g) => (
+                <button key={g.key} className="gapchip" onClick={() => nav.push(g.screen)}>
+                  {gapLabel(g.key, t)}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 2. Add something new — high up, where it invites action */}
+        <div ref={composerRef}>
+          <TellMe t={t} settings={settings} />
+        </div>
+
+        {/* 3. What employers ask — profile data, so it lives here, not in a tab */}
+        <div className="p-sec">
+          <div className="p-sec-h"><span>{t.whatEmployersAsk}</span></div>
+          <div className="rows nav">
+            <Row
+              title={t.standardAnswersTitle}
+              sub={t.standardAnswersSub}
+              warn={factsFilled < 5}
+              right={<span className={`cnt ${factsFilled < 5 ? 'warn' : ''}`}>{t.answeredOf(factsFilled, 9)}</span>}
+              onClick={() => nav.push('facts')}
+            />
+            <Row
+              title={t.answerBankTitle}
+              sub={t.answerBankSub}
+              right={<span className="cnt">{bank.length}</span>}
+              onClick={() => nav.push('bank')}
+            />
+          </div>
+        </div>
+
+        {/* 4. The profile itself, rendered */}
+        <Band title={t.aboutYou} onEdit={() => nav.push('about')} icon="pen" />
+        <div className="facts">
+          {p.identity.email && <Fact k={t.email} v={p.identity.email} />}
+          {p.identity.phone && <Fact k={t.phone} v={p.identity.phone} />}
+          {p.identity.location && <Fact k={t.location} v={p.identity.location} />}
+          {p.industries.length > 0 && <Fact k={t.industries} v={p.industries.join(', ')} />}
+        </div>
+        {p.summary && <p className="summary">{p.summary}</p>}
+
+        {p.highlights.length > 0 && (
+          <>
+            <Band title={t.careerHighlights} count={`${p.highlights.length} / 3`} onEdit={() => nav.push('extras')} icon="pen" />
+            <ul className="hl">
+              {p.highlights.map((h, i) => <li key={i}>{h}</li>)}
+            </ul>
+          </>
+        )}
+
+        <Band title={t.workTitle} onEdit={() => nav.push('work')} icon="chev" />
+        {p.work.length === 0 ? (
+          <div className="empty">{t.nothingYet}</div>
+        ) : (
+          <div className="tline">
+            {p.work.map((w) => {
+              const incomplete = needsCompletion(w)
+              return (
+                <button key={w.id} className={`tl-item ${incomplete ? 'bad' : ''}`} onClick={() => nav.push('work')}>
+                  <span className={`tl-dot ${incomplete ? 'warn' : w.isCurrent ? 'now' : ''}`} />
+                  <span className="tl-body">
+                    <span className={`tl-when ${incomplete ? 'missing' : ''}`}>
+                      {incomplete ? t.workNeedsDetail : workPeriodLabel(w) || '—'}
+                    </span>
+                    <span className="tl-t">{w.title || t.untitled}</span>
+                    <span className="tl-c">{w.company || '—'}</span>
+                    {w.skills.length > 0 && (
+                      <span className="tl-tags">
+                        {w.skills.slice(0, 3).map((s) => <span key={s} className="minichip">{s}</span>)}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        <Band title={t.educationTitle} onEdit={() => nav.push('education')} icon="pen" />
+        {p.education.length === 0 ? (
+          <div className="empty">{t.nothingYet}</div>
+        ) : (
+          p.education.map((e) => (
+            <div key={e.id} className="edu">
+              <div className="edu-t">{[e.degree, e.fieldOfStudy].filter(Boolean).join(', ') || e.school}</div>
+              <div className="edu-c">
+                {[e.school, [e.startYear, e.endYear].filter(Boolean).join(' — ')].filter(Boolean).join(' · ')}
+              </div>
+            </div>
+          ))
+        )}
+
+        {skills.length > 0 && (
+          <>
+            <Band title={t.skillsTitle} count={String(skills.length)} onEdit={() => nav.push('about')} icon="pen" />
+            <div className="chipwrap">
+              {skills.slice(0, 12).map((s) => <span key={s} className="minichip">{s}</span>)}
+              {skills.length > 12 && (
+                <button className="minichip more" onClick={() => nav.push('about')}>
+                  +{skills.length - 12} {t.moreCount}
+                </button>
+              )}
+            </div>
+          </>
+        )}
+
+        {p.languages.length > 0 && (
+          <>
+            <Band title={t.languagesTitle} onEdit={() => nav.push('extras')} icon="pen" />
+            <div className="facts">
+              {p.languages.map((l) => (
+                <Fact key={l.langCode + l.name} k={l.name} v={l.proficiency.replaceAll('_', ' ')} />
+              ))}
+            </div>
+          </>
+        )}
+
+        {p.certifications.length > 0 && (
+          <>
+            <Band title={t.certificationsTitle} onEdit={() => nav.push('extras')} icon="pen" />
+            <div className="facts">
+              {p.certifications.map((c, i) => (
+                <Fact key={i} k={c.name} v={[c.issuingOrganization, c.year].filter(Boolean).join(' · ')} />
+              ))}
+            </div>
+          </>
+        )}
+
+        <Band title={t.linksTitle} onEdit={() => nav.push('links')} icon="pen" />
+        {Object.values(p.links).filter(Boolean).length === 0 ? (
+          <div className="empty">{t.nothingYet}</div>
+        ) : (
+          <div className="chipwrap">
+            {Object.values(p.links).filter(Boolean).map((l) => (
+              <span key={l} className="linkchip">{prettyLink(l)}</span>
+            ))}
+          </div>
+        )}
+
+        {/* 5. Re-import last: a destructive rebuild belongs at the bottom */}
+        <div className="reimport">
+          <div className="ri-t">{t.reimportTitle}</div>
+          <div className="ri-s">{t.reimportBody}</div>
+          <button className="ghost small wide" onClick={() => nav.push('reimport')}>
+            <Icon name="up" /> {t.reimportTitle}
+          </button>
+          <div className="ri-c">
+            <span className="cost">{t.oneCredit}</span> {t.reimportReplaces}
+          </div>
+        </div>
+      </Body>
+    </>
+  )
+}
+
+/* ---------- shared pieces ---------- */
+
+function Pushed({
+  title,
+  nav,
+  t,
+  right,
+  children,
+}: {
+  title: string
+  nav: ReturnType<typeof useStack>
+  t: T
+  right?: string
+  children: React.ReactNode
+}) {
+  return (
+    <>
+      <ScreenHead title={title} onBack={nav.back} backLabel={t.back} right={right} />
+      <Body screen={nav.screen}>{children}</Body>
+    </>
+  )
+}
+
+function Band({
+  title,
+  count,
+  onEdit,
+  icon,
+}: {
+  title: string
+  count?: string
+  onEdit: () => void
+  icon: 'pen' | 'chev'
+}) {
+  return (
+    <div className="band-h">
+      <span>{title}</span>
+      {count && <span className="band-n">{count}</span>}
+      <button className="editbtn" onClick={onEdit} aria-label={title}>
+        <Icon name={icon} />
+      </button>
     </div>
+  )
+}
+
+function Fact({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="fact">
+      <span className="f-k">{k}</span>
+      <span className="f-v">{v}</span>
+    </div>
+  )
+}
+
+function gapLabel(key: GapKey, t: T): string {
+  switch (key) {
+    case 'name': return t.gapName
+    case 'contact': return t.gapContact
+    case 'headline': return t.gapHeadline
+    case 'workDates': return t.gapWorkDates
+    case 'workHighlights': return t.gapWorkHighlights
+    case 'education': return t.gapEducation
+    case 'skills': return t.gapSkills
+    case 'answers': return t.gapAnswers
+  }
+}
+
+function prettyLink(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return url
+  }
+}
+
+/** Free words in, filed into the right profile slots. Reports what the merge
+ *  actually stored, never what the model proposed: a highlight for a job that
+ *  isn't on file has nowhere to go, and claiming it saved is how a fact appears
+ *  to vanish. */
+function TellMe({ t, settings }: { t: T; settings: Parameters<typeof cloudProfileNote>[0] }) {
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  return (
+    <>
+      <Composer
+        accent
+        label={t.tellMeTitle}
+        placeholder={t.tellMePlaceholder}
+        hint={t.tellMeSummary}
+        submitLabel={t.tellMeButton}
+        busy={busy}
+        onSubmit={(text) => {
+          setBusy(true)
+          setMsg('')
+          void cloudProfileNote(settings, text)
+            .then(async (facts) => {
+              let applied = 0
+              let unplaced = 0
+              let incomplete: string[] = []
+              await store.update('profile', (cur) => {
+                const r = mergeIntakeFacts(cur, facts)
+                applied = r.applied
+                unplaced = r.unplacedHighlights
+                incomplete = r.incompleteWork
+                return r.profile
+              })
+              if (applied === 0) {
+                setMsg(unplaced > 0 ? t.tellMeNoSuchJob : t.tellMeNothing)
+                return
+              }
+              // A job created from a sentence usually lacks a title or dates.
+              // Say so here rather than letting it look finished.
+              const parts = [t.tellMeAdded(applied)]
+              if (incomplete.length) parts.push(t.tellMeFinishJob(incomplete.join(', ')))
+              else if (unplaced > 0) parts.push(t.tellMeNoSuchJob)
+              setMsg(parts.join(' '))
+              showToast(t.savedToast)
+            })
+            .catch((e) => setMsg(e instanceof Error ? e.message : String(e)))
+            .finally(() => setBusy(false))
+        }}
+      />
+      {msg && <p className="microhint">{msg}</p>}
+    </>
+  )
+}
+
+function AboutEditor({ p, set, t }: { p: Profile; set: (patch: Partial<Profile>) => void; t: T }) {
+  const setIdentity = (k: keyof typeof p.identity, v: string) => set({ identity: { ...p.identity, [k]: v } })
+  return (
+    <>
+      <KV k={t.firstName} v={p.identity.firstName} onChange={(v) => setIdentity('firstName', v)} />
+      <KV k={t.lastName} v={p.identity.lastName} onChange={(v) => setIdentity('lastName', v)} />
+      <KV k={t.email} v={p.identity.email} onChange={(v) => setIdentity('email', v)} />
+      <KV k={t.phone} v={p.identity.phone} placeholder="+92 …" onChange={(v) => setIdentity('phone', v)} />
+      <KV k={t.location} v={p.identity.location} placeholder={t.locationPlaceholder} onChange={(v) => setIdentity('location', v)} />
+      <KV k={t.city} v={p.identity.city ?? ''} onChange={(v) => setIdentity('city', v)} />
+      <KV k={t.countryIso} v={p.identity.country ?? ''} placeholder="PK" onChange={(v) => setIdentity('country', v)} />
+      <KV k={t.headline} v={p.headline} placeholder={t.headlinePlaceholder} onChange={(v) => set({ headline: v })} />
+      <KV k={t.summary} v={p.summary} multiline onChange={(v) => set({ summary: v })} />
+      <KV
+        k={t.skills} multiline v={skillNames(p).join(', ')} placeholder={t.skillsPlaceholder}
+        onChange={(v) => {
+          const byName = new Map(p.skills.map((s) => [s.name.toLowerCase(), s]))
+          set({
+            skills: v.split(',').map((s) => s.trim()).filter(Boolean)
+              .map((n) => byName.get(n.toLowerCase()) ?? { name: n }),
+          })
+        }}
+      />
+      <KV
+        k={t.industries} v={p.industries.join(', ')} placeholder={t.industriesPlaceholder}
+        onChange={(v) => set({ industries: v.split(',').map((s) => s.trim()).filter(Boolean) })}
+      />
+    </>
   )
 }
 
@@ -269,6 +582,17 @@ function parseLanguages(text: string): LanguageEntry[] {
   })
 }
 
+function parseCertifications(text: string) {
+  return text.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
+    const [name, issuer, year] = l.split('—').map((s) => s.trim())
+    return {
+      name: name ?? l,
+      issuingOrganization: issuer || undefined,
+      year: year ? Number(year) || undefined : undefined,
+    }
+  })
+}
+
 function WorkRow({ entry, onChange, onRemove }: { entry: WorkEntry; onChange: (w: WorkEntry) => void; onRemove: () => void }) {
   const t = useContent('profile')
   // A job added from a sentence opens straight away: it is missing a title or
@@ -276,14 +600,19 @@ function WorkRow({ entry, onChange, onRemove }: { entry: WorkEntry; onChange: (w
   // later that a tailored CV had a gap in it.
   const incomplete = needsCompletion(entry)
   const [open, setOpen] = useState((!entry.company && !entry.title) || incomplete)
+
   if (!open) {
     return (
-      <div className="kv" onClick={() => setOpen(true)}>
-        <span className="k">{workPeriodLabel(entry) || '—'}</span>
-        <span className="v">{entry.title || t.untitled} · {entry.company || '?'}</span>
-      </div>
+      <button className="row" onClick={() => setOpen(true)} style={{ width: '100%' }}>
+        <span className="row-b">
+          <span className="row-t">{entry.title || t.untitled}</span>
+          <span className="row-s">{entry.company || '?'} · {workPeriodLabel(entry) || '—'}</span>
+        </span>
+        <Icon name="chev" />
+      </button>
     )
   }
+
   const setStart = (v: string) => {
     const { year, month } = parseYm(v)
     onChange({ ...entry, startYear: year, startMonth: month })
@@ -293,36 +622,38 @@ function WorkRow({ entry, onChange, onRemove }: { entry: WorkEntry; onChange: (w
     const { year, month } = parseYm(v)
     onChange({ ...entry, endYear: year, endMonth: month, isCurrent: false })
   }
+
   return (
-    <div style={{ padding: '6px 0 12px' }}>
-      {incomplete && <p className="microhint">{t.workNeedsDetail}</p>}
+    <div className={incomplete ? 'editcard' : 'qcard'}>
+      {incomplete && <div className="ec-warn">{t.workNeedsDetail}</div>}
       <div className="field-row">
-        <label className="f"><span>{t.roleTitle}</span>
-          <input type="text" value={entry.title} onChange={(e) => onChange({ ...entry, title: e.target.value })} /></label>
-        <label className="f"><span>{t.company}</span>
-          <input type="text" value={entry.company} onChange={(e) => onChange({ ...entry, company: e.target.value })} /></label>
+        <label className="fl">{t.roleTitle}
+          <input className="fin" type="text" value={entry.title} onChange={(e) => onChange({ ...entry, title: e.target.value })} /></label>
+        <label className="fl">{t.company}
+          <input className="fin" type="text" value={entry.company} onChange={(e) => onChange({ ...entry, company: e.target.value })} /></label>
       </div>
       <div className="field-row">
-        <label className="f"><span>{t.fromYm}</span>
-          <input type="text" placeholder="2021-03" defaultValue={ymString(entry.startYear, entry.startMonth)} onBlur={(e) => setStart(e.target.value)} /></label>
-        <label className="f"><span>{t.toYm}</span>
-          <input type="text" defaultValue={entry.isCurrent ? '' : ymString(entry.endYear, entry.endMonth)} onBlur={(e) => setEnd(e.target.value)} /></label>
+        <label className="fl">{t.fromYm}
+          <input className="fin" type="text" placeholder="2021-03" defaultValue={ymString(entry.startYear, entry.startMonth)} onBlur={(e) => setStart(e.target.value)} /></label>
+        <label className="fl">{t.toYm}
+          <input className="fin" type="text" defaultValue={entry.isCurrent ? '' : ymString(entry.endYear, entry.endMonth)} onBlur={(e) => setEnd(e.target.value)} /></label>
       </div>
-      <label className="f"><span>{t.techUsed}</span>
+      <label className="fl">{t.techUsed}
         <input
+          className="fin"
           type="text"
           value={entry.skills.join(', ')}
           onChange={(e) => onChange({ ...entry, skills: e.target.value.split(',').map((s) => s.trim()).filter(Boolean) })}
         /></label>
-      <label className="f"><span>{t.workHighlights}</span>
+      <label className="fl">{t.workHighlights}
         <textarea
           rows={4}
           value={entry.highlights.join('\n')}
           onChange={(e) => onChange({ ...entry, highlights: e.target.value.split('\n').filter((l) => l.trim()) })}
         /></label>
-      <div className="field-row">
-        <button className="ghost small" onClick={() => setOpen(false)}>{t.done}</button>
-        <button className="danger small" onClick={onRemove}>{t.remove}</button>
+      <div className="duo tight">
+        <button className="plain small danger" onClick={onRemove}>{t.remove}</button>
+        <button className="primary small" onClick={() => setOpen(false)}>{t.done}</button>
       </div>
     </div>
   )
@@ -331,33 +662,38 @@ function WorkRow({ entry, onChange, onRemove }: { entry: WorkEntry; onChange: (w
 function EduRow({ entry, onChange, onRemove }: { entry: EducationEntry; onChange: (e: EducationEntry) => void; onRemove: () => void }) {
   const t = useContent('profile')
   const [open, setOpen] = useState(!entry.school && !entry.degree)
+
   if (!open) {
     return (
-      <div className="kv" onClick={() => setOpen(true)}>
-        <span className="k">{[entry.startYear, entry.endYear].filter(Boolean).join('—') || '—'}</span>
-        <span className="v">{[entry.degree, entry.fieldOfStudy].filter(Boolean).join(', ') || '?'} · {entry.school || '?'}</span>
-      </div>
+      <button className="row" onClick={() => setOpen(true)} style={{ width: '100%' }}>
+        <span className="row-b">
+          <span className="row-t">{[entry.degree, entry.fieldOfStudy].filter(Boolean).join(', ') || '?'}</span>
+          <span className="row-s">{entry.school || '?'} · {[entry.startYear, entry.endYear].filter(Boolean).join(' — ') || '—'}</span>
+        </span>
+        <Icon name="chev" />
+      </button>
     )
   }
+
   return (
-    <div style={{ padding: '6px 0 12px' }}>
+    <div className="qcard">
       <div className="field-row">
-        <label className="f"><span>{t.degree}</span>
-          <input type="text" value={entry.degree} onChange={(e) => onChange({ ...entry, degree: e.target.value })} /></label>
-        <label className="f"><span>{t.fieldOfStudy}</span>
-          <input type="text" value={entry.fieldOfStudy ?? ''} onChange={(e) => onChange({ ...entry, fieldOfStudy: e.target.value })} /></label>
+        <label className="fl">{t.degree}
+          <input className="fin" type="text" value={entry.degree} onChange={(e) => onChange({ ...entry, degree: e.target.value })} /></label>
+        <label className="fl">{t.fieldOfStudy}
+          <input className="fin" type="text" value={entry.fieldOfStudy ?? ''} onChange={(e) => onChange({ ...entry, fieldOfStudy: e.target.value })} /></label>
       </div>
-      <label className="f"><span>{t.school}</span>
-        <input type="text" value={entry.school} onChange={(e) => onChange({ ...entry, school: e.target.value })} /></label>
+      <label className="fl">{t.school}
+        <input className="fin" type="text" value={entry.school} onChange={(e) => onChange({ ...entry, school: e.target.value })} /></label>
       <div className="field-row">
-        <label className="f"><span>{t.fromYear}</span>
-          <input type="text" defaultValue={entry.startYear ?? ''} onBlur={(e) => onChange({ ...entry, startYear: Number(e.target.value) || undefined })} /></label>
-        <label className="f"><span>{t.toYear}</span>
-          <input type="text" defaultValue={entry.endYear ?? ''} onBlur={(e) => onChange({ ...entry, endYear: Number(e.target.value) || undefined })} /></label>
+        <label className="fl">{t.fromYear}
+          <input className="fin" type="text" defaultValue={entry.startYear ?? ''} onBlur={(e) => onChange({ ...entry, startYear: Number(e.target.value) || undefined })} /></label>
+        <label className="fl">{t.toYear}
+          <input className="fin" type="text" defaultValue={entry.endYear ?? ''} onBlur={(e) => onChange({ ...entry, endYear: Number(e.target.value) || undefined })} /></label>
       </div>
-      <div className="field-row">
-        <button className="ghost small" onClick={() => setOpen(false)}>{t.done}</button>
-        <button className="danger small" onClick={onRemove}>{t.remove}</button>
+      <div className="duo tight">
+        <button className="plain small danger" onClick={onRemove}>{t.remove}</button>
+        <button className="primary small" onClick={() => setOpen(false)}>{t.done}</button>
       </div>
     </div>
   )
@@ -376,15 +712,11 @@ function ImportBox({
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
+
   return (
     <>
-      <button
-        className="ghost small"
-        disabled={busy}
-        onClick={() => fileRef.current?.click()}
-        style={{ marginBottom: 8 }}
-      >
-        {busy ? t.readingPdf : t.uploadPdf}
+      <button className="ghost wide" disabled={busy} onClick={() => fileRef.current?.click()}>
+        <Icon name="up" /> {busy ? t.readingPdf : t.uploadPdf}
       </button>
       <input
         ref={fileRef} type="file" accept="application/pdf" style={{ display: 'none' }}
@@ -405,9 +737,8 @@ function ImportBox({
         }}
       />
       <textarea rows={5} placeholder={t.pasteCvPlaceholder} value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} />
-      <div className="spacer" />
       <button
-        className="ghost small"
+        className="primary wide"
         disabled={busy || text.trim().length < 50}
         onClick={async () => {
           setErr('')
@@ -423,6 +754,7 @@ function ImportBox({
         }}
       >
         {busy ? t.reading : t.rebuildProfile}
+        {!busy && <span className="cost onbtn">{t.oneCredit}</span>}
       </button>
       {err && <p className="error">{err}</p>}
     </>

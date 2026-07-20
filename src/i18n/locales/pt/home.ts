@@ -98,6 +98,4 @@ export const home: tLocale['home'] = {
   fillNoForm: 'Não foi encontrado nenhum formulário de candidatura nesta página.',
 
   credits: (n: number) => `${n} créditos`,
-  settingsLabel: 'Definições',
-  back: 'Voltar',
 }
