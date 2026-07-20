@@ -808,6 +808,19 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.5; }
 input:focus, textarea:focus, select:focus {
   outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
 }
+
+/* The native arrow sits hard against the border and is drawn at whatever
+   weight the platform likes. Replace it with our own chevron, matched to the
+   icon set, with real space around it. */
+select {
+  appearance: none; -webkit-appearance: none;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6.5 8 10.5l4-4' fill='none' stroke='%236f6f78' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  background-size: 15px 15px;
+}
+select::-ms-expand { display: none; }
 textarea.tall { min-height: 110px; }
 .comp-in, input.comp-in { min-height: 40px; font-size: 13px; }
 .fin, input.fin { font-size: 13.5px; font-weight: 400; color: var(--fg); }

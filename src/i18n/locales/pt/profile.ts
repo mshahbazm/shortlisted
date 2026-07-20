@@ -37,7 +37,6 @@ export const profile: tLocale['profile'] = {
   fromYear: 'De (ano)',
   toYear: 'Até (ano)',
 
-  extrasTitle: 'Destaques, línguas, certificações',
   standardAnswersTitle: 'Respostas padrão',
   answeredOf: (filled: number, total: number) => `${filled} de ${total} respondidas`,
   standardAnswersHint: 'Perguntam em quase todas as candidaturas — responde uma vez aqui.',

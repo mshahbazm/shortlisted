@@ -146,97 +146,119 @@ export function ProfileTab({
     )
   }
 
-  if (nav.screen === 'extras') {
+  // One screen per section. A band's pencil edits that band and nothing else —
+  // sending Skills into "About you" made the user hunt for what they tapped.
+  if (nav.screen === 'skills') {
     return (
-      <Pushed title={t.extrasTitle} nav={nav} t={t}>
-        <div className="p-sec">
-          <div className="p-sec-h"><span>{t.careerHighlights}</span><span className="band-n">{p.highlights.length} / 3</span></div>
-          <ListEditor
-            items={p.highlights}
-            onChange={(v) => set({ highlights: v.slice(0, 3) })}
-            placeholder={t.highlightPlaceholder}
-            addLabel={t.addHighlight}
-            removeLabel={t.removeItem}
-            max={3}
-          />
-        </div>
+      <Pushed title={t.skillsTitle} nav={nav} t={t} right={String(skillNames(p).length)}>
+        <ChipInput
+          items={skillNames(p)}
+          placeholder={t.skillPlaceholder}
+          removeLabel={t.removeItem}
+          onChange={(names) => {
+            // Keep proficiency/category on skills that survive the edit.
+            const byName = new Map(p.skills.map((x) => [x.name.toLowerCase(), x]))
+            set({ skills: names.map((n) => byName.get(n.toLowerCase()) ?? { name: n }) })
+          }}
+        />
+      </Pushed>
+    )
+  }
 
-        <div className="p-sec">
-          <div className="p-sec-h"><span>{t.languagesTitle}</span></div>
-          {p.languages.map((l, i) => (
+  if (nav.screen === 'highlights') {
+    return (
+      <Pushed title={t.careerHighlights} nav={nav} t={t} right={`${p.highlights.length} / 3`}>
+        <ListEditor
+          items={p.highlights}
+          onChange={(v) => set({ highlights: v.slice(0, 3) })}
+          placeholder={t.highlightPlaceholder}
+          addLabel={t.addHighlight}
+          removeLabel={t.removeItem}
+          max={3}
+        />
+      </Pushed>
+    )
+  }
+
+  if (nav.screen === 'languages') {
+    return (
+      <Pushed title={t.languagesTitle} nav={nav} t={t}>
+        {p.languages.map((l, i) => (
+          <div key={i} className="subrow">
+            <div className="subrow-f side">
+              <input
+                className="fin" type="text" value={l.name} placeholder={t.languageName}
+                onChange={(e) => set({
+                  languages: p.languages.map((x, j) => (j === i
+                    ? { ...x, name: e.target.value, langCode: e.target.value.slice(0, 2).toLowerCase() }
+                    : x)),
+                })}
+              />
+              <select
+                value={l.proficiency}
+                onChange={(e) => set({
+                  languages: p.languages.map((x, j) =>
+                    (j === i ? { ...x, proficiency: e.target.value as LanguageProficiency } : x)),
+                })}
+              >
+                {LEVELS.map(([value, key]) => (
+                  <option key={value} value={value}>{t[key]}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              className="lrow-x" aria-label={t.removeItem}
+              onClick={() => set({ languages: p.languages.filter((_, j) => j !== i) })}
+            >
+              <Icon name="close" />
+            </button>
+          </div>
+        ))}
+        <button
+          className="ghost wide small"
+          onClick={() => set({
+            languages: [...p.languages, { langCode: '', name: '', proficiency: 'professional_working' }],
+          })}
+        >
+          <Icon name="plus" /> {t.addLanguage}
+        </button>
+      </Pushed>
+    )
+  }
+
+  if (nav.screen === 'certifications') {
+    return (
+      <Pushed title={t.certificationsTitle} nav={nav} t={t}>
+        {p.certifications.map((c, i) => {
+          const setCert = (patch: Partial<typeof c>) =>
+            set({ certifications: p.certifications.map((x, j) => (j === i ? { ...x, ...patch } : x)) })
+          return (
             <div key={i} className="subrow">
-              <div className="subrow-f side">
-                <input
-                  className="fin" type="text" value={l.name} placeholder={t.languageName}
-                  onChange={(e) => set({
-                    languages: p.languages.map((x, j) => (j === i
-                      ? { ...x, name: e.target.value, langCode: e.target.value.slice(0, 2).toLowerCase() }
-                      : x)),
-                  })}
-                />
-                <select
-                  value={l.proficiency}
-                  onChange={(e) => set({
-                    languages: p.languages.map((x, j) =>
-                      (j === i ? { ...x, proficiency: e.target.value as LanguageProficiency } : x)),
-                  })}
-                >
-                  {LEVELS.map(([value, key]) => (
-                    <option key={value} value={value}>{t[key]}</option>
-                  ))}
-                </select>
+              <div className="subrow-f">
+                <input className="fin" type="text" value={c.name} placeholder={t.certName}
+                  onChange={(e) => setCert({ name: e.target.value })} />
+                <div className="field-row">
+                  <input className="fin" type="text" value={c.issuingOrganization ?? ''} placeholder={t.issuer}
+                    onChange={(e) => setCert({ issuingOrganization: e.target.value || undefined })} />
+                  <input className="fin" type="text" inputMode="numeric" value={c.year ?? ''} placeholder={t.yearLabel}
+                    onChange={(e) => setCert({ year: Number(e.target.value) || undefined })} />
+                </div>
               </div>
               <button
                 className="lrow-x" aria-label={t.removeItem}
-                onClick={() => set({ languages: p.languages.filter((_, j) => j !== i) })}
+                onClick={() => set({ certifications: p.certifications.filter((_, j) => j !== i) })}
               >
                 <Icon name="close" />
               </button>
             </div>
-          ))}
-          <button
-            className="ghost wide small"
-            onClick={() => set({
-              languages: [...p.languages, { langCode: '', name: '', proficiency: 'professional_working' }],
-            })}
-          >
-            <Icon name="plus" /> {t.addLanguage}
-          </button>
-        </div>
-
-        <div className="p-sec">
-          <div className="p-sec-h"><span>{t.certificationsTitle}</span></div>
-          {p.certifications.map((c, i) => {
-            const setCert = (patch: Partial<typeof c>) =>
-              set({ certifications: p.certifications.map((x, j) => (j === i ? { ...x, ...patch } : x)) })
-            return (
-              <div key={i} className="subrow">
-                <div className="subrow-f">
-                  <input className="fin" type="text" value={c.name} placeholder={t.certName}
-                    onChange={(e) => setCert({ name: e.target.value })} />
-                  <div className="field-row">
-                    <input className="fin" type="text" value={c.issuingOrganization ?? ''} placeholder={t.issuer}
-                      onChange={(e) => setCert({ issuingOrganization: e.target.value || undefined })} />
-                    <input className="fin" type="text" inputMode="numeric" value={c.year ?? ''} placeholder={t.yearLabel}
-                      onChange={(e) => setCert({ year: Number(e.target.value) || undefined })} />
-                  </div>
-                </div>
-                <button
-                  className="lrow-x" aria-label={t.removeItem}
-                  onClick={() => set({ certifications: p.certifications.filter((_, j) => j !== i) })}
-                >
-                  <Icon name="close" />
-                </button>
-              </div>
-            )
-          })}
-          <button
-            className="ghost wide small"
-            onClick={() => set({ certifications: [...p.certifications, { name: '' }] })}
-          >
-            <Icon name="plus" /> {t.addCertification}
-          </button>
-        </div>
+          )
+        })}
+        <button
+          className="ghost wide small"
+          onClick={() => set({ certifications: [...p.certifications, { name: '' }] })}
+        >
+          <Icon name="plus" /> {t.addCertification}
+        </button>
       </Pushed>
     )
   }
@@ -390,7 +412,7 @@ export function ProfileTab({
 
         {p.highlights.length > 0 && (
           <>
-            <Band title={t.careerHighlights} count={`${p.highlights.length} / 3`} onEdit={() => nav.push('extras')} icon="pen" />
+            <Band title={t.careerHighlights} count={`${p.highlights.length} / 3`} onEdit={() => nav.push('highlights')} icon="pen" />
             <ul className="hl">
               {p.highlights.map((h, i) => <li key={i}>{h}</li>)}
             </ul>
@@ -457,40 +479,40 @@ export function ProfileTab({
           ))
         )}
 
-        {skills.length > 0 && (
-          <>
-            <Band title={t.skillsTitle} count={String(skills.length)} onEdit={() => nav.push('about')} icon="pen" />
-            <div className="chipwrap">
-              {skills.slice(0, 12).map((s) => <span key={s} className="minichip">{s}</span>)}
-              {skills.length > 12 && (
-                <button className="minichip more" onClick={() => nav.push('about')}>
-                  +{skills.length - 12} {t.moreCount}
-                </button>
-              )}
-            </div>
-          </>
+        <Band title={t.skillsTitle} count={String(skills.length)} onEdit={() => nav.push('skills')} icon="pen" />
+        {skills.length === 0 ? (
+          <div className="empty">{t.nothingYet}</div>
+        ) : (
+          <div className="chipwrap">
+            {skills.slice(0, 12).map((s) => <span key={s} className="minichip">{s}</span>)}
+            {skills.length > 12 && (
+              <button className="minichip more" onClick={() => nav.push('skills')}>
+                +{skills.length - 12} {t.moreCount}
+              </button>
+            )}
+          </div>
         )}
 
-        {p.languages.length > 0 && (
-          <>
-            <Band title={t.languagesTitle} onEdit={() => nav.push('extras')} icon="pen" />
-            <div className="facts">
-              {p.languages.map((l) => (
-                <Fact key={l.langCode + l.name} k={l.name} v={l.proficiency.replaceAll('_', ' ')} />
-              ))}
-            </div>
-          </>
+        <Band title={t.languagesTitle} onEdit={() => nav.push('languages')} icon="pen" />
+        {p.languages.length === 0 ? (
+          <div className="empty">{t.nothingYet}</div>
+        ) : (
+          <div className="facts">
+            {p.languages.map((l, i) => (
+              <Fact key={i} k={l.name} v={levelLabel(l.proficiency, t)} />
+            ))}
+          </div>
         )}
 
-        {p.certifications.length > 0 && (
-          <>
-            <Band title={t.certificationsTitle} onEdit={() => nav.push('extras')} icon="pen" />
-            <div className="facts">
-              {p.certifications.map((c, i) => (
-                <Fact key={i} k={c.name} v={[c.issuingOrganization, c.year].filter(Boolean).join(' · ')} />
-              ))}
-            </div>
-          </>
+        <Band title={t.certificationsTitle} onEdit={() => nav.push('certifications')} icon="pen" />
+        {p.certifications.length === 0 ? (
+          <div className="empty">{t.nothingYet}</div>
+        ) : (
+          <div className="facts">
+            {p.certifications.map((c, i) => (
+              <Fact key={i} k={c.name} v={[c.issuingOrganization, c.year].filter(Boolean).join(' · ')} />
+            ))}
+          </div>
         )}
 
         <Band title={t.linksTitle} onEdit={() => nav.push('links')} icon="pen" />
@@ -683,18 +705,6 @@ function AboutEditor({ p, set, t }: { p: Profile; set: (patch: Partial<Profile>)
       <KV k={t.countryIso} v={p.identity.country ?? ''} placeholder="PK" onChange={(v) => setIdentity('country', v)} />
       <KV k={t.headline} v={p.headline} placeholder={t.headlinePlaceholder} onChange={(v) => set({ headline: v })} />
       <KV k={t.summary} v={p.summary} multiline onChange={(v) => set({ summary: v })} />
-      <label className="fl">{t.skills}
-        <ChipInput
-          items={skillNames(p)}
-          placeholder={t.skillPlaceholder}
-          removeLabel={t.removeItem}
-          onChange={(names) => {
-            // Keep proficiency/category on skills that survive the edit.
-            const byName = new Map(p.skills.map((x) => [x.name.toLowerCase(), x]))
-            set({ skills: names.map((n) => byName.get(n.toLowerCase()) ?? { name: n }) })
-          }}
-        />
-      </label>
       <label className="fl">{t.industries}
         <ChipInput
           items={p.industries}
@@ -886,6 +896,10 @@ function ConfirmRemove({
 /** Where a strength gap should take you. Most name a screen outright; the two
  *  work gaps have to resolve to a specific role, since there is no list screen
  *  to land on any more. */
+function levelLabel(level: LanguageProficiency, t: T): string {
+  return t[LEVELS.find(([value]) => value === level)?.[1] ?? 'lvlProfessional']
+}
+
 function gapTarget(gap: Gap, p: Profile): string {
   if (gap.screen !== 'work') return gap.screen
   const offender = p.work.find((w) => needsCompletion(w)) ?? p.work[0]

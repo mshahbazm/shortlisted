@@ -37,7 +37,6 @@ export const profile = {
   fromYear: 'From (year)',
   toYear: 'To (year)',
 
-  extrasTitle: 'Highlights, languages, certifications',
   standardAnswersTitle: 'Standard answers',
   answeredOf: (filled: number, total: number) => `${filled} of ${total} answered`,
   standardAnswersHint: 'Asked on almost every application — answer once here.',
