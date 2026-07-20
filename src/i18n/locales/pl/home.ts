@@ -90,7 +90,7 @@ export const home: tLocale['home'] = {
   jobsTitle: 'Oferty',
   yourListSub: 'Oferty zapisane lub wklejone',
   foundForYou: 'Znalezione dla Ciebie',
-  foundForYouSoon: 'Oferty pasujące do Twojego profilu pojawią się tutaj. Jeszcze nieaktywne — na razie dodaj własne.',
+  foundForYouSoon: 'Oferty pasujące do Twojego profilu pojawią się tutaj.',
   comingSoon: 'Wkrótce',
   noneSavedYet: 'Wklej linki i aplikuj po kolei',
   segAll: 'Wszystkie',

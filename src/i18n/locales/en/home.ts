@@ -101,7 +101,7 @@ export const home = {
   jobsTitle: 'Jobs',
   yourListSub: 'Jobs you saved or pasted in',
   foundForYou: 'Found for you',
-  foundForYouSoon: 'Jobs matched to your profile will show up here. Not switched on yet — for now, bring your own.',
+  foundForYouSoon: 'Jobs matched to your profile will show up here.',
   comingSoon: 'Coming soon',
   noneSavedYet: 'Paste job links and apply through them one by one',
   segAll: 'All',

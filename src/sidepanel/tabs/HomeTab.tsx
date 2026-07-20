@@ -313,11 +313,17 @@ function ContextSlot({
   onFit: () => void
   onSave: () => void
 }) {
-  // 4. Anywhere else — no slot at all, so the paid actions move up the screen
-  //    instead of sitting under an empty banner.
+  // A restricted page (chrome://, extension pages). No slot at all, so the paid
+  // actions move up the screen instead of sitting under an empty banner.
   if (!page) return null
 
-  // 1. The bubble is up: stand back, name the job, offer a way in.
+  // Two independent questions, and the answers do not imply each other:
+  //   is this a job?     -> the detector scored it, or the URL is a known ATS
+  //   are there fields?  -> weak on its own; a webmail search box is a field
+  // Four combinations, four different things worth saying.
+  const isJob = page.isJobPage || page.knownAts
+
+  // The bubble is up: stand back, name the job, offer a way in.
   if (page.bubbleOpen) {
     return (
       <div className="ctx quiet">
@@ -331,10 +337,9 @@ function ContextSlot({
     )
   }
 
-  // 2. We are actually sure: the detector scored this page as an application,
-  //    or the URL is an ATS we ship an adapter for. Only here do we ASSERT it,
-  //    and only here is the page title presented as a job title.
-  if (page.isJobPage || page.knownAts) {
+  // A job AND something to fill: an application form. The only case where we
+  // assert it, and the only case where the page title is a job title.
+  if (isJob && page.hasFields) {
     return (
       <div className="ctx">
         <div className="ctx-l"><span className="live" /> {t.formOnThisTab}</div>
@@ -348,25 +353,9 @@ function ContextSlot({
     )
   }
 
-  // 3. Fields exist, but nothing says they belong to an application — a webmail
-  //    search box is a field. So we ask rather than announce, and we do not
-  //    dress the page title up as a job title. The offer still stands, quietly.
-  if (page.hasFields) {
-    return (
-      <div className="ctx ask">
-        <div className="ctx-l">{t.onThisPage}</div>
-        <div className="ctx-job">{t.applyingHere}</div>
-        <div className="ctx-co">{hostOf(page.url)} · {t.fieldCount(page.fieldCount)}</div>
-        <div className="ctx-note plain">{t.notRecognised}</div>
-        <button className="ghost wide" onClick={onFill}>{t.fillThisPage}</button>
-        <div className="ctx-foot">{t.fillPartial}</div>
-      </div>
-    )
-  }
-
-  // 3. A job page with the apply form somewhere else. Nothing to fill, so the
-  //    two useful moves are saving it and scoring it.
-  if (page.isJobPage) {
+  // A job with the apply form somewhere else — a description page. Nothing to
+  // fill, so the two useful moves are saving it and scoring it.
+  if (isJob) {
     return (
       <div className="ctx">
         <div className="ctx-l">{t.jobOnThisPage}</div>
@@ -377,6 +366,22 @@ function ContextSlot({
           <button className="ghost" onClick={onSave}>{t.saveToList}</button>
           <button className="primary" onClick={onFit}>{t.checkMyFit}</button>
         </div>
+      </div>
+    )
+  }
+
+  // Fields, but nothing saying they belong to an application. Ask rather than
+  // announce, and do not dress the page title up as a job title. The offer
+  // still stands — quietly, and phrased as the guess it is.
+  if (page.hasFields) {
+    return (
+      <div className="ctx ask">
+        <div className="ctx-l">{t.onThisPage}</div>
+        <div className="ctx-job">{t.applyingHere}</div>
+        <div className="ctx-co">{hostOf(page.url)} · {t.fieldCount(page.fieldCount)}</div>
+        <div className="ctx-note plain">{t.notRecognised}</div>
+        <button className="ghost wide" onClick={onFill}>{t.fillThisPage}</button>
+        <div className="ctx-foot">{t.fillPartial}</div>
       </div>
     )
   }

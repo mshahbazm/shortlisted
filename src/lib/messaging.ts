@@ -13,9 +13,9 @@ export interface FillState {
 /** What Home needs in order to pick which context state to show.
  *
  *  Note the difference between `hasFields` and `isJobPage`. Fields are weak
- *  evidence — a webmail search box is a field. Only `isJobPage` or `knownAts`
- *  justify telling the user we found an application; anything less has to be
- *  phrased as a question, or Gmail gets announced as a job form. */
+ *  evidence — a search box is a field, and most pages have one. Only
+ *  `isJobPage` or `knownAts` justify telling the user we found an
+ *  application; anything weaker has to be phrased as a question. */
 export interface PageContext {
   /** This frame holds SOMETHING fillable. Not evidence of an application. */
   hasFields: boolean

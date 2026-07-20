@@ -89,7 +89,7 @@ export const home: tLocale['home'] = {
   jobsTitle: 'Vacatures',
   yourListSub: 'Vacatures die je bewaarde of plakte',
   foundForYou: 'Voor jou gevonden',
-  foundForYouSoon: 'Vacatures die bij je profiel passen komen hier. Nog niet aan — breng voorlopig je eigen mee.',
+  foundForYouSoon: 'Vacatures die bij je profiel passen komen hier.',
   comingSoon: 'Binnenkort',
   noneSavedYet: 'Plak vacaturelinks en werk ze één voor één af',
   segAll: 'Alle',

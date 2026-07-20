@@ -89,7 +89,7 @@ export const home: tLocale['home'] = {
   jobsTitle: 'Offerte',
   yourListSub: 'Offerte salvate o incollate',
   foundForYou: 'Trovate per te',
-  foundForYouSoon: 'Le offerte in linea con il tuo profilo compariranno qui. Non ancora attivo — per ora portane di tue.',
+  foundForYouSoon: 'Le offerte in linea con il tuo profilo compariranno qui.',
   comingSoon: 'In arrivo',
   noneSavedYet: 'Incolla i link e candidati una alla volta',
   segAll: 'Tutte',
