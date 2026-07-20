@@ -650,7 +650,6 @@ function TellMe({ t, settings }: { t: T; settings: Parameters<typeof cloudProfil
   return (
     <>
       <Composer
-        accent
         label={t.tellMeTitle}
         placeholder={t.tellMePlaceholder}
         hint={t.tellMeSummary}

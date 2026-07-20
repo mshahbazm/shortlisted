@@ -1,14 +1,15 @@
 // Design-system primitives for the side panel.
 //
-// Only things that repeat or carry behaviour live here — layout shells, the
-// push-navigation row, the paid-action tile, the sheet, the stack hook. Chips,
-// pills and one-off spans stay as plain class strings, which is how the rest of
-// this codebase is written.
+// Styled with Tailwind against the theme in styles.css, so a class name can no
+// longer be written in markup and forgotten in CSS — the failure that produced
+// an unstyled segmented control, chevrons that never picked up their colour,
+// and a `sm` where `small` was meant.
 //
-// The old Section/KV primitives stay in components.tsx: the wizard and the
-// not-yet-migrated profile editors still use them.
+// Only things that repeat or carry behaviour live here. One-off spans stay
+// inline, which is how the rest of this codebase is written.
 
 import { ReactNode, useEffect, useRef, useState } from 'react'
+import { cn } from '../lib/cn'
 
 /* ---------- icons ---------- */
 
@@ -26,7 +27,9 @@ export type IconName = keyof typeof ICONS | 'gear' | 'bolt' | 'doc' | 'briefcase
 
 /** 16px stroke icon. Inline rather than a sprite sheet — there are nine of
  *  them and a sprite would mean another asset to keep in sync. */
-export function Icon({ name }: { name: IconName }) {
+export function Icon({ name, className }: { name: IconName; className?: string }) {
+  const box = cn('block size-4 shrink-0', className)
+
   // A cog, not a sun. The previous drawing was a circle with eight radiating
   // lines, which is the universal brightness glyph — it read as a theme toggle.
   // Teeth are blocky and joined to the ring, and there is a hole in the middle.
@@ -41,7 +44,7 @@ export function Icon({ name }: { name: IconName }) {
       tooth('e', 11.5, 7.15, 3.4, 1.7),
     ]
     return (
-      <svg className="ic" viewBox="0 0 16 16" aria-hidden="true">
+      <svg className={box} viewBox="0 0 16 16" aria-hidden="true">
         <g>{teeth}</g>
         <g transform="rotate(45 8 8)">{teeth}</g>
         <circle cx="8" cy="8" r="4.4" fill="none" stroke="currentColor" strokeWidth="1.9" />
@@ -51,14 +54,14 @@ export function Icon({ name }: { name: IconName }) {
   }
   if (name === 'bolt') {
     return (
-      <svg className="ic" viewBox="0 0 16 16" aria-hidden="true">
+      <svg className={box} viewBox="0 0 16 16" aria-hidden="true">
         <path d="M8.8 1.5 3.5 9h3.6l-.9 5.5L12.5 7H8.9z" fill="currentColor" />
       </svg>
     )
   }
   if (name === 'briefcase') {
     return (
-      <svg className="ic" viewBox="0 0 16 16" aria-hidden="true">
+      <svg className={box} viewBox="0 0 16 16" aria-hidden="true">
         <rect x="1.8" y="4.8" width="12.4" height="8.7" rx="1.4" fill="none" stroke="currentColor" strokeWidth="1.3" />
         <path d="M5.8 4.8V3.6a1.1 1.1 0 0 1 1.1-1.1h2.2a1.1 1.1 0 0 1 1.1 1.1v1.2" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
         <path d="M1.8 8.3h12.4" fill="none" stroke="currentColor" strokeWidth="1.3" />
@@ -67,14 +70,14 @@ export function Icon({ name }: { name: IconName }) {
   }
   if (name === 'doc') {
     return (
-      <svg className="ic" viewBox="0 0 16 16" aria-hidden="true">
+      <svg className={box} viewBox="0 0 16 16" aria-hidden="true">
         <path d="M4 2h5l3 3v9H4z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
         <path d="M9 2v3h3" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
       </svg>
     )
   }
   return (
-    <svg className="ic" viewBox="0 0 16 16" aria-hidden="true">
+    <svg className={box} viewBox="0 0 16 16" aria-hidden="true">
       <path d={ICONS[name]} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
@@ -82,7 +85,7 @@ export function Icon({ name }: { name: IconName }) {
 
 /** Tab bar glyph. Drawn here rather than pulled from an icon pack: four shapes
  *  is not worth a dependency, and these match the stroke weight of Icon above.
- *  24-unit grid so they stay crisp at the 20px the tab bar renders them at. */
+ *  24-unit grid so they stay crisp at the 21px the tab bar renders them at. */
 export function TabIcon({ name }: { name: 'home' | 'jobs' | 'profile' | 'cvs' }) {
   const common = {
     fill: 'none',
@@ -92,11 +95,9 @@ export function TabIcon({ name }: { name: 'home' | 'jobs' | 'profile' | 'cvs' })
     strokeLinejoin: 'round' as const,
   }
   return (
-    <svg className="tb-i" viewBox="0 0 24 24" aria-hidden="true">
+    <svg className="block size-[21px]" viewBox="0 0 24 24" aria-hidden="true">
       {name === 'home' && (
-        <>
-          <path d="M3.5 10.2 12 3.5l8.5 6.7V20a1 1 0 0 1-1 1h-4.2v-5.6H8.7V21H4.5a1 1 0 0 1-1-1z" {...common} />
-        </>
+        <path d="M3.5 10.2 12 3.5l8.5 6.7V20a1 1 0 0 1-1 1h-4.2v-5.6H8.7V21H4.5a1 1 0 0 1-1-1z" {...common} />
       )}
       {name === 'jobs' && (
         <>
@@ -119,6 +120,105 @@ export function TabIcon({ name }: { name: 'home' | 'jobs' | 'profile' | 'cvs' })
         </>
       )}
     </svg>
+  )
+}
+
+/* ---------- buttons ---------- */
+
+/** Variants were a list of CSS selectors sharing one base rule, which meant a
+ *  typo like `sm` for `small` produced a full-size button and no error at all.
+ *  They are values now, so a wrong one does not compile. */
+const BUTTON_BASE =
+  'inline-flex cursor-pointer items-center justify-center gap-[7px] rounded-field ' +
+  'border border-transparent font-semibold transition-colors ' +
+  'disabled:cursor-default disabled:opacity-40'
+
+const BUTTON_VARIANT = {
+  primary: 'bg-primary text-primary-fg hover:bg-[#2c2c31]',
+  ghost: 'border-line bg-bg text-fg hover:bg-hover',
+  plain: 'bg-transparent font-medium text-muted hover:bg-hover',
+  danger: 'bg-transparent text-bad hover:bg-[#fef2f2]',
+  destructive: 'bg-bad text-white hover:bg-[#b91c1c]',
+  link: 'bg-transparent p-0 text-[12.5px] text-accent hover:underline',
+} as const
+
+const BUTTON_SIZE = {
+  md: 'min-h-10 px-3.5 py-2.5 text-[13.5px]',
+  sm: 'min-h-[34px] px-3 py-[7px] text-[12.5px]',
+  lg: 'min-h-[46px] w-full px-3.5 py-2.5 text-[14.5px]',
+  none: 'min-h-0',
+} as const
+
+export type ButtonVariant = keyof typeof BUTTON_VARIANT
+export type ButtonSize = keyof typeof BUTTON_SIZE
+
+export function Button({
+  variant = 'primary',
+  size = 'md',
+  wide,
+  className,
+  ...rest
+}: {
+  variant?: ButtonVariant
+  size?: ButtonSize
+  wide?: boolean
+} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      className={cn(
+        BUTTON_BASE,
+        BUTTON_VARIANT[variant],
+        BUTTON_SIZE[variant === 'link' ? 'none' : size],
+        wide && 'w-full',
+        className,
+      )}
+      {...rest}
+    />
+  )
+}
+
+/** Square icon-only button — back arrows, the gear, the + in a title bar. */
+export function IconButton({
+  icon,
+  className,
+  ...rest
+}: { icon: IconName } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      className={cn(
+        'grid size-7 shrink-0 cursor-pointer place-items-center rounded-md',
+        'border-0 bg-transparent p-0 text-muted hover:bg-hover hover:text-fg',
+        className,
+      )}
+      {...rest}
+    >
+      <Icon name={icon} />
+    </button>
+  )
+}
+
+/** The x beside a repeatable row. Muted until hovered, then clearly a delete. */
+export function RemoveButton({
+  label,
+  onClick,
+  className,
+}: {
+  label: string
+  onClick: () => void
+  className?: string
+}) {
+  return (
+    <button
+      aria-label={label}
+      onClick={onClick}
+      className={cn(
+        'grid size-[30px] shrink-0 cursor-pointer place-items-center rounded-[7px]',
+        'border-0 bg-transparent p-0 text-faint hover:bg-hover hover:text-bad',
+        className,
+      )}
+    >
+      <Icon name="close" className="size-[13px]" />
+    </button>
   )
 }
 
@@ -145,12 +245,14 @@ export function useStack(): {
 
 /* ---------- layout shells ---------- */
 
+const BAR = 'flex flex-none items-center gap-2 border-b border-line bg-bg'
+
 /** Header for a tab's root screen: wordmark left, actions right. */
 export function TopBar({ title, right }: { title: string; right?: ReactNode }) {
   return (
-    <div className="p-top">
-      <div className="p-brand">{title}</div>
-      {right && <div className="p-top-r">{right}</div>}
+    <div className={cn(BAR, 'px-3.5 pt-3 pb-2.5')}>
+      <div className="text-[15px] font-[650] tracking-[-0.015em]">{title}</div>
+      {right && <div className="ml-auto flex items-center gap-1.5">{right}</div>}
     </div>
   )
 }
@@ -168,31 +270,46 @@ export function ScreenHead({
   backLabel: string
 }) {
   return (
-    <div className="p-head">
-      <button className="iconbtn" onClick={onBack} aria-label={backLabel}>
-        <Icon name="back" />
-      </button>
-      <span>{title}</span>
-      {right && <span className="head-r">{right}</span>}
+    <div className={cn(BAR, 'px-3.5 py-[11px] text-sm font-semibold')}>
+      <IconButton icon="back" onClick={onBack} aria-label={backLabel} />
+      <span className="min-w-0 truncate">{title}</span>
+      {right && (
+        <span className="ml-auto shrink-0 text-[11.5px] font-semibold text-muted tabular-nums">{right}</span>
+      )}
     </div>
   )
 }
 
 /** The scrolling area of a screen. Resets scroll whenever the screen changes,
- *  so a pushed view never opens halfway down. */
+ *  so a pushed view never opens halfway down.
+ *
+ *  One rhythm for the whole panel: 20px between sections. Sections set no outer
+ *  margins of their own, so nothing can double up or collapse. */
 export function Body({ children, center, screen }: { children: ReactNode; center?: boolean; screen?: string }) {
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (ref.current) ref.current.scrollTop = 0
   }, [screen])
   return (
-    <div className={`p-body ${center ? 'center' : ''}`} ref={ref}>
+    <div
+      ref={ref}
+      className={cn(
+        'mx-auto flex min-h-0 w-full max-w-[640px] flex-1 flex-col overflow-y-auto',
+        'gap-5 px-3.5 pt-4 pb-7',
+        center && 'justify-center',
+      )}
+    >
       {children}
     </div>
   )
 }
 
 /* ---------- rows ---------- */
+
+/** The bordered container a set of Rows sits in. */
+export function Rows({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={cn('overflow-hidden rounded-card border border-line bg-bg', className)}>{children}</div>
+}
 
 /** One row in a bordered list. With `onClick` it's a button that pushes a
  *  screen and shows a chevron; without, it's a static line. */
@@ -203,6 +320,7 @@ export function Row({
   right,
   warn,
   lead,
+  tall,
 }: {
   title: ReactNode
   sub?: ReactNode
@@ -212,22 +330,28 @@ export function Row({
   warn?: boolean
   /** Leading slot — a fit score, a tick. */
   lead?: ReactNode
+  tall?: boolean
 }) {
   const inner = (
     <>
       {lead}
-      <span className="row-b">
-        <span className="row-t">{title}</span>
-        {sub && <span className="row-s">{sub}</span>}
+      <span className="flex min-w-0 flex-1 flex-col gap-px">
+        <span className="truncate text-[13.5px] font-semibold">{title}</span>
+        {sub && <span className="truncate text-[11.5px] text-muted">{sub}</span>}
       </span>
-      {warn && <span className="warn-dot" />}
+      {warn && <span className="size-[7px] shrink-0 rounded-full bg-warn" />}
       {right}
-      {onClick && <Icon name="chev" />}
+      {onClick && <Icon name="chev" className="text-faint" />}
     </>
   )
-  if (!onClick) return <div className="row">{inner}</div>
+  const shared = cn(
+    'flex w-full items-center gap-2.5 border-0 border-b border-line bg-bg px-3 text-left',
+    'last:border-b-0',
+    tall ? 'py-[13px]' : 'py-[11px]',
+  )
+  if (!onClick) return <div className={shared}>{inner}</div>
   return (
-    <button className="row" onClick={onClick}>
+    <button className={cn(shared, 'cursor-pointer hover:bg-hover')} onClick={onClick}>
       {inner}
     </button>
   )
@@ -256,78 +380,48 @@ export function Feature({
   onClick: () => void
 }) {
   return (
-    <button className="feat" onClick={onClick} disabled={disabled}>
-      {cost && <span className="feat-cost">{cost}</span>}
-      <span className={`feat-ic ${accent ? 'accent' : ''}`}>
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        'group relative flex cursor-pointer flex-col gap-0.5 rounded-[11px] border border-line',
+        'bg-bg px-[11px] pt-3 pb-[11px] text-left transition',
+        'hover:-translate-y-px hover:border-[#dcdcd6] hover:shadow-lift-hover',
+        'disabled:translate-y-0 disabled:cursor-default disabled:opacity-55 disabled:shadow-none',
+      )}
+    >
+      {cost && <span className="absolute top-2.5 right-2.5 text-[10px] font-semibold text-warn">{cost}</span>}
+      <span
+        className={cn(
+          'mb-2 grid size-7 place-items-center rounded-lg',
+          accent ? 'bg-accent-soft text-accent' : 'bg-hover text-muted',
+        )}
+      >
         <Icon name={icon} />
       </span>
-      {/* The chevron sits on the title row rather than in a corner, so a sub
-          that wraps to two lines cannot collide with it. */}
-      <span className="feat-t">
+      {/* Chevron on the title row, not in a corner: a sub that wraps to two
+          lines cannot collide with it there. */}
+      <span className="flex items-center justify-between gap-1.5 text-[13.5px] font-[650] tracking-[-0.01em]">
         {title}
-        <Icon name="chev" />
+        <Icon
+          name="chev"
+          className={cn(
+            'text-faint transition group-hover:text-muted',
+            'motion-safe:group-hover:translate-x-0.5',
+          )}
+        />
       </span>
-      <span className="feat-s">{sub}</span>
+      <span className="text-[11.5px] leading-[1.4] text-muted">{sub}</span>
     </button>
   )
 }
 
-/* ---------- composer ---------- */
+/* ---------- form fields ---------- */
 
-/** "Something new to add?" — an open input rather than a button that leads to
- *  one, so adding a fact is a single gesture. Clears on submit. */
-export function Composer({
-  label,
-  placeholder,
-  hint,
-  submitLabel,
-  accent,
-  busy,
-  autoFocus,
-  onSubmit,
-}: {
-  label: string
-  placeholder: string
-  hint?: string
-  submitLabel: string
-  accent?: boolean
-  busy?: boolean
-  autoFocus?: boolean
-  onSubmit: (text: string) => void
-}) {
-  const [text, setText] = useState('')
-  const ready = text.trim().length >= 8 && !busy
-
-  const send = () => {
-    if (!ready) return
-    onSubmit(text.trim())
-    setText('')
-  }
-
-  return (
-    <div className={`composer ${accent ? 'accent' : ''}`}>
-      <label className="comp-l" htmlFor="composer-in">{label}</label>
-      <input
-        id="composer-in"
-        className="comp-in"
-        autoFocus={autoFocus}
-        placeholder={placeholder}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && send()}
-      />
-      {text.trim() && (
-        <button className="ghost small wide" onClick={send} disabled={!ready}>
-          {busy ? <span className="spin" /> : null}
-          {submitLabel}
-        </button>
-      )}
-      {hint && !text.trim() && <div className="comp-h">{hint}</div>}
-    </div>
-  )
-}
-
-/* ---------- repeatable fields ---------- */
+/** The one input look, shared by everything that takes typing. */
+export const FIELD =
+  'w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg ' +
+  'placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none'
 
 /** Short tokens — skills, industries, the tech used in a role.
  *
@@ -362,24 +456,28 @@ export function ChipInput({
   }
 
   return (
-    <div className="chipedit">
+    <div className="flex flex-col gap-2">
       {items.length > 0 && (
-        <div className="chipedit-list">
+        <div className="flex flex-wrap gap-1.5">
           {items.map((item, i) => (
-            <span key={`${item}-${i}`} className="echip">
+            <span
+              key={`${item}-${i}`}
+              className="inline-flex items-center gap-[5px] rounded-full border border-line bg-hover py-1 pr-1.5 pl-2.5 text-xs"
+            >
               {item}
               <button
                 aria-label={`${removeLabel} ${item}`}
                 onClick={() => onChange(items.filter((_, j) => j !== i))}
+                className="grid size-[17px] shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-faint hover:bg-active hover:text-bad"
               >
-                <Icon name="close" />
+                <Icon name="close" className="size-[11px]" />
               </button>
             </span>
           ))}
         </div>
       )}
       <input
-        className="fin"
+        className={FIELD}
         type="text"
         value={draft}
         placeholder={placeholder}
@@ -424,35 +522,91 @@ export function ListEditor({
   const removeAt = (i: number) => onChange(items.filter((_, j) => j !== i))
 
   return (
-    <div className="listedit">
+    <div className="flex flex-col gap-2">
       {items.map((item, i) => (
-        <div key={i} className="lrow">
+        <div key={i} className="flex items-start gap-1.5">
           <textarea
             rows={2}
             value={item}
             placeholder={placeholder}
             autoFocus={i === focusAt}
+            className={cn(FIELD, 'min-h-[52px] resize-y leading-normal')}
             onChange={(e) => setAt(i, e.target.value)}
             onBlur={() => {
               if (!item.trim()) removeAt(i)
               setFocusAt(-1)
             }}
           />
-          <button className="lrow-x" aria-label={removeLabel} onClick={() => removeAt(i)}>
-            <Icon name="close" />
-          </button>
+          <RemoveButton label={removeLabel} onClick={() => removeAt(i)} className="mt-[5px]" />
         </div>
       ))}
       {!atMax && (
-        <button
-          className="ghost wide small"
+        <Button
+          variant="ghost"
+          size="sm"
+          wide
           onClick={() => {
             setFocusAt(items.length)
             onChange([...items, ''])
           }}
         >
           <Icon name="plus" /> {addLabel}
-        </button>
+        </Button>
+      )}
+    </div>
+  )
+}
+
+/** "Something new to add?" — an open input rather than a button that leads to
+ *  one, so adding a fact is a single gesture. Deliberately the most inviting
+ *  block on the screen after the primary action: it is free, it takes one line,
+ *  and it makes every later CV better. Clears on submit. */
+export function Composer({
+  label,
+  placeholder,
+  hint,
+  submitLabel,
+  busy,
+  autoFocus,
+  onSubmit,
+}: {
+  label: string
+  placeholder: string
+  hint?: string
+  submitLabel: string
+  busy?: boolean
+  autoFocus?: boolean
+  onSubmit: (text: string) => void
+}) {
+  const [text, setText] = useState('')
+  const ready = text.trim().length >= 8 && !busy
+
+  const send = () => {
+    if (!ready) return
+    onSubmit(text.trim())
+    setText('')
+  }
+
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-[#d9d2ff] bg-gradient-to-b from-[#faf9ff] to-bg p-3.5">
+      <label className="text-sm font-[650] tracking-[-0.01em]" htmlFor="composer-in">
+        {label}
+      </label>
+      <input
+        id="composer-in"
+        className={cn(FIELD, 'min-h-10 text-[13px]')}
+        autoFocus={autoFocus}
+        placeholder={placeholder}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && send()}
+      />
+      {text.trim() ? (
+        <Button variant="ghost" size="sm" wide onClick={send} disabled={!ready}>
+          {submitLabel}
+        </Button>
+      ) : (
+        hint && <div className="text-[11.5px] leading-[1.45] text-muted">{hint}</div>
       )}
     </div>
   )
@@ -460,8 +614,11 @@ export function ListEditor({
 
 /* ---------- sheet ---------- */
 
-/** Bottom sheet. Used to ask a question before an action spends a credit.
- *  Closes on scrim click or Escape. */
+/** Bottom sheet. Asks a question before an action spends a credit or deletes
+ *  something. Closes on scrim click or Escape.
+ *
+ *  Focus is NOT trapped — that is what the Base UI dialog is for, and replacing
+ *  this is the next step. */
 export function Sheet({
   title,
   sub,
@@ -482,13 +639,22 @@ export function Sheet({
   }, [onClose])
 
   return (
-    <div className="sheet-overlay">
-      <div className="sheet-scrim" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-label={title}>
-        <div className="sheet-h">{title}</div>
-        {sub && <div className="sheet-s">{sub}</div>}
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 bg-[rgba(24,24,27,0.32)]" onClick={onClose} />
+      <div
+        role="dialog"
+        aria-label={title}
+        className={cn(
+          'absolute inset-x-0 bottom-0 mx-auto flex w-full max-w-[640px] flex-col gap-2.5',
+          'rounded-t-2xl bg-bg px-3.5 pt-[18px] pb-4 shadow-[0_-8px_30px_rgba(0,0,0,0.16)]',
+        )}
+      >
+        <div className="text-[17px] font-[650] tracking-[-0.015em]">{title}</div>
+        {sub && <div className="-mt-1.5 mb-1 text-[12.5px] text-muted">{sub}</div>}
         {children}
-        <button className="plain wide" onClick={onClose}>{closeLabel}</button>
+        <Button variant="plain" wide onClick={onClose}>
+          {closeLabel}
+        </Button>
       </div>
     </div>
   )
@@ -498,6 +664,22 @@ export function Sheet({
 
 /** Fit score 1-10 as a coloured square. Bands match lib/fitBands. */
 export function FitChip({ score }: { score?: number }) {
-  const tone = score === undefined ? 'none' : score >= 7 ? 'good' : score >= 5 ? 'mid' : 'low'
-  return <span className={`fitchip ${tone}`}>{score ?? '?'}</span>
+  const tone =
+    score === undefined
+      ? 'bg-hover text-faint'
+      : score >= 7
+        ? 'bg-good-bg text-good'
+        : score >= 5
+          ? 'bg-accent-soft text-accent'
+          : 'bg-warn-bg text-warn'
+  return (
+    <span
+      className={cn(
+        'grid size-[26px] shrink-0 place-items-center rounded-[7px] text-[12.5px] font-bold tabular-nums',
+        tone,
+      )}
+    >
+      {score ?? '?'}
+    </span>
+  )
 }

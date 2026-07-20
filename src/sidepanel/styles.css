@@ -130,48 +130,12 @@ a:hover { text-decoration: underline; }
 /* ---------- 3. shell ---------- */
 
 .shell { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-
-/* Title bar on a root screen: wordmark left, credits + gear right. */
-.p-top {
-  display: flex; align-items: center; gap: 8px; flex: none;
-  padding: 12px 14px 10px; border-bottom: 1px solid var(--border);
-}
-.p-brand { font-size: 15px; font-weight: 650; letter-spacing: -0.015em; }
-.p-top-r { margin-left: auto; display: flex; align-items: center; gap: 6px; }
-
-/* Title bar on a pushed screen: back arrow, title, optional right slot. */
-.p-head {
-  display: flex; align-items: center; gap: 8px; flex: none;
-  padding: 11px 14px; border-bottom: 1px solid var(--border);
-  font-size: 14px; font-weight: 600;
-}
-.p-head .head-r {
-  margin-left: auto; font-size: 11.5px; font-weight: 600;
-  color: var(--muted); font-variant-numeric: tabular-nums;
-}
-
-/* One rhythm for the whole panel: 20px between sections, 10px inside one.
-   Sections do not set their own outer margins — the body's gap owns the
-   vertical rhythm, so nothing can double up or collapse. */
-.p-body {
-  flex: 1; min-height: 0; overflow-y: auto;
-  padding: 16px 14px 28px;
-  display: flex; flex-direction: column; gap: 20px;
-  /* Wide panels: keep lines readable rather than stretching them. */
-  width: 100%; max-width: 640px; margin: 0 auto;
-}
-.p-body.center { justify-content: center; gap: 20px; }
-.p-body::-webkit-scrollbar { width: 6px; }
-.p-body::-webkit-scrollbar-thumb { background: #dcdcd8; border-radius: 3px; }
-
 .iconbtn {
   width: 28px; height: 28px; flex: none; display: grid; place-items: center;
   border: none; background: none; border-radius: 6px;
   color: var(--muted); cursor: pointer; padding: 0;
 }
 .iconbtn:hover { background: var(--hover); color: var(--fg); }
-.ic { width: 16px; height: 16px; display: block; flex: none; }
-
 .credits {
   border: none; font: inherit; cursor: pointer;
   font-size: 11.5px; font-weight: 600; color: var(--accent);
@@ -189,9 +153,7 @@ a:hover { text-decoration: underline; }
   padding: 8px 4px 9px; border: none; background: none; cursor: pointer;
   font: inherit; font-size: 10.5px; font-weight: 600; color: var(--faint);
   transition: color 0.12s;
-}
-.tabbar button .tb-i { width: 21px; height: 21px; display: block; }
-.tabbar button.active { color: var(--accent); }
+}.tabbar button.active { color: var(--accent); }
 .tabbar button:hover:not(.active) { color: var(--muted); }
 
 /* ---------- 4. buttons ---------- */
@@ -286,22 +248,14 @@ button.link.amber { color: var(--amber); }
 .seg.on {
   background: var(--bg); color: var(--fg);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.07);
-}
-
-.row-b { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
-.row-t {
+}.row-t {
   font-size: 13.5px; font-weight: 600;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .row-s {
   font-size: 11.5px; color: var(--muted);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-/* The trailing chevron on a nav row. Targets .ic because that is what the
-   Icon component renders — a .chev class was never on the element. */
-.rows > .row > .ic:last-child { color: var(--faint); }
-.warn-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); flex: none; }
-.cnt {
+}.cnt {
   font-size: 11.5px; font-weight: 650; color: var(--muted);
   background: var(--hover); border-radius: 999px; padding: 2px 8px; white-space: nowrap;
 }
@@ -336,17 +290,6 @@ button.link.amber { color: var(--amber); }
 .pill.flat { color: var(--muted); background: var(--hover); }
 .pill.amber { color: var(--amber); background: var(--amber-bg); }
 .pill.now { color: var(--accent); background: var(--accent-soft); margin-left: 6px; }
-
-.fitchip {
-  width: 26px; height: 26px; flex: none; border-radius: 7px;
-  display: grid; place-items: center;
-  font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums;
-}
-.fitchip.good { color: var(--green); background: var(--green-bg); }
-.fitchip.mid { color: var(--accent); background: var(--accent-soft); }
-.fitchip.low { color: var(--amber); background: var(--amber-bg); }
-.fitchip.none { color: var(--faint); background: var(--hover); }
-
 /* Credit cost. Muted amber states a fact; red would make our own paid
    features read as a penalty. */
 .cost {
@@ -387,39 +330,7 @@ button.link.amber { color: var(--amber); }
 .ctx-co { font-size: 12.5px; color: var(--muted); margin-bottom: 11px; }
 .ctx-note { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin-top: -5px; }
 .ctx-note.plain { margin-bottom: 11px; }
-.ctx-foot { font-size: 11.5px; color: var(--faint); text-align: center; margin-top: 7px; }
-
-/* The two paid actions. Given real weight — these are the product. */
-.feat {
-  position: relative; border: 1px solid var(--border); border-radius: 11px;
-  padding: 12px 11px 11px; background: var(--bg); cursor: pointer;
-  font: inherit; color: inherit; text-align: left;
-  display: flex; flex-direction: column; gap: 2px;
-  transition: border-color 0.13s, box-shadow 0.13s, transform 0.13s;
-}
-.feat:hover { border-color: #dcdcd6; box-shadow: var(--lift-hover); transform: translateY(-1px); }
-.feat:disabled { opacity: 0.55; cursor: default; transform: none; box-shadow: none; }
-.feat-cost { position: absolute; top: 9px; right: 9px; font-size: 10px; font-weight: 600; color: var(--amber); }
-.feat-ic {
-  width: 28px; height: 28px; border-radius: 8px; margin-bottom: 8px;
-  display: grid; place-items: center; background: var(--hover); color: var(--muted);
-}
-.feat-ic.accent { background: var(--accent-soft); color: var(--accent); }
-/* Title row carries the chevron: these tiles open a screen, and without one
-   they read as toggles rather than links. */
-.feat-t {
-  display: flex; align-items: center; justify-content: space-between; gap: 6px;
-  font-size: 13.5px; font-weight: 650; letter-spacing: -0.01em;
-}
-.feat-t .ic { color: var(--faint); }
-.feat:hover .feat-t .ic { color: var(--muted); }
-@media (prefers-reduced-motion: no-preference) {
-  .feat-t .ic { transition: transform 0.13s, color 0.13s; }
-  .feat:hover .feat-t .ic { transform: translateX(2px); }
-}
-.feat-s { font-size: 11.5px; color: var(--muted); line-height: 1.4; }
-
-/* The manual override, for when detection was wrong. Deliberately the quietest
+.ctx-foot { font-size: 11.5px; color: var(--faint); text-align: center; margin-top: 7px; }/* The manual override, for when detection was wrong. Deliberately the quietest
    thing on the screen: it must be findable when needed without implying that
    the automatic path usually fails. */
 .tryline {
@@ -431,18 +342,6 @@ button.link.amber { color: var(--amber); }
   font-size: 12px; font-weight: 650; color: var(--accent);
 }
 .tryline button:hover { text-decoration: underline; }
-
-/* "Something new to add" — an open input, not a button that leads to one.
-   Deliberately the most inviting block on the screen after the primary
-   action: it is free, it takes one line, and it makes every later CV better. */
-.composer {
-  display: flex; flex-direction: column; gap: 8px;
-  border: 1px solid #d9d2ff; border-radius: 12px; padding: 14px;
-  background: linear-gradient(180deg, #faf9ff, #fff);
-}
-.comp-l { font-size: 14px; font-weight: 650; letter-spacing: -0.01em; }
-.comp-h { font-size: 11.5px; color: var(--muted); line-height: 1.45; }
-
 /* Full-width nav card — a section that is really a doorway to a screen. */
 .navcard {
   display: flex; align-items: center; gap: 12px; width: 100%;
@@ -593,38 +492,13 @@ button.link.amber { color: var(--amber); }
 .ri-c { font-size: 11.5px; color: var(--faint); display: flex; align-items: center; gap: 7px; }
 
 .ec-warn { font-size: 12px; color: var(--amber); line-height: 1.45; }
-label.fl { display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; font-weight: 600; color: var(--muted); }
-
-/* Repeatable fields. A token list and a list of boxes, replacing "comma
-   separated" and "one per line" — formats the user had to learn, and could
-   get wrong in ways nothing reported. */
-.chipedit { display: flex; flex-direction: column; gap: 8px; }
-.chipedit-list { display: flex; flex-wrap: wrap; gap: 6px; }
-.echip {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 12px; color: var(--fg); background: var(--hover);
-  border: 1px solid var(--border); border-radius: 999px; padding: 4px 6px 4px 10px;
-}
-.echip button {
-  display: grid; place-items: center; width: 17px; height: 17px; flex: none;
-  border: none; background: none; padding: 0; cursor: pointer;
-  color: var(--faint); border-radius: 50%;
-}
-.echip button .ic { width: 11px; height: 11px; }
-.echip button:hover { background: var(--active); color: var(--red); }
-
-.listedit { display: flex; flex-direction: column; gap: 8px; }
-.lrow { display: flex; align-items: flex-start; gap: 6px; }
-.lrow textarea { min-height: 52px; }
-.lrow-x {
+label.fl { display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; font-weight: 600; color: var(--muted); }.lrow-x {
   flex: none; width: 30px; height: 30px; margin-top: 5px;
   display: grid; place-items: center;
   border: none; background: none; padding: 0; cursor: pointer;
   color: var(--faint); border-radius: 7px;
 }
 .lrow-x:hover { background: var(--hover); color: var(--red); }
-.lrow-x .ic { width: 13px; height: 13px; }
-
 /* Rows of a few fields that belong together — a language and its level, a
    certificate and who issued it. */
 .subrow {
@@ -738,29 +612,7 @@ label.fl { display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; f
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .cv-tags { display: flex; gap: 5px; flex-wrap: wrap; }
-.cv-actions { display: flex; gap: 13px; flex-wrap: wrap; padding-top: 2px; }
-
-/* Bottom sheet — asks the question before spending a credit. */
-.sheet-overlay { position: fixed; inset: 0; z-index: 50; }
-.sheet-scrim { position: absolute; inset: 0; background: rgba(24, 24, 27, 0.32); }
-.sheet {
-  position: absolute; left: 0; right: 0; bottom: 0;
-  background: var(--bg); border-radius: 16px 16px 0 0; padding: 18px 14px 16px;
-  display: flex; flex-direction: column; gap: 9px;
-  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.16);
-  width: 100%; max-width: 640px; margin: 0 auto;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .sheet { animation: rise 0.22s cubic-bezier(0.2, 0.8, 0.3, 1); }
-  @keyframes rise {
-    from { transform: translateY(14px); opacity: 0.4; }
-    to { transform: none; opacity: 1; }
-  }
-}
-.sheet-h { font-size: 17px; font-weight: 650; letter-spacing: -0.015em; }
-.sheet-s { font-size: 12.5px; color: var(--muted); margin: -6px 0 5px; }
-
-.bigchoice {
+.cv-actions { display: flex; gap: 13px; flex-wrap: wrap; padding-top: 2px; }.bigchoice {
   display: flex; flex-direction: column; gap: 4px; width: 100%; text-align: left;
   background: var(--bg); border: 1px solid var(--border); border-radius: 11px;
   padding: 13px; cursor: pointer; font-family: inherit;
@@ -863,9 +715,7 @@ select {
   background-size: 15px 15px;
 }
 select::-ms-expand { display: none; }
-textarea.tall { min-height: 110px; }
-.comp-in, input.comp-in { min-height: 40px; font-size: 13px; }
-.fin, input.fin { font-size: 13.5px; font-weight: 400; color: var(--fg); }
+textarea.tall { min-height: 110px; }.fin, input.fin { font-size: 13.5px; font-weight: 400; color: var(--fg); }
 
 /* ---------- 13. legacy: wizard, toast, inline edit ---------- */
 
