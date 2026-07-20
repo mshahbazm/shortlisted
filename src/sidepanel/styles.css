@@ -19,35 +19,77 @@
    Deliberately light-only: the extension has no dark mode, and inventing one
    here would mean guessing at a second palette nobody has signed off. */
 
+/* ---------- 0. tailwind ---------- */
+
+/* Theme and utilities only — preflight is deliberately NOT imported yet.
+   Preflight resets margins, list markers and button chrome that the
+   hand-written rules further down still rely on, so pulling it in now would
+   break every screen at once and make each ported screen impossible to verify
+   on its own. It goes in at the end, when those rules are gone. */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
 /* ---------- 1. tokens ---------- */
 
-:root {
-  --bg: #ffffff;
-  --fg: #18181b;
-  --muted: #6f6f78;
-  --faint: #a0a0a8;
-  --border: #e7e7e3;
-  --hover: #f7f7f5;
-  --active: #efefec;
-  --primary: #18181b;
-  --primary-fg: #ffffff;
-  --accent: #3d11ff; /* brand */
-  --accent-dark: #2e0bd1;
-  --accent-soft: #f0edff;
-  --green: #16a34a;
-  --green-bg: #f0fdf4;
-  --amber: #b45309;
-  --amber-bg: #fffbeb;
-  --amber-line: #f0e3c8;
-  --red: #dc2626;
-  --radius: 8px;
-  /* Two layers: a tight contact shadow and a wider soft one. Matches how
-     Chrome's own surfaces lift off the page, which is what the panel sits
-     next to. */
-  --lift-hover: 0 1px 2px rgba(24, 24, 27, 0.06), 0 6px 14px -3px rgba(24, 24, 27, 0.12);
+/* One source of truth. @theme is what generates utilities (bg-accent,
+   text-muted, border-border, rounded-panel...); the :root aliases below let
+   the not-yet-ported CSS keep using the short names it always has. */
+@theme {
+  --color-bg: #ffffff;
+  --color-fg: #18181b;
+  --color-muted: #6f6f78;
+  --color-faint: #a0a0a8;
+  --color-line: #e7e7e3;
+  --color-hover: #f7f7f5;
+  --color-active: #efefec;
+  --color-primary: #18181b;
+  --color-primary-fg: #ffffff;
+  --color-accent: #3d11ff;
+  --color-accent-dark: #2e0bd1;
+  --color-accent-soft: #f0edff;
+  --color-good: #16a34a;
+  --color-good-bg: #f0fdf4;
+  --color-warn: #b45309;
+  --color-warn-bg: #fffbeb;
+  --color-warn-line: #f0e3c8;
+  --color-bad: #dc2626;
+
+  --radius-field: 8px;
+  --radius-card: 10px;
+  --radius-panel: 14px;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  --shadow-lift-hover: 0 1px 2px rgba(24, 24, 27, 0.06), 0 6px 14px -3px rgba(24, 24, 27, 0.12);
+  --shadow-app:
+    0 0 0 1px rgba(24, 24, 27, 0.05),
+    0 2px 5px rgba(24, 24, 27, 0.08),
+    0 12px 28px -8px rgba(24, 24, 27, 0.18);
 }
 
-/* ---------- 2. base ---------- */
+:root {
+  --bg: var(--color-bg);
+  --fg: var(--color-fg);
+  --muted: var(--color-muted);
+  --faint: var(--color-faint);
+  --border: var(--color-line);
+  --hover: var(--color-hover);
+  --active: var(--color-active);
+  --primary: var(--color-primary);
+  --primary-fg: var(--color-primary-fg);
+  --accent: var(--color-accent);
+  --accent-dark: var(--color-accent-dark);
+  --accent-soft: var(--color-accent-soft);
+  --green: var(--color-good);
+  --green-bg: var(--color-good-bg);
+  --amber: var(--color-warn);
+  --amber-bg: var(--color-warn-bg);
+  --amber-line: var(--color-warn-line);
+  --red: var(--color-bad);
+  --radius: var(--radius-field);
+  --lift-hover: var(--shadow-lift-hover);
+}
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }

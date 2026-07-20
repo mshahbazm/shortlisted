@@ -1,10 +1,15 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import { crx } from '@crxjs/vite-plugin'
 import manifest from './manifest.config'
 
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), crx({ manifest })],
+  // Tailwind only ever reaches the side panel: styles.css is imported by
+  // sidepanel/main.tsx and nothing else. The on-page overlay renders into a
+  // closed shadow root with its own injected <style>, so no utility class or
+  // preflight rule can leak onto a page we are filling.
+  plugins: [react(), tailwindcss(), crx({ manifest })],
   build: {
     target: 'es2022',
     // Dev and prod builds MUST NOT share an output folder. dist/ is what you
