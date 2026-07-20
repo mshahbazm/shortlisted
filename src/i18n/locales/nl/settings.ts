@@ -50,4 +50,10 @@ export const settings: tLocale['settings'] = {
     'Verbonden met Shortlisted Cloud. Laat dit leeg, tenzij je gevraagd is het elders heen te wijzen.',
   serverUrlLabel: 'Server-URL',
   serverReset: 'Standaard gebruiken',
+  creditsLeft: 'Credits over',
+  creditsOf: 'van',
+  goPro: 'Ga Pro — 100 credits per maand',
+  proFoot: '$9 per maand. Eén cv op maat of één score kost 1 credit. Formulieren invullen is altijd gratis.',
+  signedInLabel: 'Ingelogd',
+  whereILook: 'Waar ik naar formulieren zoek',
 }

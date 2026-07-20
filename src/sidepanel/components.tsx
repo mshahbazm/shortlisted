@@ -1,30 +1,4 @@
-import { ReactNode, useState } from 'react'
-
-// Collapsible section — the core of the progressive-disclosure layout.
-// Collapsed, it's one calm line with a summary; open, it's the editor.
-export function Section({
-  title,
-  summary,
-  defaultOpen = false,
-  children,
-}: {
-  title: string
-  summary?: string
-  defaultOpen?: boolean
-  children: ReactNode
-}) {
-  const [open, setOpen] = useState(defaultOpen)
-  return (
-    <div className="section">
-      <button className={`section-head ${open ? 'open' : ''}`} onClick={() => setOpen(!open)}>
-        <span className="chev">▶</span>
-        <span className="t">{title}</span>
-        {!open && summary && <span className="s">{summary}</span>}
-      </button>
-      {open && <div className="section-body">{children}</div>}
-    </div>
-  )
-}
+import { useState } from 'react'
 
 // Notion-style key/value row: reads as text, click to edit in place.
 export function KV({

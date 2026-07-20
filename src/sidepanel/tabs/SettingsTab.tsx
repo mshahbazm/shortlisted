@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
-import { Section } from '../components'
+import { Body, Row, ScreenHead, useStack } from '../ui'
 import { StorageShape, storageDefaults } from '../../lib/types'
 import { LOCALES, LOCALE_LABELS, isLocale, useContent } from '../../i18n'
-import { CloudUsage, cloudUsage, sendLoginCode, verifyLoginCode } from '../../ai/run'
+import { CloudUsage, UsageStatsRow, cloudUsage, cloudUsageStats, sendLoginCode, verifyLoginCode } from '../../ai/run'
 import { cloudBaseUrl, cloudUrlDefault, isDevInstall } from '../../lib/config'
 import { sendMsg } from '../../lib/messaging'
 
-export function SettingsTab() {
+export function SettingsTab({ onClose }: { onClose: () => void }) {
   const t = useContent('settings')
+  const nav = useStack()
   const [settings, saveSettings] = useStore('settings')
   const importRef = useRef<HTMLInputElement>(null)
   const [msg, setMsg] = useState('')
@@ -40,52 +41,56 @@ export function SettingsTab() {
     a.click()
   }
 
-  return (
-    <div>
-      <h2>{t.title}</h2>
-      <p className="hint">{t.hint}</p>
+  const importInput = (
+    <input
+      ref={importRef} type="file" accept="application/json" style={{ display: 'none' }}
+      onChange={(e) => {
+        const f = e.target.files?.[0]
+        if (f) void importAll(f)
+        e.target.value = ''
+      }}
+    />
+  )
 
-      <Section title={t.languageTitle} summary={isLocale(s.locale) ? LOCALE_LABELS[s.locale] : t.languageAuto}>
-        <label className="f"><span>{t.languageTitle}</span>
-          <select
-            value={isLocale(s.locale) ? s.locale : 'auto'}
-            onChange={(e) => set({ locale: e.target.value === 'auto' ? undefined : e.target.value })}
-          >
-            <option value="auto">{t.languageAuto}</option>
-            {LOCALES.map((code) => (
-              <option key={code} value={code}>{LOCALE_LABELS[code]}</option>
-            ))}
-          </select>
-        </label>
-      </Section>
+  if (nav.screen === 'language') {
+    return (
+      <Screen title={t.languageTitle} onBack={nav.back} t={t}>
+        <select
+          value={isLocale(s.locale) ? s.locale : 'auto'}
+          onChange={(e) => set({ locale: e.target.value === 'auto' ? undefined : e.target.value })}
+        >
+          <option value="auto">{t.languageAuto}</option>
+          {LOCALES.map((code) => (
+            <option key={code} value={code}>{LOCALE_LABELS[code]}</option>
+          ))}
+        </select>
+      </Screen>
+    )
+  }
 
-      <Section
-        title={t.accountTitle}
-        summary={s.accountEmail ?? t.notSignedIn}
-        defaultOpen={!s.accountEmail}
-      >
-        <AccountPanel />
-      </Section>
-
-      <Section title={t.detectTitle} summary={s.detectEverywhere === false ? t.detectOff : t.detectOn}>
-        <p className="microhint">{t.detectHint}</p>
-        <label className="f">
-          <span>{t.detectToggle}</span>
+  if (nav.screen === 'detect') {
+    return (
+      <Screen title={t.whereILook} onBack={nav.back} t={t}>
+        <p className="lede">{t.detectHint}</p>
+        <label className="ct-row">
           <input
             type="checkbox"
             checked={s.detectEverywhere !== false}
             onChange={(e) => set({ detectEverywhere: e.target.checked })}
           />
+          <span>{t.detectToggle}</span>
         </label>
-      </Section>
+      </Screen>
+    )
+  }
 
-      {/* Which server we talk to, always visible. A wrong endpoint used to be
-          invisible until a request failed with a URL nobody had chosen. */}
-      <Section title={t.serverTitle} summary={cloudBaseUrl(s)}>
-        <p className="microhint">{isDevInstall() ? t.serverDevHint : t.serverProdHint}</p>
-        <label className="f">
-          <span>{t.serverUrlLabel}</span>
+  if (nav.screen === 'server') {
+    return (
+      <Screen title={t.serverTitle} onBack={nav.back} t={t}>
+        <p className="lede">{isDevInstall() ? t.serverDevHint : t.serverProdHint}</p>
+        <label className="fl">{t.serverUrlLabel}
           <input
+            className="fin"
             type="text"
             placeholder={cloudUrlDefault()}
             value={s.cloudUrl ?? ''}
@@ -94,29 +99,137 @@ export function SettingsTab() {
           />
         </label>
         {s.cloudUrl?.trim() && (
-          <button className="ghost small" onClick={() => set({ cloudUrl: '' })}>
-            {t.serverReset}
+          <button className="ghost wide" onClick={() => set({ cloudUrl: '' })}>{t.serverReset}</button>
+        )}
+      </Screen>
+    )
+  }
+
+  if (nav.screen === 'cost') {
+    return (
+      <Screen title="Dev: real cost" onBack={nav.back} t={t}>
+        <DevCosts />
+      </Screen>
+    )
+  }
+
+  if (nav.screen === 'backup') {
+    return (
+      <Screen title={t.backupTitle} onBack={nav.back} t={t}>
+        <p className="lede">{t.backupSummary}</p>
+        <div className="duo tight">
+          <button className="ghost" onClick={exportAll}>{t.exportJson}</button>
+          <button className="ghost" onClick={() => importRef.current?.click()}>{t.importJson}</button>
+        </div>
+        {importInput}
+        {msg && <p className="microhint">{msg}</p>}
+      </Screen>
+    )
+  }
+
+  return (
+    <>
+      <ScreenHead title={t.title} onBack={onClose} backLabel={t.back} />
+      <Body screen={nav.screen}>
+        {/* Account leads: this is where the money is. */}
+        <AccountPanel />
+
+        <div className="rows nav">
+          <Row
+            title={t.languageTitle}
+            sub={isLocale(s.locale) ? LOCALE_LABELS[s.locale] : t.languageAuto}
+            onClick={() => nav.push('language')}
+          />
+          <Row
+            title={t.whereILook}
+            sub={s.detectEverywhere === false ? t.detectOff : t.detectOn}
+            onClick={() => nav.push('detect')}
+          />
+          <Row title={t.backupTitle} sub={t.backupSummary} onClick={() => nav.push('backup')} />
+          {/* Which server we talk to, always visible. A wrong endpoint used to
+              be invisible until a request failed with a URL nobody had chosen. */}
+          <Row title={t.serverTitle} sub={cloudBaseUrl(s)} onClick={() => nav.push('server')} />
+          {/* DEV ONLY — what this account has actually cost us. Deliberately
+              untranslated; remove before launch. */}
+          {isDevInstall() && (
+            <Row title="⚙ Dev: real cost" sub="Provider spend on this account" onClick={() => nav.push('cost')} />
+          )}
+        </div>
+
+        {s.accountEmail && (
+          <button
+            className="plain wide danger"
+            onClick={() => saveSettings({ ...settings, accountEmail: undefined, cloudToken: undefined })}
+          >
+            {t.signOutDevice}
           </button>
         )}
-      </Section>
+      </Body>
+    </>
+  )
+}
 
-      <Section title={t.backupTitle} summary={t.backupSummary}>
-        <div className="field-row">
-          <button className="ghost small" onClick={exportAll}>{t.exportJson}</button>
-          <button className="ghost small" onClick={() => importRef.current?.click()}>{t.importJson}</button>
+function Screen({
+  title,
+  onBack,
+  t,
+  children,
+}: {
+  title: string
+  onBack: () => void
+  t: ReturnType<typeof useContent<'settings'>>
+  children: React.ReactNode
+}) {
+  return (
+    <>
+      <ScreenHead title={title} onBack={onBack} backLabel={t.back} />
+      <Body screen={title}>{children}</Body>
+    </>
+  )
+}
+
+// DEV ONLY — real money each AI action has cost us, straight from the server's
+// ledger. Deliberately not translated; remove before launch.
+function DevCosts() {
+  const [settings] = useStore('settings')
+  const [rows, setRows] = useState<UsageStatsRow[]>([])
+  const [err, setErr] = useState('')
+
+  const refresh = () => {
+    if (!settings.accountEmail) return // settings still loading, or signed out
+    cloudUsageStats(settings)
+      .then((r) => { setRows(r); setErr('') })
+      .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
+  }
+  useEffect(refresh, [settings.accountEmail]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const total = rows.reduce((s, r) => s + r.costUsd, 0)
+  const totalTokens = rows.reduce((s, r) => s + r.inputTokens + r.outputTokens, 0)
+
+  return (
+    <>
+      <p className="lede">
+        What your account has actually cost us so far (provider prices). Dev build only.
+      </p>
+      <div className="meter">
+        <div className="meter-top">
+          <span>Total</span>
+          <b>${total.toFixed(4)} · {(totalTokens / 1000).toFixed(1)}k tok</b>
         </div>
-        <input
-          ref={importRef} type="file" accept="application/json" style={{ display: 'none' }}
-          onChange={(e) => {
-            const f = e.target.files?.[0]
-            if (f) void importAll(f)
-            e.target.value = ''
-          }}
-        />
-        {msg && <p className="microhint">{msg}</p>}
-      </Section>
-
-    </div>
+      </div>
+      {err && <p className="error">{err}</p>}
+      <div className="rows">
+        {[...rows].sort((a, b) => b.costUsd - a.costUsd).map((r) => (
+          <Row
+            key={`${r.kind}:${r.endpoint}`}
+            title={`${r.endpoint}${r.kind !== 'llm' ? ` (${r.kind})` : ''}`}
+            sub={`${r.calls}× · ${r.inputTokens.toLocaleString()} in / ${r.outputTokens.toLocaleString()} out`}
+            right={<span className="minichip">${r.costUsd.toFixed(4)}</span>}
+          />
+        ))}
+      </div>
+      <button className="ghost wide" onClick={refresh}>Refresh</button>
+    </>
   )
 }
 
@@ -178,33 +291,34 @@ function AccountPanel() {
     }
   }
 
+  const left = usage ? Math.max(0, usage.creditsLimit - usage.creditsUsed) : 0
+  const pct = usage && usage.creditsLimit > 0 ? (left / usage.creditsLimit) * 100 : 0
+
   return (
-    <div style={{ marginTop: 4 }}>
+    <div className="acct">
       {!signedIn && (
         <>
-          <p className="microhint">{t.accountIntro}</p>
-          <label className="f"><span>{t.email}</span>
+          <p className="lede">{t.accountIntro}</p>
+          <label className="fl">{t.email}
             <input
-              type="email" placeholder={t.emailPlaceholder} value={email}
+              className="fin" type="email" placeholder={t.emailPlaceholder} value={email}
               onChange={(e) => setEmail(e.target.value)}
             /></label>
           {!codeSent ? (
-            <button className="primary small" disabled={busy || !email.trim()} onClick={sendCode}>
+            <button className="primary wide" disabled={busy || !email.trim()} onClick={sendCode}>
               {busy ? t.sending : t.sendCode}
             </button>
           ) : (
             <>
-              <label className="f"><span>{t.codeLabel}</span>
+              <label className="fl">{t.codeLabel}
                 <input
-                  type="text" inputMode="numeric" placeholder={t.codePlaceholder} value={otp}
+                  className="fin" type="text" inputMode="numeric" placeholder={t.codePlaceholder} value={otp}
                   onChange={(e) => setOtp(e.target.value)} autoFocus
                 /></label>
-              <div className="field-row">
-                <button className="primary small" disabled={busy || !otp.trim()} onClick={verify}>
-                  {busy ? t.checking : t.signIn}
-                </button>
-                <button className="link small" disabled={busy} onClick={sendCode}>{t.resendCode}</button>
-              </div>
+              <button className="primary wide" disabled={busy || !otp.trim()} onClick={verify}>
+                {busy ? t.checking : t.signIn}
+              </button>
+              <button className="link" disabled={busy} onClick={sendCode}>{t.resendCode}</button>
             </>
           )}
         </>
@@ -212,26 +326,32 @@ function AccountPanel() {
 
       {signedIn && (
         <>
-          <p className="microhint">{t.signedInAs(settings.accountEmail!)}</p>
-          <div className="field-row" style={{ marginTop: 8 }}>
-            <button className="ghost small" onClick={refresh}>{t.checkCredits}</button>
+          <div className="acct-top">
+            <div>
+              <div className="acct-l">{t.signedInLabel}</div>
+              <div className="acct-e">{settings.accountEmail}</div>
+            </div>
+            <span className="pill flat">{usage?.plan === 'pro' ? t.planPro : t.planFree}</span>
           </div>
+
+          {/* Credits as a bar, not a sentence — it's the thing you check. */}
           {usage && (
-            <p className="microhint">
-              {t.usageLine(
-                usage.plan === 'pro' ? t.planPro : t.planFree,
-                usage.creditsUsed,
-                usage.creditsLimit,
-                usage.plan === 'pro',
-              )}
-            </p>
+            <div className="cred">
+              <div className="cred-top">
+                <span>{t.creditsLeft}</span>
+                <b>{left} {t.creditsOf} {usage.creditsLimit}</b>
+              </div>
+              <div className="meter-bar"><i style={{ width: `${pct}%` }} /></div>
+            </div>
           )}
-          <button
-            className="link small" style={{ marginTop: 6 }}
-            onClick={() => saveSettings({ ...settings, accountEmail: undefined, cloudToken: undefined })}
-          >
-            {t.signOutDevice}
-          </button>
+
+          {usage?.plan !== 'pro' && (
+            <>
+              <button className="primary wide">{t.goPro}</button>
+              <div className="acct-f">{t.proFoot}</div>
+            </>
+          )}
+          {!usage && <button className="ghost wide" onClick={refresh}>{t.checkCredits}</button>}
         </>
       )}
       {msg && <p className="microhint">{msg}</p>}

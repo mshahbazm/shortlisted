@@ -50,4 +50,10 @@ export const settings: tLocale['settings'] = {
     'Ligado ao Shortlisted Cloud. Deixe vazio, a não ser que lhe tenham pedido para apontar para outro lado.',
   serverUrlLabel: 'URL do servidor',
   serverReset: 'Usar a predefinição',
+  creditsLeft: 'Créditos restantes',
+  creditsOf: 'de',
+  goPro: 'Passar a Pro — 100 créditos por mês',
+  proFoot: '9 $ por mês. Um CV adaptado ou uma pontuação custa 1 crédito. Preencher formulários é sempre grátis.',
+  signedInLabel: 'Sessão iniciada',
+  whereILook: 'Onde procuro formulários',
 }

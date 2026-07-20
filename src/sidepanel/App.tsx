@@ -6,7 +6,6 @@ import { HomeTab } from './tabs/HomeTab'
 import { ProfileTab } from './tabs/ProfileTab'
 import { ResumesTab } from './tabs/ResumesTab'
 import { SettingsTab } from './tabs/SettingsTab'
-import { Icon, ScreenHead } from './ui'
 import { Toasts } from './toast'
 import * as store from '../lib/store'
 
@@ -66,10 +65,7 @@ export function App() {
     return (
       <>
         <div className="shell">
-          <ScreenHead title={t.settings} onBack={() => setSettingsOpen(false)} backLabel={t.back} />
-          <div className="p-body">
-            <SettingsTab />
-          </div>
+          <SettingsTab onClose={() => setSettingsOpen(false)} />
         </div>
         <Toasts />
       </>
@@ -88,11 +84,7 @@ export function App() {
         {tab === 'profile' && (
           <ProfileTab focusTellMe={focusTellMe} onOpenSettings={() => setSettingsOpen(true)} />
         )}
-        {tab === 'cvs' && (
-          <div className="p-body">
-            <ResumesTab />
-          </div>
-        )}
+        {tab === 'cvs' && <ResumesTab />}
       </div>
       <nav className="tabbar">
         {TABS.map((name) => (

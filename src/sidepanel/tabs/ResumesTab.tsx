@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
-import { Section } from '../components'
+import { Body, Icon, ScreenHead, Sheet, TopBar, useStack } from '../ui'
 import { Profile, ResumeVariant, base64ToBytes, bytesToBase64, roleCompanyLabel, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
@@ -33,6 +33,8 @@ function styleName(t: tMerged<'resumes'>, id: string): string {
 
 export function ResumesTab() {
   const t = useContent('resumes')
+  const nav = useStack()
+  const [sheetOpen, setSheetOpen] = useState(false)
   const [resumes] = useStore('resumes')
   const [profile] = useStore('profile')
   const [settings] = useStore('settings')
@@ -169,95 +171,136 @@ export function ResumesTab() {
 
   const hasProfile = profile.work.length > 0 && !!profile.identity.firstName
 
-  return (
-    <div>
-      <h2>{t.title}</h2>
-      <p className="hint">{t.hint}</p>
+  const hiddenFileInput = (
+    <input
+      ref={fileRef} type="file" accept="application/pdf" style={{ display: 'none' }}
+      onChange={(e) => {
+        const f = e.target.files?.[0]
+        if (f) void onUpload(f)
+        e.target.value = ''
+      }}
+    />
+  )
 
-      {resumes.length > 0 && (
-        <div className="list" style={{ marginBottom: 16 }}>
-          {resumes.map((r) => (
-            <div key={r.id} className="cv-item">
-              <div className="cv-head">
-                <span className="cv-label">{r.label}</span>
-                {r.isDefault && <span className="chip green">{t.defaultChip}</span>}
-                <button className="small danger cv-del" onClick={() => removeResume(r.id)}>✕</button>
-              </div>
-              {r.tags.length > 0 && (
-                <div className="cv-tags">
-                  {r.tags.slice(0, 3).map((tag) => <span key={tag} className="chip">{tag}</span>)}
-                </div>
-              )}
-              <div className="cv-actions">
-                <button className="small link" onClick={() => void openPreview(r)}>{t.previewLabel}</button>
-                <button className="small link" onClick={() => download(r)}>{t.pdf}</button>
-                {r.content && (
-                  <button className="small link" onClick={() => setEditingCv(r.id)}>{t.contentsLabel}</button>
-                )}
-                {!r.isDefault && (
-                  <button className="small link" onClick={() => makeDefault(r.id)}>{t.makeDefault}</button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {resumes.length === 0 && <div className="empty">{t.emptyList}</div>}
-
-      <Section title={t.tailorTitle} summary={t.tailorSummary} defaultOpen={resumes.length > 0}>
-        <textarea
-          rows={5}
-          placeholder={t.pasteJobPlaceholder}
-          value={jobText}
-          onChange={(e) => setJobText(e.target.value)}
-        />
-        <div className="spacer" />
-        <textarea
-          rows={2}
-          placeholder={t.tailorNotePlaceholder}
-          value={tailorNote}
-          onChange={(e) => setTailorNote(e.target.value)}
-        />
-        <p className="microhint" style={{ margin: '4px 0 0' }}>{t.tailorNoteHint}</p>
-        <div className="spacer" />
-        <button
-          className="primary small"
-          disabled={!!busyStep || !hasProfile || jobText.trim().length < 80}
-          onClick={() => setPicking('tailor')}
-        >
-          {busyStep ? t.working : t.tailorMyCv}
-        </button>
-        {busyStep && <p className="progress">{busyStep}</p>}
-        {!hasProfile && <p className="microhint">{t.fillProfileHint}</p>}
-        {err && <p className="error">{err}</p>}
-        {gaps.length > 0 && (
-          <>
-            <p className="microhint" style={{ margin: '10px 0 6px' }}>
-              {t.gapsIntro}
-            </p>
-            {gaps.map((g, i) => <div key={i} className="chip amber" style={{ marginBottom: 4 }}>{g}</div>)}
-          </>
-        )}
-      </Section>
-
-      <Section title={t.addTitle} summary={t.addSummary}>
-        <div className="field-row">
-          <button className="ghost small" onClick={() => fileRef.current?.click()} disabled={!!busyStep}>{t.uploadPdf}</button>
-          <button className="ghost small" onClick={() => setPicking('master')} disabled={!hasProfile || !!busyStep}>
-            {busyStep ? t.working : t.generateFromProfile}
+  // Step one of tailoring: the posting. The style picker is step two, and only
+  // then does a credit get spent.
+  if (nav.screen === 'tailor') {
+    return (
+      <>
+        <ScreenHead title={t.tailorTitle} onBack={nav.back} backLabel={t.back} right={t.stepOf} />
+        <Body screen={nav.screen}>
+          <div className="step">{t.theJob}</div>
+          <textarea
+            className="tall"
+            rows={6}
+            placeholder={t.pasteJobPlaceholder}
+            value={jobText}
+            onChange={(e) => setJobText(e.target.value)}
+          />
+          <div className="opt">
+            <div className="opt-l">{t.anythingToAdd} <span className="opt-o">{t.optionalLabel}</span></div>
+            <textarea
+              rows={2}
+              placeholder={t.tailorNotePlaceholder}
+              value={tailorNote}
+              onChange={(e) => setTailorNote(e.target.value)}
+            />
+            <div className="opt-h">{t.tailorNoteHint}</div>
+          </div>
+          {!hasProfile && <p className="microhint">{t.fillProfileHint}</p>}
+          <button
+            className="primary big"
+            disabled={!!busyStep || !hasProfile || jobText.trim().length < 80}
+            onClick={() => setPicking('tailor')}
+          >
+            {busyStep ? t.working : t.nextPickStyle}
+            {!busyStep && <span className="cost onbtn">{t.oneCredit}</span>}
           </button>
-        </div>
-        {busyStep && <p className="progress">{busyStep}</p>}
-        <input
-          ref={fileRef} type="file" accept="application/pdf" style={{ display: 'none' }}
-          onChange={(e) => {
-            const f = e.target.files?.[0]
-            if (f) void onUpload(f)
-            e.target.value = ''
-          }}
-        />
-      </Section>
+          {busyStep && <p className="progress">{busyStep}</p>}
+          {err && <p className="error">{err}</p>}
+          {picking && <TemplatePicker profile={profile} onPick={onPickTemplate} onCancel={() => setPicking(null)} />}
+        </Body>
+      </>
+    )
+  }
 
+  return (
+    <>
+      <TopBar title={t.title} />
+      <Body screen={nav.screen}>
+        <button className="primary big" onClick={() => setSheetOpen(true)} disabled={!!busyStep}>
+          <Icon name="plus" /> {busyStep ? t.working : t.newCv}
+        </button>
+        <p className="lede">{t.hint}</p>
+        {busyStep && <p className="progress">{busyStep}</p>}
+        {err && <p className="error">{err}</p>}
+
+        {resumes.length === 0 && <div className="empty">{t.emptyList}</div>}
+        {resumes.length > 0 && (
+          <div className="cvs">
+            {resumes.map((r) => (
+              <div key={r.id} className={`cv-item ${r.isDefault ? 'star' : ''}`}>
+                <div className="cv-head">
+                  <span className="cv-label">{r.label}</span>
+                  {r.isDefault && <span className="pill good">{t.defaultChip}</span>}
+                  {r.source === 'uploaded' && !r.isDefault && <span className="pill flat">{t.fromUploadTitle}</span>}
+                </div>
+                {r.tags.length > 0 && (
+                  <div className="cv-tags">
+                    {r.tags.slice(0, 3).map((tag) => <span key={tag} className="minichip">{tag}</span>)}
+                  </div>
+                )}
+                <div className="cv-actions">
+                  <button className="link" onClick={() => void openPreview(r)}>{t.previewLabel}</button>
+                  <button className="link" onClick={() => download(r)}>{t.pdf}</button>
+                  {r.content && <button className="link" onClick={() => setEditingCv(r.id)}>{t.contentsLabel}</button>}
+                  {!r.isDefault && <button className="link" onClick={() => makeDefault(r.id)}>{t.makeDefault}</button>}
+                  <button className="link muted" onClick={() => removeResume(r.id)}>{t.deleteLabel}</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {gaps.length > 0 && (
+          <div className="gaps">
+            <div className="gaps-h">{t.gapsShort}</div>
+            <div className="gaps-s">{t.gapsKeptOff}</div>
+            <div className="gaps-c">
+              {gaps.map((g, i) => <span key={i} className="minichip amber">{g}</span>)}
+            </div>
+          </div>
+        )}
+      </Body>
+
+      {/* One button, then the question — so nobody spends a credit by accident. */}
+      {sheetOpen && (
+        <Sheet
+          title={t.newCv}
+          sub={t.newCvWhere}
+          closeLabel={t.cancel}
+          onClose={() => setSheetOpen(false)}
+        >
+          <button className="bigchoice" onClick={() => { setSheetOpen(false); nav.push('tailor') }}>
+            <span className="bc-t">{t.fromJobTitle} <span className="cost">{t.oneCredit}</span></span>
+            <span className="bc-s">{t.fromJobSub}</span>
+          </button>
+          <button
+            className="bigchoice"
+            disabled={!hasProfile}
+            onClick={() => { setSheetOpen(false); setPicking('master') }}
+          >
+            <span className="bc-t">{t.fromProfileTitle} <span className="cost free">{t.freeLabel}</span></span>
+            <span className="bc-s">{hasProfile ? t.fromProfileSub : t.fillProfileHint}</span>
+          </button>
+          <button className="bigchoice" onClick={() => { setSheetOpen(false); fileRef.current?.click() }}>
+            <span className="bc-t">{t.fromUploadTitle} <span className="cost free">{t.freeLabel}</span></span>
+            <span className="bc-s">{t.fromUploadSub}</span>
+          </button>
+        </Sheet>
+      )}
+
+      {hiddenFileInput}
       {picking && <TemplatePicker profile={profile} onPick={onPickTemplate} onCancel={() => setPicking(null)} />}
 
       {editingCv && (() => {
@@ -277,7 +320,7 @@ export function ResumesTab() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
 

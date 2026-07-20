@@ -50,4 +50,10 @@ export const settings = {
     'Connected to Shortlisted Cloud. Leave this empty unless you have been asked to point it somewhere else.',
   serverUrlLabel: 'Server URL',
   serverReset: 'Use the default',
+  creditsLeft: 'Credits left',
+  creditsOf: 'of',
+  goPro: 'Go Pro — 100 credits a month',
+  proFoot: '$9 a month. One tailored CV or fit score uses 1 credit. Filling forms is always free.',
+  signedInLabel: 'Signed in',
+  whereILook: 'Where I look for forms',
 }
