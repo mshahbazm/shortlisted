@@ -93,6 +93,17 @@ function main() {
   // frequently have none.
   const hasFillable = () => !!document.querySelector('input:not([type=hidden]), textarea, select')
 
+  // Scoring walks every field label, and the side panel polls this while it is
+  // open. Cache per (url, field count) — the same key main() uses to decide a
+  // re-score is worth it, and for the same reason: the page only becomes a
+  // different page when its fields or its URL change.
+  let ctxScore: { key: string; detection: ReturnType<typeof detectJobForm> } | null = null
+  const cachedDetection = () => {
+    const key = currentKey()
+    if (ctxScore?.key !== key) ctxScore = { key, detection: detectJobForm() }
+    return ctxScore.detection
+  }
+
   chrome.runtime.onMessage.addListener((msg: Msg, _sender, sendResponse) => {
     // Describe the page for the side panel's Home screen. Read-only: nothing
     // mounts, nothing fills. An iframe answers only when it holds fields, so an
@@ -103,7 +114,7 @@ function main() {
       const ctx: PageContext = {
         hasFields: hasFillable(),
         bubbleOpen: !!document.getElementById('shortlisted-overlay-host'),
-        isJobPage: detectJobForm().confident,
+        isJobPage: cachedDetection().confident,
         knownAts: !!known,
         url: location.href,
         title: document.title.split(/[|\-–]/)[0]?.trim() ?? document.title,

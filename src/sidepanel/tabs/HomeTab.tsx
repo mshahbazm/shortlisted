@@ -20,30 +20,92 @@ import { fitBand } from '../../lib/fitBands'
 type FillErrorCode = 'noTab' | 'cannotFill' | 'noForm'
 const FILL_ERRORS = { noTab: 'fillNoTab', cannotFill: 'fillCannotFill', noForm: 'fillNoForm' } as const
 
-/** What the panel knows about the tab in front of the user. `null` means the
- *  content script isn't there — an ordinary page, nothing to offer. */
+/** What the panel knows about the tab in front of the user. `null` means no
+ *  content script answered — a chrome:// or otherwise restricted page.
+ *
+ *  Keeping this current is harder than it looks, because there are three ways
+ *  the answer can change and only one of them is a page load:
+ *
+ *    - a full navigation      -> tabs.onUpdated, status 'complete'
+ *    - a client-side route    -> tabs.onUpdated, changeInfo.url, NO status
+ *    - a form appearing in    -> no event of any kind exists for this
+ *      place (modal, wizard
+ *      step, lazy render)
+ *
+ *  Hence listeners for the first two and a gentle poll for the third. The poll
+ *  is cheap: the content script caches its scoring per (url, field count), so
+ *  a tick on an unchanged page is a message round trip and nothing else. */
+const POLL_MS = 1500
+
+/** Whether two readings would render identically. The poll runs on a timer, so
+ *  without this every tick would hand React a fresh object and re-render Home
+ *  a couple of times a second for no reason. Returning the previous value from
+ *  the setter makes React bail out instead. */
+function samePage(a: PageContext | null, b: PageContext | null): boolean {
+  if (a === b) return true
+  if (!a || !b) return false
+  return (
+    a.url === b.url &&
+    a.title === b.title &&
+    a.hasFields === b.hasFields &&
+    a.bubbleOpen === b.bubbleOpen &&
+    a.isJobPage === b.isJobPage &&
+    a.knownAts === b.knownAts &&
+    a.fieldCount === b.fieldCount
+  )
+}
+
 function usePageContext(): { page: PageContext | null; refresh: () => void } {
   const [ctx, setCtx] = useState<PageContext | null>(null)
   const [tick, setTick] = useState(0)
 
   useEffect(() => {
     let alive = true
-    const read = () => {
+    let retry: ReturnType<typeof setTimeout> | undefined
+
+    // The content script registers its listener at document_idle, so a read
+    // fired the moment a tab reports 'complete' can land before anything is
+    // listening. Treat an early miss as "not ready yet" and try again briefly
+    // before concluding the page has nothing for us.
+    const read = (attempt = 0) => {
       void sendMsg<PageContext | null>({ type: 'pageContext' })
-        .then((c) => alive && setCtx(c ?? null))
-        .catch(() => alive && setCtx(null))
+        .then((c) => {
+          if (!alive) return
+          if (c) return setCtx((prev) => (samePage(prev, c) ? prev : c))
+          if (attempt < 3) retry = setTimeout(() => read(attempt + 1), 200 * (attempt + 1))
+          else setCtx(null)
+        })
+        .catch(() => {
+          if (!alive) return
+          if (attempt < 3) retry = setTimeout(() => read(attempt + 1), 200 * (attempt + 1))
+          else setCtx(null)
+        })
     }
+
     read()
-    // The panel stays open while the user moves around the browser, so follow
-    // the active tab rather than reading once on mount.
+
     const onActivated = () => read()
-    const onUpdated = (_id: number, change: chrome.tabs.TabChangeInfo) => {
-      if (change.status === 'complete') read()
+    // `url` without `status` is a client-side route change — the case that
+    // used to go completely unnoticed. Only the active tab matters.
+    const onUpdated = (tabId: number, change: chrome.tabs.TabChangeInfo) => {
+      if (change.status !== 'complete' && !change.url) return
+      void chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
+        if (alive && tab?.id === tabId) read()
+      })
     }
     chrome.tabs.onActivated.addListener(onActivated)
     chrome.tabs.onUpdated.addListener(onUpdated)
+
+    // Catches everything the events cannot see. No retries on a poll tick: a
+    // miss here just means we look again shortly anyway.
+    const poll = setInterval(() => {
+      if (document.visibilityState === 'visible') read(3)
+    }, POLL_MS)
+
     return () => {
       alive = false
+      clearTimeout(retry)
+      clearInterval(poll)
       chrome.tabs.onActivated.removeListener(onActivated)
       chrome.tabs.onUpdated.removeListener(onUpdated)
     }
