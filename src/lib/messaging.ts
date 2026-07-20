@@ -10,14 +10,21 @@ export interface FillState {
   settings: Settings
 }
 
-/** What Home needs in order to pick which of its four context states to show. */
+/** What Home needs in order to pick which context state to show.
+ *
+ *  Note the difference between `hasFields` and `isJobPage`. Fields are weak
+ *  evidence — a webmail search box is a field. Only `isJobPage` or `knownAts`
+ *  justify telling the user we found an application; anything less has to be
+ *  phrased as a question, or Gmail gets announced as a job form. */
 export interface PageContext {
-  /** This frame holds fields we could fill. */
-  hasForm: boolean
+  /** This frame holds SOMETHING fillable. Not evidence of an application. */
+  hasFields: boolean
   /** The on-page bubble is already mounted — Home must not repeat its offer. */
   bubbleOpen: boolean
-  /** The detector is confident this is a job page. */
+  /** The detector scored this page as an application form, confidently. */
   isJobPage: boolean
+  /** The URL matched an ATS we ship an adapter for — the strongest signal. */
+  knownAts: boolean
   /** The page's own URL — the queue is keyed by it, so "Save to list" needs it. */
   url: string
   title: string

@@ -101,9 +101,10 @@ function main() {
     if (msg.type === 'getPageContext') {
       if (window !== window.top && !hasFillable()) return
       const ctx: PageContext = {
-        hasForm: hasFillable(),
+        hasFields: hasFillable(),
         bubbleOpen: !!document.getElementById('shortlisted-overlay-host'),
         isJobPage: detectJobForm().confident,
+        knownAts: !!known,
         url: location.href,
         title: document.title.split(/[|\-–]/)[0]?.trim() ?? document.title,
         company: guessCompany(),

@@ -239,7 +239,7 @@ export function HomeTab({
             — fillCurrentTab force-injects and fills regardless of what the
             detector decided. `page === null` means a chrome:// or restricted
             page, where we genuinely cannot help, so nothing is offered. */}
-        {page && !page.hasForm && !page.bubbleOpen && (
+        {page && !page.hasFields && !page.bubbleOpen && (
           <div className="tryline">
             <span>{t.missedJob}</span>
             <button onClick={fillCurrent}>{t.fillAnyway} &rarr;</button>
@@ -331,8 +331,10 @@ function ContextSlot({
     )
   }
 
-  // 2. A form, and nothing else offering to fill it.
-  if (page.hasForm) {
+  // 2. We are actually sure: the detector scored this page as an application,
+  //    or the URL is an ATS we ship an adapter for. Only here do we ASSERT it,
+  //    and only here is the page title presented as a job title.
+  if (page.isJobPage || page.knownAts) {
     return (
       <div className="ctx">
         <div className="ctx-l"><span className="live" /> {t.formOnThisTab}</div>
@@ -342,6 +344,22 @@ function ContextSlot({
         </div>
         <button className="primary big" onClick={onFill}>{t.fillThisApplication}</button>
         <div className="ctx-foot">{t.fillFoot}</div>
+      </div>
+    )
+  }
+
+  // 3. Fields exist, but nothing says they belong to an application — a webmail
+  //    search box is a field. So we ask rather than announce, and we do not
+  //    dress the page title up as a job title. The offer still stands, quietly.
+  if (page.hasFields) {
+    return (
+      <div className="ctx ask">
+        <div className="ctx-l">{t.onThisPage}</div>
+        <div className="ctx-job">{t.applyingHere}</div>
+        <div className="ctx-co">{hostOf(page.url)} · {t.fieldCount(page.fieldCount)}</div>
+        <div className="ctx-note plain">{t.notRecognised}</div>
+        <button className="ghost wide" onClick={onFill}>{t.fillThisPage}</button>
+        <div className="ctx-foot">{t.fillPartial}</div>
       </div>
     )
   }
@@ -606,6 +624,16 @@ function bandWord(band: ReturnType<typeof fitBand> | undefined, t: ReturnType<ty
     case 'worthAShot': return t.fitWorthAShot
     case 'borderline': return t.fitBorderline
     default: return t.fitLongShot
+  }
+}
+
+/** Bare hostname. Used where we know which site we're on but have no
+ *  business claiming to know what the page is. */
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return url
   }
 }
 

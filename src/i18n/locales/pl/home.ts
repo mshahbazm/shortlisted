@@ -99,4 +99,8 @@ export const home: tLocale['home'] = {
   noYoursYet: 'Nic jeszcze na liście. Wklej kilka linków, a przejdziemy przez nie razem.',
   missedJob: 'Jest tu oferta, której nie zauważyłem?',
   fillAnyway: 'Wypełnij mimo to',
+  applyingHere: 'Aplikujesz na tej stronie?',
+  notRecognised: 'Nie rozpoznałem tu formularza aplikacyjnego, ale nadal mogę wypełnić to, co jest na stronie.',
+  fillThisPage: 'Wypełnij tę stronę',
+  fillPartial: 'Za darmo · wypełnię, co się da, resztę zostawię',
 }

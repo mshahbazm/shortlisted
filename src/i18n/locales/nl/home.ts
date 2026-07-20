@@ -98,4 +98,8 @@ export const home: tLocale['home'] = {
   noYoursYet: 'Nog niets op je lijst. Plak een paar vacaturelinks en we lopen ze samen door.',
   missedJob: 'Staat hier een vacature die ik miste?',
   fillAnyway: 'Toch invullen',
+  applyingHere: 'Solliciteer je op deze pagina?',
+  notRecognised: 'Ik herkende hier geen sollicitatieformulier, maar ik kan wel invullen wat er staat.',
+  fillThisPage: 'Deze pagina invullen',
+  fillPartial: 'Gratis · ik vul in wat ik kan en laat de rest staan',
 }

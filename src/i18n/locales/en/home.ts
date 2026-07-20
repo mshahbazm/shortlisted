@@ -110,4 +110,8 @@ export const home = {
   noYoursYet: 'Nothing on your list yet. Paste a few job links and we’ll work through them together.',
   missedJob: 'Job on this page I didn’t spot?',
   fillAnyway: 'Fill it anyway',
+  applyingHere: 'Applying on this page?',
+  notRecognised: 'I didn’t recognise an application form here, but I can still fill what’s on the page.',
+  fillThisPage: 'Fill this page',
+  fillPartial: 'Free · I’ll fill what I can and leave the rest',
 }
