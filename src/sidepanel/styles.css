@@ -13,7 +13,8 @@
      9. fit + run
     10. cvs          — cards, sheet, template picker, contents editor
     11. settings
-    13. legacy       — wizard, toast, inline edit, shared chip primitives
+    12. forms
+    13. legacy       — wizard, toast, inline edit
 
    Deliberately light-only: the extension has no dark mode, and inventing one
    here would mean guessing at a second palette nobody has signed off. */
@@ -204,6 +205,27 @@ button.link.amber { color: var(--amber); }
 .rows > button.row { cursor: pointer; }
 .rows > button.row:hover { background: var(--hover); }
 .rows.tall > .row { padding: 13px 12px; }
+.rows.nav > .row { cursor: pointer; }
+
+/* Segmented filter over ONE list — same jobs, three views, not three places.
+   Segments shrink with an ellipsis rather than wrapping, so a long label can
+   never push the control onto two lines. */
+.segs {
+  display: flex; gap: 3px; padding: 3px;
+  background: var(--hover); border-radius: 10px;
+}
+.seg {
+  flex: 1; min-width: 0; padding: 7px 6px; border-radius: 8px;
+  border: none; background: none; cursor: pointer; font: inherit;
+  font-size: 12px; font-weight: 600; color: var(--muted); text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: background 0.12s, color 0.12s;
+}
+.seg:hover:not(.on) { color: var(--fg); }
+.seg.on {
+  background: var(--bg); color: var(--fg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.07);
+}
 
 .row-b { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
 .row-t {
@@ -214,7 +236,9 @@ button.link.amber { color: var(--amber); }
   font-size: 11.5px; color: var(--muted);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.chev { color: var(--faint); }
+/* The trailing chevron on a nav row. Targets .ic because that is what the
+   Icon component renders — a .chev class was never on the element. */
+.rows > .row > .ic:last-child { color: var(--faint); }
 .warn-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); flex: none; }
 .cnt {
   font-size: 11.5px; font-weight: 650; color: var(--muted);
@@ -224,7 +248,6 @@ button.link.amber { color: var(--amber); }
 
 .empty { color: var(--faint); text-align: center; padding: 26px 12px; font-size: 13px; }
 .lede { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
-.hint { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
 .microhint { color: var(--faint); font-size: 12px; margin: 6px 0 0; }
 .error { color: var(--red); font-size: 13px; margin: 4px 0; }
 .progress { color: var(--muted); font-size: 13px; margin: 4px 0; }
@@ -237,6 +260,12 @@ button.link.amber { color: var(--amber); }
   background: #f5f5f3; border-radius: 5px; padding: 2.5px 7px; white-space: nowrap;
 }
 .minichip.amber { color: var(--amber); background: var(--amber-bg); }
+/* "+9 more" — a chip that is really a button, so it has to look pressable. */
+.minichip.more {
+  border: none; font: inherit; font-size: 11px; cursor: pointer;
+  color: var(--accent); background: var(--accent-soft);
+}
+.minichip.more:hover { background: #e6e0ff; }
 
 .pill {
   display: inline-block; font-size: 10.5px; font-weight: 650;
@@ -256,7 +285,6 @@ button.link.amber { color: var(--amber); }
 .fitchip.mid { color: var(--accent); background: var(--accent-soft); }
 .fitchip.low { color: var(--amber); background: var(--amber-bg); }
 .fitchip.none { color: var(--faint); background: var(--hover); }
-.fitchip.lg { width: 44px; height: 44px; border-radius: 11px; font-size: 19px; }
 
 /* Credit cost. Muted amber states a fact; red would make our own paid
    features read as a penalty. */
@@ -338,7 +366,7 @@ button.link.amber { color: var(--amber); }
   background: var(--amber); color: #fff; display: grid; place-items: center;
   font-size: 11px; font-weight: 700;
 }
-.qline .chev { margin-left: auto; color: var(--amber); }
+.qline > .ic { margin-left: auto; color: var(--amber); }
 
 /* "Something new to add" — an open input, not a button that leads to one.
    Deliberately the most inviting block on the screen after the primary
@@ -581,11 +609,6 @@ label.fl { display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; f
 .q-meta { font-size: 11px; color: var(--faint); }
 .q-q { font-size: 13.5px; font-weight: 600; line-height: 1.4; }
 .q-act { display: flex; gap: 6px; }
-.choice {
-  flex: 1; text-align: center; border: 1px solid var(--border); border-radius: 8px;
-  padding: 9px; font: inherit; font-size: 13px; font-weight: 600; background: none; cursor: pointer;
-}
-.choice:hover { background: var(--hover); border-color: #d4d4cf; }
 
 /* ---------- 10. cvs ---------- */
 
@@ -670,14 +693,12 @@ label.fl { display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; f
   text-align: left; font: inherit; color: var(--fg);
 }
 .tpl-card:hover .tpl-thumb { border-color: #c9c9c2; }
-.tpl-card.sel { border-color: var(--accent); background: var(--accent-soft); }
 .tpl-thumb {
   aspect-ratio: 210 / 280; background: #fff;
   border: 1px solid var(--border); border-radius: 5px; overflow: hidden;
 }
 .tpl-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
 .tpl-name { font-size: 11.5px; font-weight: 600; text-align: center; color: var(--muted); }
-.tpl-card.sel .tpl-name { color: var(--accent); }
 .tpl-for { font-size: 10.5px; color: var(--muted); }
 
 /* CV contents editor */

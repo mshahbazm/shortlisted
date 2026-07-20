@@ -360,7 +360,7 @@ export function Sheet({
 /* ---------- small helpers ---------- */
 
 /** Fit score 1-10 as a coloured square. Bands match lib/fitBands. */
-export function FitChip({ score, large }: { score?: number; large?: boolean }) {
+export function FitChip({ score }: { score?: number }) {
   const tone = score === undefined ? 'none' : score >= 7 ? 'good' : score >= 5 ? 'mid' : 'low'
-  return <span className={`fitchip ${tone} ${large ? 'lg' : ''}`}>{score ?? '?'}</span>
+  return <span className={`fitchip ${tone}`}>{score ?? '?'}</span>
 }
