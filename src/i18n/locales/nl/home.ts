@@ -29,7 +29,6 @@ export const home: tLocale['home'] = {
 
   jobListTitle: 'Vacaturelijst',
   startApplying: 'Beginnen met solliciteren',
-  emptyJobList: 'Nog geen vacatures bewaard. Plak er een paar en we lopen ze samen door.',
   addJobsLabel: 'Vacatures toevoegen',
   addJobsPlaceholder: 'Plak vacaturelinks, één per regel',
   addToList: 'Aan lijst toevoegen',
@@ -88,10 +87,13 @@ export const home: tLocale['home'] = {
 
   credits: (n: number) => `${n} credits`,
   jobsTitle: 'Vacatures',
-  yourList: 'Jouw lijst',
   yourListSub: 'Vacatures die je bewaarde of plakte',
   foundForYou: 'Voor jou gevonden',
   foundForYouSoon: 'Vacatures die bij je profiel passen komen hier. Nog niet aan — breng voorlopig je eigen mee.',
   comingSoon: 'Binnenkort',
   noneSavedYet: 'Plak vacaturelinks en werk ze één voor één af',
+  segAll: 'Alle',
+  segYours: 'Van jou',
+  addJobsSub: 'Eén link per regel. Wat al op je lijst staat, sla ik over.',
+  noYoursYet: 'Nog niets op je lijst. Plak een paar vacaturelinks en we lopen ze samen door.',
 }

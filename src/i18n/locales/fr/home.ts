@@ -29,7 +29,6 @@ export const home: tLocale['home'] = {
 
   jobListTitle: 'Liste d’offres',
   startApplying: 'Commencer à postuler',
-  emptyJobList: 'Aucune offre enregistrée. Collez quelques liens et nous les parcourrons ensemble.',
   addJobsLabel: 'Ajouter des offres',
   addJobsPlaceholder: 'Collez des liens d’offres, un par ligne',
   addToList: 'Ajouter à la liste',
@@ -88,10 +87,13 @@ export const home: tLocale['home'] = {
 
   credits: (n: number) => `${n} crédits`,
   jobsTitle: 'Offres',
-  yourList: 'Votre liste',
   yourListSub: 'Offres que vous avez enregistrées ou collées',
   foundForYou: 'Trouvées pour vous',
   foundForYouSoon: 'Les offres correspondant à votre profil apparaîtront ici. Pas encore actif — apportez les vôtres pour l’instant.',
   comingSoon: 'Bientôt',
   noneSavedYet: 'Collez des liens d’offres et postulez une par une',
+  segAll: 'Toutes',
+  segYours: 'Les vôtres',
+  addJobsSub: 'Un lien par ligne. Ce qui figure déjà sur votre liste est ignoré.',
+  noYoursYet: 'Rien sur votre liste. Collez quelques liens et nous les parcourrons ensemble.',
 }

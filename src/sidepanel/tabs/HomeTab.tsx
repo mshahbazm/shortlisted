@@ -257,7 +257,9 @@ export function HomeTab({
         <TellMeComposer t={t} />
 
         {apps.length > 0 && (
-          <div className="p-sec">
+          /* `apart` — a different subject from the composer above it, so it gets
+             twice the usual gap. */
+          <div className="p-sec apart">
             <div className="p-sec-h">
               <span>{t.recentlyApplied}</span>
               <button className="link" onClick={() => nav.push('applied')}>{t.seeAllApplied(apps.length)}</button>

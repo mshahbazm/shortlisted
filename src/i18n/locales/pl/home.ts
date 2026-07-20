@@ -30,7 +30,6 @@ export const home: tLocale['home'] = {
 
   jobListTitle: 'Lista ofert',
   startApplying: 'Zacznij aplikować',
-  emptyJobList: 'Nie masz jeszcze zapisanych ofert. Wklej kilka linków, a przejdziemy przez nie razem.',
   addJobsLabel: 'Dodaj oferty',
   addJobsPlaceholder: 'Wklej linki do ofert, po jednym w wierszu',
   addToList: 'Dodaj do listy',
@@ -89,10 +88,13 @@ export const home: tLocale['home'] = {
 
   credits: (n: number) => `${n} ${plural(n, 'kredyt', 'kredyty', 'kredytów')}`,
   jobsTitle: 'Oferty',
-  yourList: 'Twoja lista',
   yourListSub: 'Oferty zapisane lub wklejone',
   foundForYou: 'Znalezione dla Ciebie',
   foundForYouSoon: 'Oferty pasujące do Twojego profilu pojawią się tutaj. Jeszcze nieaktywne — na razie dodaj własne.',
   comingSoon: 'Wkrótce',
   noneSavedYet: 'Wklej linki i aplikuj po kolei',
+  segAll: 'Wszystkie',
+  segYours: 'Twoje',
+  addJobsSub: 'Jeden link w wierszu. To, co już masz na liście, pomijam.',
+  noYoursYet: 'Nic jeszcze na liście. Wklej kilka linków, a przejdziemy przez nie razem.',
 }

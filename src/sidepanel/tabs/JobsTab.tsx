@@ -1,19 +1,21 @@
-// Jobs — the list you work through, and (soon) the ones we find for you.
+// Jobs — one list, one way to add to it.
 //
-// Split out of Home so the dashboard stops carrying a paste box. Two ways in:
-// bring your own links, or take from what we've harvested. The harvested half
-// is honest about not existing yet rather than pretending to be empty.
+// An earlier pass had three competing ideas on this screen: a card that opened
+// the list, a "found for you" block, and a loose paste box. That is three
+// answers to "where do my jobs live". Now there is one list with a segmented
+// filter over it, and adding happens in a sheet you open deliberately.
 
 import { useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
-import { Body, FitChip, Icon, Row, ScreenHead, TopBar, useStack } from '../ui'
+import { Body, FitChip, Icon, Row, ScreenHead, Sheet, TopBar, useStack } from '../ui'
 import * as store from '../../lib/store'
 import { QueueItem, jobUrlKey, uid } from '../../lib/types'
 import { showToast } from '../toast'
 import { fitBand } from '../../lib/fitBands'
 
 type T = ReturnType<typeof useContent<'home'>>
+type Seg = 'all' | 'yours' | 'found'
 
 export function JobsTab() {
   const t = useContent('home')
@@ -21,9 +23,15 @@ export function JobsTab() {
   const [queue] = useStore('queue')
   const [fitScores] = useStore('fitScores')
   const [runAt, setRunAt] = useState(0)
+  const [seg, setSeg] = useState<Seg>('all')
+  const [adding, setAdding] = useState(false)
 
   const todo = queue.filter((q) => q.status === 'todo')
   const scoreOf = (url: string) => fitScores[jobUrlKey(url)]?.score
+
+  // Every job is currently one the user brought. When harvesting lands, these
+  // split on a source field and 'found' stops being empty by definition.
+  const shown = seg === 'found' ? [] : todo
 
   const addPasted = (text: string) => {
     const urls = text.split(/[\n,\s]+/).map((s) => s.trim()).filter((s) => /^https?:\/\//.test(s))
@@ -38,6 +46,7 @@ export function JobsTab() {
         return [...q, ...fresh]
       })
       .then(() => added && showToast(t.addedJobs(added)))
+    setAdding(false)
   }
 
   const skip = (id: string) =>
@@ -114,87 +123,94 @@ export function JobsTab() {
     )
   }
 
-  /* ---------- your saved list ---------- */
-
-  if (nav.screen === 'list') {
-    return (
-      <>
-        <ScreenHead title={t.yourList} onBack={nav.back} backLabel={t.back} />
-        <Body screen={nav.screen}>
-          {todo.length === 0 ? (
-            <div className="empty">{t.emptyJobList}</div>
-          ) : (
-            <>
-              <div className="rows tall">
-                {todo.map((q) => (
-                  <Row
-                    key={q.id}
-                    lead={<FitChip score={scoreOf(q.url)} />}
-                    title={q.title || urlLabel(q.url)}
-                    sub={q.company || (scoreOf(q.url) === undefined ? t.notScoredYet : urlLabel(q.url))}
-                    right={<button className="link muted" onClick={() => skip(q.id)}>{t.skip}</button>}
-                  />
-                ))}
-              </div>
-              <button className="primary wide" onClick={() => { setRunAt(0); nav.push('run') }}>
-                {t.startApplying} &rarr;
-              </button>
-            </>
-          )}
-          <PasteJobs t={t} onAdd={addPasted} />
-        </Body>
-      </>
-    )
-  }
-
-  /* ---------- root ---------- */
+  /* ---------- root: one list ---------- */
 
   return (
     <>
-      <TopBar title={t.jobsTitle} />
-      <Body screen={nav.screen}>
-        <button className="navcard" onClick={() => nav.push('list')}>
-          <span className="navcard-ic"><Icon name="briefcase" /></span>
-          <span className="navcard-b">
-            <span className="navcard-t">{t.yourList}</span>
-            <span className="navcard-s">{todo.length > 0 ? t.yourListSub : t.noneSavedYet}</span>
-          </span>
-          {todo.length > 0 && <span className="navcard-n">{todo.length}</span>}
-          <Icon name="chev" />
-        </button>
-
-        {todo.length > 0 && (
-          <button className="primary big" onClick={() => { setRunAt(0); nav.push('run') }}>
-            {t.startApplying} &rarr;
+      <TopBar
+        title={t.jobsTitle}
+        right={
+          <button className="iconbtn" onClick={() => setAdding(true)} aria-label={t.addJobsLabel}>
+            <Icon name="plus" />
           </button>
-        )}
-
-        {/* Honest about not existing yet — an empty list would read as "we
-            looked and found nothing", which is a different and worse claim. */}
-        <div className="p-sec">
-          <div className="p-sec-h">
-            <span>{t.foundForYou}</span>
-            <span className="pill flat">{t.comingSoon}</span>
-          </div>
-          <div className="soon">{t.foundForYouSoon}</div>
+        }
+      />
+      <Body screen={`jobs-${seg}`}>
+        <div className="segs">
+          <button className={`seg ${seg === 'all' ? 'on' : ''}`} onClick={() => setSeg('all')}>
+            {t.segAll}{todo.length > 0 ? ` ${todo.length}` : ''}
+          </button>
+          <button className={`seg ${seg === 'yours' ? 'on' : ''}`} onClick={() => setSeg('yours')}>
+            {t.segYours}{todo.length > 0 ? ` ${todo.length}` : ''}
+          </button>
+          <button className={`seg ${seg === 'found' ? 'on' : ''}`} onClick={() => setSeg('found')}>
+            {t.foundForYou}
+          </button>
         </div>
 
-        <PasteJobs t={t} onAdd={addPasted} />
+        {/* Harvesting isn't switched on. Said plainly — an empty list here would
+            read as "we looked and found nothing", which is a worse claim. */}
+        {seg === 'found' && (
+          <div className="soon">
+            <b>{t.comingSoon}.</b> {t.foundForYouSoon}
+          </div>
+        )}
+
+        {seg !== 'found' && shown.length === 0 && (
+          <div className="blank">
+            <div className="blank-t">{t.jobListTitle}</div>
+            <div className="blank-s">{t.noYoursYet}</div>
+            <button className="primary" onClick={() => setAdding(true)}>
+              <Icon name="plus" /> {t.addJobsLabel}
+            </button>
+          </div>
+        )}
+
+        {shown.length > 0 && (
+          <>
+            <div className="rows tall">
+              {shown.map((q) => (
+                <Row
+                  key={q.id}
+                  lead={<FitChip score={scoreOf(q.url)} />}
+                  title={q.title || urlLabel(q.url)}
+                  sub={q.company || (scoreOf(q.url) === undefined ? t.notScoredYet : urlLabel(q.url))}
+                  right={<button className="link muted" onClick={() => skip(q.id)}>{t.skip}</button>}
+                />
+              ))}
+            </div>
+            <button className="primary big" onClick={() => { setRunAt(0); nav.push('run') }}>
+              {t.startApplying} &rarr;
+            </button>
+            <button className="ghost wide" onClick={() => setAdding(true)}>
+              <Icon name="plus" /> {t.addJobsLabel}
+            </button>
+          </>
+        )}
       </Body>
+
+      {adding && <AddJobsSheet t={t} onAdd={addPasted} onClose={() => setAdding(false)} />}
     </>
   )
 }
 
-function PasteJobs({ t, onAdd }: { t: T; onAdd: (text: string) => void }) {
+/** Adding is a deliberate act, so it gets a sheet rather than a box sitting
+ *  permanently on the screen competing with the list itself. */
+function AddJobsSheet({ t, onAdd, onClose }: { t: T; onAdd: (text: string) => void; onClose: () => void }) {
   const [text, setText] = useState('')
   return (
-    <div className="p-sec">
-      <div className="p-sec-h"><span>{t.addJobsLabel}</span></div>
-      <textarea rows={2} placeholder={t.addJobsPlaceholder} value={text} onChange={(e) => setText(e.target.value)} />
-      {text.trim() && (
-        <button className="ghost wide" onClick={() => { onAdd(text); setText('') }}>{t.addToList}</button>
-      )}
-    </div>
+    <Sheet title={t.addJobsLabel} sub={t.addJobsSub} closeLabel={t.cancel} onClose={onClose}>
+      <textarea
+        rows={4}
+        autoFocus
+        placeholder={t.addJobsPlaceholder}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+      <button className="primary wide" disabled={!text.trim()} onClick={() => onAdd(text)}>
+        {t.addToList}
+      </button>
+    </Sheet>
   )
 }
 

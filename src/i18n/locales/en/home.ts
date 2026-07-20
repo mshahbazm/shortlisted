@@ -37,7 +37,6 @@ export const home = {
   // --- job list ---
   jobListTitle: 'Job list',
   startApplying: 'Start applying',
-  emptyJobList: 'No jobs saved yet. Paste a few links and I’ll work through them with you.',
   addJobsLabel: 'Add jobs',
   addJobsPlaceholder: 'Paste job links, one per line',
   addToList: 'Add to list',
@@ -100,10 +99,13 @@ export const home = {
 
   credits: (n: number) => `${n} credits`,
   jobsTitle: 'Jobs',
-  yourList: 'Your list',
   yourListSub: 'Jobs you saved or pasted in',
   foundForYou: 'Found for you',
   foundForYouSoon: 'Jobs matched to your profile will show up here. Not switched on yet — for now, bring your own.',
   comingSoon: 'Coming soon',
   noneSavedYet: 'Paste job links and apply through them one by one',
+  segAll: 'All',
+  segYours: 'Yours',
+  addJobsSub: 'One link per line. Anything already on your list gets skipped.',
+  noYoursYet: 'Nothing on your list yet. Paste a few job links and we’ll work through them together.',
 }
