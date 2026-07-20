@@ -165,7 +165,7 @@ export function ProfileTab({
           <div className="p-sec-h"><span>{t.languagesTitle}</span></div>
           {p.languages.map((l, i) => (
             <div key={i} className="subrow">
-              <div className="subrow-f">
+              <div className="subrow-f side">
                 <input
                   className="fin" type="text" value={l.name} placeholder={t.languageName}
                   onChange={(e) => set({

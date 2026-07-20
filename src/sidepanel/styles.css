@@ -591,6 +591,11 @@ label.fl { display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; f
 }
 .subrow:last-of-type { border-bottom: none; }
 .subrow-f { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+/* Two halves of one fact — a language and how well you speak it. Stacked,
+   they read as two separate questions. */
+.subrow-f.side { flex-direction: row; align-items: center; }
+.subrow-f.side > input { flex: 1.1; min-width: 0; }
+.subrow-f.side > select { flex: 1; min-width: 0; }
 
 /* A link slot and its clear button. */
 .linkrow { display: flex; align-items: center; gap: 4px; }
