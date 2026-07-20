@@ -512,7 +512,13 @@ button.link.amber { color: var(--amber); }
 .tl-c { font-size: 12.5px; color: var(--muted); }
 .tl-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
 
-.edu { display: flex; flex-direction: column; gap: 2px; }
+/* An education entry opens its own editor, so it is a button. */
+.edu {
+  display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left;
+  border: none; background: none; font: inherit; color: inherit; cursor: pointer;
+  padding: 6px; margin: -6px; border-radius: 8px;
+}
+.edu:hover { background: var(--hover); }
 .edu-t { font-size: 13.5px; font-weight: 650; }
 .edu-c { font-size: 12.5px; color: var(--muted); }
 
@@ -525,10 +531,6 @@ button.link.amber { color: var(--amber); }
 .ri-s { font-size: 11.5px; color: var(--muted); line-height: 1.45; margin-top: -6px; }
 .ri-c { font-size: 11.5px; color: var(--faint); display: flex; align-items: center; gap: 7px; }
 
-.editcard {
-  border: 1px solid var(--amber-line); background: #fffdf7; border-radius: 11px;
-  padding: 13px; display: flex; flex-direction: column; gap: 10px;
-}
 .ec-warn { font-size: 12px; color: var(--amber); line-height: 1.45; }
 label.fl { display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; font-weight: 600; color: var(--muted); }
 

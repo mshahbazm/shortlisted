@@ -24,7 +24,6 @@ export const profile: tLocale['profile'] = {
   portfolio: 'Portafolio',
 
   workTitle: 'Experiencia laboral',
-  addRole: '+ Añadir puesto',
   roleTitle: 'Puesto',
   company: 'Empresa',
   fromYm: 'Desde (AAAA-MM o AAAA)',
@@ -34,7 +33,6 @@ export const profile: tLocale['profile'] = {
   untitled: 'Sin título',
 
   educationTitle: 'Educación',
-  addEducation: '+ Añadir educación',
   degree: 'Título',
   fieldOfStudy: 'Área de estudio',
   school: 'Institución',
@@ -110,4 +108,8 @@ export const profile: tLocale['profile'] = {
   oneCredit: '1 crédito',
   segProfile: 'Perfil',
   segUnanswered: 'Sin responder',
+  newRole: 'Nuevo puesto',
+  newEducation: 'Nueva formación',
+  addRoleShort: 'Añadir un puesto',
+  addEducationShort: 'Añadir formación',
 }

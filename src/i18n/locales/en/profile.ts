@@ -24,7 +24,6 @@ export const profile = {
   portfolio: 'Portfolio',
 
   workTitle: 'Work experience',
-  addRole: '+ Add role',
   roleTitle: 'Title',
   company: 'Company',
   fromYm: 'From (YYYY-MM or YYYY)',
@@ -34,7 +33,6 @@ export const profile = {
   untitled: 'Untitled',
 
   educationTitle: 'Education',
-  addEducation: '+ Add education',
   degree: 'Degree',
   fieldOfStudy: 'Field of study',
   school: 'School',
@@ -110,4 +108,8 @@ export const profile = {
   oneCredit: '1 credit',
   segProfile: 'Profile',
   segUnanswered: 'Unanswered',
+  newRole: 'New role',
+  newEducation: 'New education',
+  addRoleShort: 'Add a role',
+  addEducationShort: 'Add education',
 }

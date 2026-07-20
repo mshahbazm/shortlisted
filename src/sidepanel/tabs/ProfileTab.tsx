@@ -26,7 +26,7 @@ import {
 } from '../../lib/types'
 import { cloudParseResumePdf, cloudProfileNote, runExtractProfile } from '../../ai/run'
 import * as store from '../../lib/store'
-import { GapKey, profileStrength } from '../../lib/profileStrength'
+import { Gap, GapKey, profileStrength } from '../../lib/profileStrength'
 import { mergeIntakeFacts, needsCompletion } from '../../lib/profileMerge'
 import { showToast } from '../toast'
 
@@ -89,46 +89,41 @@ export function ProfileTab({
     )
   }
 
-  if (nav.screen === 'work') {
+  // One entry, not the whole list. The profile screen already shows every role;
+  // opening one from there should land on that one, editable — not on a second
+  // copy of the list where every row can expand.
+  if (nav.screen.startsWith('work:')) {
+    const id = nav.screen.slice(5)
+    const entry = p.work.find((w) => w.id === id)
+    if (!entry) return <Pushed title={t.workTitle} nav={nav} t={t}><div className="empty">{t.nothingYet}</div></Pushed>
     return (
-      <Pushed title={t.workTitle} nav={nav} t={t}>
-        {p.work.map((w, i) => (
-          <WorkRow
-            key={w.id}
-            entry={w}
-            onChange={(next) => set({ work: p.work.map((x, j) => (j === i ? next : x)) })}
-            onRemove={() => set({ work: p.work.filter((_, j) => j !== i) })}
-          />
-        ))}
-        <button
-          className="ghost wide"
-          onClick={() =>
-            set({ work: [...p.work, { id: uid(), company: '', title: '', isCurrent: true, skills: [], highlights: [] }] })
-          }
-        >
-          <Icon name="plus" /> {t.addRole}
-        </button>
+      <Pushed title={entry.title || t.newRole} nav={nav} t={t}>
+        <WorkEditor
+          entry={entry}
+          onChange={(next) => set({ work: p.work.map((x) => (x.id === id ? next : x)) })}
+          onRemove={() => {
+            set({ work: p.work.filter((x) => x.id !== id) })
+            nav.back()
+          }}
+        />
       </Pushed>
     )
   }
 
-  if (nav.screen === 'education') {
+  if (nav.screen.startsWith('education:')) {
+    const id = nav.screen.slice(10)
+    const entry = p.education.find((e) => e.id === id)
+    if (!entry) return <Pushed title={t.educationTitle} nav={nav} t={t}><div className="empty">{t.nothingYet}</div></Pushed>
     return (
-      <Pushed title={t.educationTitle} nav={nav} t={t}>
-        {p.education.map((e, i) => (
-          <EduRow
-            key={e.id}
-            entry={e}
-            onChange={(next) => set({ education: p.education.map((x, j) => (j === i ? next : x)) })}
-            onRemove={() => set({ education: p.education.filter((_, j) => j !== i) })}
-          />
-        ))}
-        <button
-          className="ghost wide"
-          onClick={() => set({ education: [...p.education, { id: uid(), school: '', degree: '' }] })}
-        >
-          <Icon name="plus" /> {t.addEducation}
-        </button>
+      <Pushed title={entry.degree || t.newEducation} nav={nav} t={t}>
+        <EduEditor
+          entry={entry}
+          onChange={(next) => set({ education: p.education.map((x) => (x.id === id ? next : x)) })}
+          onRemove={() => {
+            set({ education: p.education.filter((x) => x.id !== id) })
+            nav.back()
+          }}
+        />
       </Pushed>
     )
   }
@@ -260,7 +255,7 @@ export function ProfileTab({
           {gaps.length > 0 && (
             <div className="meter-gaps">
               {gaps.map((g) => (
-                <button key={g.key} className="gapchip" onClick={() => nav.push(g.screen)}>
+                <button key={g.key} className="gapchip" onClick={() => nav.push(gapTarget(g, p))}>
                   {gapLabel(g.key, t)}
                 </button>
               ))}
@@ -306,7 +301,15 @@ export function ProfileTab({
           </>
         )}
 
-        <Band title={t.workTitle} onEdit={() => nav.push('work')} icon="chev" />
+        <Band
+          title={t.workTitle}
+          addLabel={t.addRoleShort}
+          onAdd={() => {
+            const entry = { id: uid(), company: '', title: '', isCurrent: true, skills: [], highlights: [] }
+            set({ work: [entry, ...p.work] })
+            nav.push(`work:${entry.id}`)
+          }}
+        />
         {p.work.length === 0 ? (
           <div className="empty">{t.nothingYet}</div>
         ) : (
@@ -314,7 +317,7 @@ export function ProfileTab({
             {p.work.map((w) => {
               const incomplete = needsCompletion(w)
               return (
-                <button key={w.id} className={`tl-item ${incomplete ? 'bad' : ''}`} onClick={() => nav.push('work')}>
+                <button key={w.id} className={`tl-item ${incomplete ? 'bad' : ''}`} onClick={() => nav.push(`work:${w.id}`)}>
                   <span className={`tl-dot ${incomplete ? 'warn' : w.isCurrent ? 'now' : ''}`} />
                   <span className="tl-body">
                     <span className={`tl-when ${incomplete ? 'missing' : ''}`}>
@@ -334,17 +337,25 @@ export function ProfileTab({
           </div>
         )}
 
-        <Band title={t.educationTitle} onEdit={() => nav.push('education')} icon="pen" />
+        <Band
+          title={t.educationTitle}
+          addLabel={t.addEducationShort}
+          onAdd={() => {
+            const entry = { id: uid(), school: '', degree: '' }
+            set({ education: [...p.education, entry] })
+            nav.push(`education:${entry.id}`)
+          }}
+        />
         {p.education.length === 0 ? (
           <div className="empty">{t.nothingYet}</div>
         ) : (
           p.education.map((e) => (
-            <div key={e.id} className="edu">
-              <div className="edu-t">{[e.degree, e.fieldOfStudy].filter(Boolean).join(', ') || e.school}</div>
-              <div className="edu-c">
+            <button key={e.id} className="edu" onClick={() => nav.push(`education:${e.id}`)}>
+              <span className="edu-t">{[e.degree, e.fieldOfStudy].filter(Boolean).join(', ') || e.school}</span>
+              <span className="edu-c">
                 {[e.school, [e.startYear, e.endYear].filter(Boolean).join(' — ')].filter(Boolean).join(' · ')}
-              </div>
-            </div>
+              </span>
+            </button>
           ))
         )}
 
@@ -440,20 +451,33 @@ function Band({
   title,
   count,
   onEdit,
-  icon,
+  onAdd,
+  addLabel,
+  icon = 'pen',
 }: {
   title: string
   count?: string
-  onEdit: () => void
-  icon: 'pen' | 'chev'
+  onEdit?: () => void
+  /** Bands that are a list of entries add to the list from here, rather than
+   *  opening a separate screen that repeats what is already on this one. */
+  onAdd?: () => void
+  addLabel?: string
+  icon?: 'pen' | 'chev'
 }) {
   return (
     <div className="band-h">
       <span>{title}</span>
       {count && <span className="band-n">{count}</span>}
-      <button className="editbtn" onClick={onEdit} aria-label={title}>
-        <Icon name={icon} />
-      </button>
+      {onAdd && (
+        <button className="editbtn" onClick={onAdd} aria-label={addLabel ?? title}>
+          <Icon name="plus" />
+        </button>
+      )}
+      {onEdit && (
+        <button className="editbtn" onClick={onEdit} aria-label={title}>
+          <Icon name={icon} />
+        </button>
+      )}
     </div>
   )
 }
@@ -599,25 +623,19 @@ function parseCertifications(text: string) {
   })
 }
 
-function WorkRow({ entry, onChange, onRemove }: { entry: WorkEntry; onChange: (w: WorkEntry) => void; onRemove: () => void }) {
+/** Every field of one role, always open. This used to be a collapsible row in
+ *  a list of rows, which is why opening one appeared to open them all. */
+function WorkEditor({
+  entry,
+  onChange,
+  onRemove,
+}: {
+  entry: WorkEntry
+  onChange: (w: WorkEntry) => void
+  onRemove: () => void
+}) {
   const t = useContent('profile')
-  // A job added from a sentence opens straight away: it is missing a title or
-  // dates, and the point is that the user finishes it rather than discovers
-  // later that a tailored CV had a gap in it.
   const incomplete = needsCompletion(entry)
-  const [open, setOpen] = useState((!entry.company && !entry.title) || incomplete)
-
-  if (!open) {
-    return (
-      <button className="row" onClick={() => setOpen(true)} style={{ width: '100%' }}>
-        <span className="row-b">
-          <span className="row-t">{entry.title || t.untitled}</span>
-          <span className="row-s">{entry.company || '?'} · {workPeriodLabel(entry) || '—'}</span>
-        </span>
-        <Icon name="chev" />
-      </button>
-    )
-  }
 
   const setStart = (v: string) => {
     const { year, month } = parseYm(v)
@@ -630,79 +648,79 @@ function WorkRow({ entry, onChange, onRemove }: { entry: WorkEntry; onChange: (w
   }
 
   return (
-    <div className={incomplete ? 'editcard' : 'qcard'}>
+    <>
       {incomplete && <div className="ec-warn">{t.workNeedsDetail}</div>}
       <div className="field-row">
         <label className="fl">{t.roleTitle}
-          <input className="fin" type="text" value={entry.title} onChange={(e) => onChange({ ...entry, title: e.target.value })} /></label>
+          <input className="fin" type="text" autoFocus={!entry.title} value={entry.title}
+            onChange={(e) => onChange({ ...entry, title: e.target.value })} /></label>
         <label className="fl">{t.company}
-          <input className="fin" type="text" value={entry.company} onChange={(e) => onChange({ ...entry, company: e.target.value })} /></label>
+          <input className="fin" type="text" value={entry.company}
+            onChange={(e) => onChange({ ...entry, company: e.target.value })} /></label>
       </div>
       <div className="field-row">
         <label className="fl">{t.fromYm}
-          <input className="fin" type="text" placeholder="2021-03" defaultValue={ymString(entry.startYear, entry.startMonth)} onBlur={(e) => setStart(e.target.value)} /></label>
+          <input className="fin" type="text" placeholder="2021-03"
+            defaultValue={ymString(entry.startYear, entry.startMonth)} onBlur={(e) => setStart(e.target.value)} /></label>
         <label className="fl">{t.toYm}
-          <input className="fin" type="text" defaultValue={entry.isCurrent ? '' : ymString(entry.endYear, entry.endMonth)} onBlur={(e) => setEnd(e.target.value)} /></label>
+          <input className="fin" type="text"
+            defaultValue={entry.isCurrent ? '' : ymString(entry.endYear, entry.endMonth)}
+            onBlur={(e) => setEnd(e.target.value)} /></label>
       </div>
       <label className="fl">{t.techUsed}
-        <input
-          className="fin"
-          type="text"
-          value={entry.skills.join(', ')}
-          onChange={(e) => onChange({ ...entry, skills: e.target.value.split(',').map((s) => s.trim()).filter(Boolean) })}
-        /></label>
+        <input className="fin" type="text" value={entry.skills.join(', ')}
+          onChange={(e) => onChange({ ...entry, skills: e.target.value.split(',').map((x) => x.trim()).filter(Boolean) })} /></label>
       <label className="fl">{t.workHighlights}
-        <textarea
-          rows={4}
-          value={entry.highlights.join('\n')}
-          onChange={(e) => onChange({ ...entry, highlights: e.target.value.split('\n').filter((l) => l.trim()) })}
-        /></label>
-      <div className="duo tight">
-        <button className="plain small danger" onClick={onRemove}>{t.remove}</button>
-        <button className="primary small" onClick={() => setOpen(false)}>{t.done}</button>
-      </div>
-    </div>
+        <textarea rows={5} value={entry.highlights.join('\n')}
+          onChange={(e) => onChange({ ...entry, highlights: e.target.value.split('\n').filter((l) => l.trim()) })} /></label>
+      <button className="plain wide danger" onClick={onRemove}>{t.remove}</button>
+    </>
   )
 }
 
-function EduRow({ entry, onChange, onRemove }: { entry: EducationEntry; onChange: (e: EducationEntry) => void; onRemove: () => void }) {
+function EduEditor({
+  entry,
+  onChange,
+  onRemove,
+}: {
+  entry: EducationEntry
+  onChange: (e: EducationEntry) => void
+  onRemove: () => void
+}) {
   const t = useContent('profile')
-  const [open, setOpen] = useState(!entry.school && !entry.degree)
-
-  if (!open) {
-    return (
-      <button className="row" onClick={() => setOpen(true)} style={{ width: '100%' }}>
-        <span className="row-b">
-          <span className="row-t">{[entry.degree, entry.fieldOfStudy].filter(Boolean).join(', ') || '?'}</span>
-          <span className="row-s">{entry.school || '?'} · {[entry.startYear, entry.endYear].filter(Boolean).join(' — ') || '—'}</span>
-        </span>
-        <Icon name="chev" />
-      </button>
-    )
-  }
-
   return (
-    <div className="qcard">
+    <>
       <div className="field-row">
         <label className="fl">{t.degree}
-          <input className="fin" type="text" value={entry.degree} onChange={(e) => onChange({ ...entry, degree: e.target.value })} /></label>
+          <input className="fin" type="text" autoFocus={!entry.degree} value={entry.degree}
+            onChange={(e) => onChange({ ...entry, degree: e.target.value })} /></label>
         <label className="fl">{t.fieldOfStudy}
-          <input className="fin" type="text" value={entry.fieldOfStudy ?? ''} onChange={(e) => onChange({ ...entry, fieldOfStudy: e.target.value })} /></label>
+          <input className="fin" type="text" value={entry.fieldOfStudy ?? ''}
+            onChange={(e) => onChange({ ...entry, fieldOfStudy: e.target.value })} /></label>
       </div>
       <label className="fl">{t.school}
-        <input className="fin" type="text" value={entry.school} onChange={(e) => onChange({ ...entry, school: e.target.value })} /></label>
+        <input className="fin" type="text" value={entry.school}
+          onChange={(e) => onChange({ ...entry, school: e.target.value })} /></label>
       <div className="field-row">
         <label className="fl">{t.fromYear}
-          <input className="fin" type="text" defaultValue={entry.startYear ?? ''} onBlur={(e) => onChange({ ...entry, startYear: Number(e.target.value) || undefined })} /></label>
+          <input className="fin" type="text" defaultValue={entry.startYear ?? ''}
+            onBlur={(e) => onChange({ ...entry, startYear: Number(e.target.value) || undefined })} /></label>
         <label className="fl">{t.toYear}
-          <input className="fin" type="text" defaultValue={entry.endYear ?? ''} onBlur={(e) => onChange({ ...entry, endYear: Number(e.target.value) || undefined })} /></label>
+          <input className="fin" type="text" defaultValue={entry.endYear ?? ''}
+            onBlur={(e) => onChange({ ...entry, endYear: Number(e.target.value) || undefined })} /></label>
       </div>
-      <div className="duo tight">
-        <button className="plain small danger" onClick={onRemove}>{t.remove}</button>
-        <button className="primary small" onClick={() => setOpen(false)}>{t.done}</button>
-      </div>
-    </div>
+      <button className="plain wide danger" onClick={onRemove}>{t.remove}</button>
+    </>
   )
+}
+
+/** Where a strength gap should take you. Most name a screen outright; the two
+ *  work gaps have to resolve to a specific role, since there is no list screen
+ *  to land on any more. */
+function gapTarget(gap: Gap, p: Profile): string {
+  if (gap.screen !== 'work') return gap.screen
+  const offender = p.work.find((w) => needsCompletion(w)) ?? p.work[0]
+  return offender ? `work:${offender.id}` : 'about'
 }
 
 function ImportBox({
