@@ -22,12 +22,11 @@
 /* ---------- 1. tokens ---------- */
 
 :root {
-  --bg: #ffffff;          /* card surfaces */
-  --page: #f6f6f4;        /* what cards sit on */
+  --bg: #ffffff;
   --fg: #18181b;
   --muted: #6f6f78;
   --faint: #a0a0a8;
-  --border: #ebebe7;
+  --border: #e7e7e3;
   --hover: #f7f7f5;
   --active: #efefec;
   --primary: #18181b;
@@ -45,24 +44,35 @@
   /* Two layers: a tight contact shadow and a wider soft one. Matches how
      Chrome's own surfaces lift off the page, which is what the panel sits
      next to. */
-  --lift: 0 1px 2px rgba(24, 24, 27, 0.05), 0 2px 6px -1px rgba(24, 24, 27, 0.07);
   --lift-hover: 0 1px 2px rgba(24, 24, 27, 0.06), 0 6px 14px -3px rgba(24, 24, 27, 0.12);
 }
 
 /* ---------- 2. base ---------- */
 
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; height: 100%; }
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
 body {
-  background: var(--page);
+  background: var(--bg);
   color: var(--fg);
   font: 13.5px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* The panel owns its own scrolling: the shell is fixed height and each
-   screen body scrolls inside it, so the tab bar never scrolls away. */
-#root { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+/* The app is one page, and it sits on the browser the way Chrome's own pages
+   do: rounded, lifted, with a little air around it. ONE surface — components
+   inside it are drawn with hairlines, not stacked as cards. */
+#root {
+  display: flex; flex-direction: column;
+  height: calc(100vh - 14px);
+  margin: 7px;
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow:
+    0 0 0 1px rgba(24, 24, 27, 0.05),
+    0 2px 5px rgba(24, 24, 27, 0.08),
+    0 12px 28px -8px rgba(24, 24, 27, 0.18);
+  overflow: hidden;
+}
 
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -74,22 +84,6 @@ a:hover { text-decoration: underline; }
   outline-offset: 2px;
   border-radius: 4px;
 }
-
-/* Elevation. Every boxed surface in the panel is a card: white, rounded, and
-   lifted off the page rather than outlined against it. Declared here, ahead of
-   the component sections, so a card with its own background (the context slot,
-   the composer, a default CV) can override the fill and keep the lift. */
-.ctx, .feat, .navcard, .composer, .meter, .rows, .qcard, .crits,
-.cv-item, .acct, .app, .runcard, .reimport, .segs {
-  background: var(--bg);
-  box-shadow: var(--lift);
-}
-
-.blank, .soon { background: var(--bg); }
-
-/* Chrome for the panel itself stays flat white — it frames the page rather
-   than sitting on it. */
-.p-top, .p-head, .tabbar { background: var(--bg); }
 
 /* ---------- 3. shell ---------- */
 
@@ -237,7 +231,7 @@ button.link.amber { color: var(--amber); }
    never push the control onto two lines. */
 .segs {
   display: flex; gap: 3px; padding: 3px;
-  border: 1px solid var(--border); border-radius: 10px;
+  background: var(--hover); border-radius: 10px;
 }
 .seg {
   flex: 1; min-width: 0; padding: 7px 6px; border-radius: 8px;
@@ -248,7 +242,8 @@ button.link.amber { color: var(--amber); }
 }
 .seg:hover:not(.on) { color: var(--fg); }
 .seg.on {
-  background: var(--primary); color: var(--primary-fg);
+  background: var(--bg); color: var(--fg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.07);
 }
 
 .row-b { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
@@ -328,7 +323,7 @@ button.link.amber { color: var(--amber); }
   background: linear-gradient(180deg, #faf9ff, #fff);
   display: flex; flex-direction: column; gap: 3px;
 }
-.ctx.quiet { background: var(--bg); border-style: dashed; box-shadow: none; }
+.ctx.quiet { background: #fafaf8; border-style: dashed; }
 /* We think there might be something here, but we are not sure. No accent
    wash, no live dot, no primary button — visual weight has to match how much
    we actually know, or the panel announces a webmail inbox as a job form. */
@@ -548,7 +543,7 @@ button.link.amber { color: var(--amber); }
 
 .reimport {
   border: 1px solid var(--border); border-radius: 10px; padding: 12px;
-  margin-top: 6px;
+  margin-top: 6px; background: #fafaf8;
   display: flex; flex-direction: column; gap: 9px;
 }
 .ri-t { font-size: 13px; font-weight: 650; }
