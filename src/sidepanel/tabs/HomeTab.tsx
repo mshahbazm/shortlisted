@@ -22,8 +22,9 @@ const FILL_ERRORS = { noTab: 'fillNoTab', cannotFill: 'fillCannotFill', noForm: 
 
 /** What the panel knows about the tab in front of the user. `null` means the
  *  content script isn't there — an ordinary page, nothing to offer. */
-function usePageContext(): PageContext | null {
+function usePageContext(): { page: PageContext | null; refresh: () => void } {
   const [ctx, setCtx] = useState<PageContext | null>(null)
+  const [tick, setTick] = useState(0)
 
   useEffect(() => {
     let alive = true
@@ -46,9 +47,9 @@ function usePageContext(): PageContext | null {
       chrome.tabs.onActivated.removeListener(onActivated)
       chrome.tabs.onUpdated.removeListener(onUpdated)
     }
-  }, [])
+  }, [tick])
 
-  return ctx
+  return { page: ctx, refresh: () => setTick((n) => n + 1) }
 }
 
 /** Credits left, from the free /v1/me call. Undefined until it lands — showing
@@ -91,7 +92,7 @@ export function HomeTab({
   const [settings] = useStore('settings')
   const [profile] = useStore('profile')
   const [resumes] = useStore('resumes')
-  const page = usePageContext()
+  const { page, refresh: refreshPage } = usePageContext()
   const credits = useCreditsLeft()
 
   const [notice, setNotice] = useState('')
@@ -103,6 +104,9 @@ export function HomeTab({
     setNotice('')
     const res = await sendMsg<{ ok?: boolean; errorCode?: FillErrorCode }>({ type: 'fillCurrentTab' })
     setNotice(res?.errorCode ? t[FILL_ERRORS[res.errorCode]] : t.lookForPanel)
+    // The fill mounted the on-page bubble, so this card's answer just
+    // changed — re-read rather than leaving a stale offer on screen.
+    refreshPage()
   }
 
   const saveCurrentJob = () => {
