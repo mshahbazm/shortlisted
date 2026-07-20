@@ -313,6 +313,19 @@ button.link.amber { color: var(--amber); }
 .feat-t { font-size: 13.5px; font-weight: 650; letter-spacing: -0.01em; }
 .feat-s { font-size: 11.5px; color: var(--muted); line-height: 1.4; }
 
+/* The manual override, for when detection was wrong. Deliberately the quietest
+   thing on the screen: it must be findable when needed without implying that
+   the automatic path usually fails. */
+.tryline {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-top: -4px; font-size: 12px; color: var(--faint); line-height: 1.5;
+}
+.tryline button {
+  border: none; background: none; padding: 0; cursor: pointer; font: inherit;
+  font-size: 12px; font-weight: 650; color: var(--accent);
+}
+.tryline button:hover { text-decoration: underline; }
+
 /* Pending questions — a nudge, not a billboard. */
 .qline {
   display: flex; align-items: center; gap: 9px; width: 100%;

@@ -96,4 +96,6 @@ export const home: tLocale['home'] = {
   segYours: 'Tuyos',
   addJobsSub: 'Un enlace por línea. Lo que ya está en tu lista se omite.',
   noYoursYet: 'Aún no hay nada en tu lista. Pega unos enlaces y los repasamos juntos.',
+  missedJob: '¿Hay un empleo aquí que no vi?',
+  fillAnyway: 'Rellenar igualmente',
 }

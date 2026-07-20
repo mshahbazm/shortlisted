@@ -26,14 +26,25 @@ export type IconName = keyof typeof ICONS | 'gear' | 'bolt' | 'doc' | 'briefcase
 /** 16px stroke icon. Inline rather than a sprite sheet — there are nine of
  *  them and a sprite would mean another asset to keep in sync. */
 export function Icon({ name }: { name: IconName }) {
+  // A cog, not a sun. The previous drawing was a circle with eight radiating
+  // lines, which is the universal brightness glyph — it read as a theme toggle.
+  // Teeth are blocky and joined to the ring, and there is a hole in the middle.
   if (name === 'gear') {
+    const tooth = (key: string, x: number, y: number, w: number, h: number) => (
+      <rect key={key} x={x} y={y} width={w} height={h} rx="0.5" fill="currentColor" />
+    )
+    const teeth = [
+      tooth('n', 7.15, 1.1, 1.7, 3.4),
+      tooth('s', 7.15, 11.5, 1.7, 3.4),
+      tooth('w', 1.1, 7.15, 3.4, 1.7),
+      tooth('e', 11.5, 7.15, 3.4, 1.7),
+    ]
     return (
       <svg className="ic" viewBox="0 0 16 16" aria-hidden="true">
-        <circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" strokeWidth="1.4" />
-        <path
-          d="M8 1.6v1.6M8 12.8v1.6M14.4 8h-1.6M3.2 8H1.6M12.5 3.5l-1.1 1.1M4.6 11.4l-1.1 1.1M12.5 12.5l-1.1-1.1M4.6 4.6 3.5 3.5"
-          fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"
-        />
+        <g>{teeth}</g>
+        <g transform="rotate(45 8 8)">{teeth}</g>
+        <circle cx="8" cy="8" r="4.4" fill="none" stroke="currentColor" strokeWidth="1.9" />
+        <circle cx="8" cy="8" r="1.75" fill="none" stroke="currentColor" strokeWidth="1.3" />
       </svg>
     )
   }

@@ -234,6 +234,18 @@ export function HomeTab({
           />
         </div>
 
+        {/* Detection is good, not perfect. When we're on a real page and saw
+            nothing, offer the manual route rather than leaving the user stuck
+            — fillCurrentTab force-injects and fills regardless of what the
+            detector decided. `page === null` means a chrome:// or restricted
+            page, where we genuinely cannot help, so nothing is offered. */}
+        {page && !page.hasForm && !page.bubbleOpen && (
+          <div className="tryline">
+            <span>{t.missedJob}</span>
+            <button onClick={fillCurrent}>{t.fillAnyway} &rarr;</button>
+          </div>
+        )}
+
         {pending.length > 0 && (
           <button className="qline" onClick={() => nav.push('questions')}>
             <span className="qdot">{pending.length}</span>

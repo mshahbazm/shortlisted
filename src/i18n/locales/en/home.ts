@@ -108,4 +108,6 @@ export const home = {
   segYours: 'Yours',
   addJobsSub: 'One link per line. Anything already on your list gets skipped.',
   noYoursYet: 'Nothing on your list yet. Paste a few job links and we’ll work through them together.',
+  missedJob: 'Job on this page I didn’t spot?',
+  fillAnyway: 'Fill it anyway',
 }
