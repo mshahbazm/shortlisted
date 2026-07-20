@@ -371,20 +371,6 @@ button.link.amber { color: var(--amber); }
 }
 .tryline button:hover { text-decoration: underline; }
 
-/* Pending questions — a nudge, not a billboard. */
-.qline {
-  display: flex; align-items: center; gap: 9px; width: 100%;
-  padding: 9px 2px; border: none; background: none; cursor: pointer;
-  font: inherit; font-size: 13px; font-weight: 600; color: var(--amber); text-align: left;
-}
-.qline:hover { text-decoration: underline; }
-.qdot {
-  width: 20px; height: 20px; flex: none; border-radius: 50%;
-  background: var(--amber); color: #fff; display: grid; place-items: center;
-  font-size: 11px; font-weight: 700;
-}
-.qline > .ic { margin-left: auto; color: var(--amber); }
-
 /* "Something new to add" — an open input, not a button that leads to one.
    Deliberately the most inviting block on the screen after the primary
    action: it is free, it takes one line, and it makes every later CV better. */

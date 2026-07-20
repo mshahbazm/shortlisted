@@ -19,14 +19,6 @@ export const home: tLocale['home'] = {
   tailorACvSub: 'Enfocado a este empleo, sin inventar nada',
   tailorACvSubGeneric: 'Enfocado a un empleo, sin inventar nada',
   oneCredit: '1 crédito',
-  questionsWaiting: (n: number) => `${n} pregunta${n === 1 ? '' : 's'} esperándote`,
-  questionsTitle: 'Preguntas pendientes',
-  questionsLede:
-    'Contesta una vez. Lo reutilizo en cualquier formulario que pregunte lo mismo, esté como esté redactado — pulo la redacción, tus datos siguen siendo tuyos.',
-  answeredCount: (n: number) => `Ya contestadas · ${n}`,
-  inYourProfile: 'En tu perfil',
-  yourAnswer: 'Con tus propias palabras',
-
   jobListTitle: 'Lista de empleos',
   startApplying: 'Empezar a postular',
   addJobsLabel: 'Añadir empleos',

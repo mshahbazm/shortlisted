@@ -9,4 +9,6 @@ export const questions = {
   yourAnswerPlaceholder: 'Your answer…',
   emptyState: "Fill an application — every question I can't answer lands here, once.",
   timesUsed: (n: number) => `${n}×`,
+  noPending: 'Nothing waiting. Questions a form asks that I can’t answer land here.',
+  pendingLede: 'Answer once. I’ll reuse it on any form that asks the same thing, however it’s worded.',
 }

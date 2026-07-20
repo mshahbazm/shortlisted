@@ -41,9 +41,11 @@ export function ProfileTab({
 }) {
   const t = useContent('profile')
   const nav = useStack()
+  const [seg, setSeg] = useState<'profile' | 'bank' | 'pending'>('profile')
   const [profile, saveProfileRaw, loaded] = useStore('profile')
   const [settings] = useStore('settings')
   const [bank] = useStore('answerBank')
+  const [pending] = useStore('pendingQuestions')
 
   const p = profile
 
@@ -189,17 +191,6 @@ export function ProfileTab({
     )
   }
 
-  if (nav.screen === 'bank') {
-    return (
-      <>
-        <ScreenHead title={t.answerBankTitle} onBack={nav.back} backLabel={t.back} />
-        <Body screen={nav.screen}>
-          <QuestionsTab />
-        </Body>
-      </>
-    )
-  }
-
   if (nav.screen === 'reimport') {
     return (
       <Pushed title={t.reimportTitle} nav={nav} t={t}>
@@ -234,7 +225,26 @@ export function ProfileTab({
           </button>
         }
       />
-      <Body screen={nav.screen}>
+      <Body screen={`profile-${seg}`}>
+        {/* Three jobs, three tabs. The unanswered count lives here and nowhere
+            else — it is only actionable on this screen. */}
+        <div className="segs">
+          <button className={`seg ${seg === 'profile' ? 'on' : ''}`} onClick={() => setSeg('profile')}>
+            {t.segProfile}
+          </button>
+          <button className={`seg ${seg === 'bank' ? 'on' : ''}`} onClick={() => setSeg('bank')}>
+            {t.answerBankTitle}{bank.length > 0 ? ` ${bank.length}` : ''}
+          </button>
+          <button className={`seg ${seg === 'pending' ? 'on' : ''}`} onClick={() => setSeg('pending')}>
+            {t.segUnanswered}{pending.length > 0 ? ` ${pending.length}` : ''}
+          </button>
+        </div>
+
+        {seg === 'bank' && <QuestionsTab view="bank" />}
+        {seg === 'pending' && <QuestionsTab view="pending" />}
+
+        {seg === 'profile' && (
+          <>
         {/* 1. Where you stand */}
         <div className="ident">
           <div className="ident-n">{name || t.yourProfile}</div>
@@ -273,12 +283,6 @@ export function ProfileTab({
               warn={factsFilled < 5}
               right={<span className={`cnt ${factsFilled < 5 ? 'warn' : ''}`}>{t.answeredOf(factsFilled, 9)}</span>}
               onClick={() => nav.push('facts')}
-            />
-            <Row
-              title={t.answerBankTitle}
-              sub={t.answerBankSub}
-              right={<span className="cnt">{bank.length}</span>}
-              onClick={() => nav.push('bank')}
             />
           </div>
         </div>
@@ -402,6 +406,8 @@ export function ProfileTab({
             <span className="cost">{t.oneCredit}</span> {t.reimportReplaces}
           </div>
         </div>
+          </>
+        )}
       </Body>
     </>
   )

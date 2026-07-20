@@ -100,7 +100,6 @@ export const profile: tLocale['profile'] = {
   whatEmployersAsk: 'O co pytają pracodawcy',
   standardAnswersSub: 'Wynagrodzenie, wypowiedzenie, wiza, przeprowadzka…',
   answerBankTitle: 'Baza odpowiedzi',
-  answerBankSub: 'Zapisane z wypełnionych formularzy',
   aboutYou: 'O Tobie',
   careerHighlights: 'Najważniejsze osiągnięcia',
   skillsTitle: 'Umiejętności',
@@ -111,4 +110,6 @@ export const profile: tLocale['profile'] = {
   moreCount: 'więcej',
   nothingYet: 'Jeszcze nic tutaj',
   oneCredit: '1 kredyt',
+  segProfile: 'Profil',
+  segUnanswered: 'Bez odpowiedzi',
 }

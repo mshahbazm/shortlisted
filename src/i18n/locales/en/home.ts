@@ -26,15 +26,6 @@ export const home = {
   tailorACvSub: 'Re-angled for this job, nothing invented',
   tailorACvSubGeneric: 'Re-angled for one job, nothing invented',
   oneCredit: '1 credit',
-  questionsWaiting: (n: number) => `${n} question${n === 1 ? '' : 's'} waiting on you`,
-  questionsTitle: 'Questions waiting',
-  questionsLede:
-    'Answer once. I’ll reuse it on any form that asks the same thing, however it’s worded — and I’ll tidy the wording without changing your facts.',
-  answeredCount: (n: number) => `Already answered · ${n}`,
-  inYourProfile: 'In your profile',
-  yourAnswer: 'In your own words',
-
-  // --- job list ---
   jobListTitle: 'Job list',
   startApplying: 'Start applying',
   addJobsLabel: 'Add jobs',

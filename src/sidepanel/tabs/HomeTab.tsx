@@ -150,7 +150,6 @@ export function HomeTab({
   const nav = useStack()
   const [queue] = useStore('queue')
   const [apps] = useStore('applications')
-  const [pending] = useStore('pendingQuestions')
   const [settings] = useStore('settings')
   const [profile] = useStore('profile')
   const [resumes] = useStore('resumes')
@@ -222,25 +221,6 @@ export function HomeTab({
     )
   }
 
-  if (nav.screen === 'questions') {
-    return (
-      <>
-        <ScreenHead title={t.questionsTitle} onBack={nav.back} backLabel={t.back} />
-        <Body screen={nav.screen}>
-          <p className="lede">{t.questionsLede}</p>
-          {pending.map((q) => (
-            <PendingCard key={q.id} question={q.questionRaw} t={t} />
-          ))}
-          <div className="p-sec">
-            <div className="p-sec-h">
-              <span>{t.answeredCount(0)}</span>
-              <button className="link" onClick={onGoProfile}>{t.inYourProfile}</button>
-            </div>
-          </div>
-        </Body>
-      </>
-    )
-  }
 
   if (nav.screen === 'fit') {
     return (
@@ -312,13 +292,6 @@ export function HomeTab({
           </div>
         )}
 
-        {pending.length > 0 && (
-          <button className="qline" onClick={() => nav.push('questions')}>
-            <span className="qdot">{pending.length}</span>
-            {t.questionsWaiting(pending.length)}
-            <Icon name="chev" />
-          </button>
-        )}
 
         {/* A doorway, not a section. Adding jobs happens on the Jobs screen —
             the dashboard should never carry a paste box. */}
@@ -502,40 +475,6 @@ function AppliedCard({
   )
 }
 
-function PendingCard({ question, t }: { question: string; t: ReturnType<typeof useContent<'home'>> }) {
-  const [answer, setAnswer] = useState('')
-  return (
-    <div className="qcard">
-      <div className="q-q">{question}</div>
-      <textarea rows={3} placeholder={t.yourAnswer} value={answer} onChange={(e) => setAnswer(e.target.value)} />
-      <div className="q-act">
-        <button
-          className="primary small"
-          disabled={!answer.trim()}
-          onClick={() => {
-            void sendMsg({
-              type: 'saveAnswer',
-              questionRaw: question,
-              answer: answer.trim(),
-              answerType: 'text',
-              jobUrl: '',
-            })
-            void sendMsg({ type: 'resolvePending', questionRaw: question })
-            showToast(t.save)
-          }}
-        >
-          {t.save}
-        </button>
-        <button
-          className="plain small"
-          onClick={() => void sendMsg({ type: 'resolvePending', questionRaw: question })}
-        >
-          {t.dismiss}
-        </button>
-      </div>
-    </div>
-  )
-}
 
 /** "Something new to add?" — reports what the merge actually stored, never what
  *  the model proposed. A highlight for a job that isn't on file has nowhere to

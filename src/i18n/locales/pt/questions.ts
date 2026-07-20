@@ -9,4 +9,6 @@ export const questions: tLocale['questions'] = {
   yourAnswerPlaceholder: 'A tua resposta…',
   emptyState: 'Preenche uma candidatura — cada pergunta a que não sei responder aparece aqui, uma vez.',
   timesUsed: (n: number) => `${n}×`,
+  noPending: 'Nada pendente. As perguntas de um formulário a que não sei responder aparecem aqui.',
+  pendingLede: 'Responde uma vez. Reutilizo a resposta em qualquer formulário que pergunte o mesmo.',
 }

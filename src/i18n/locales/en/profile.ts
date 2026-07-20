@@ -98,7 +98,6 @@ export const profile = {
   whatEmployersAsk: 'What employers ask',
   standardAnswersSub: 'Salary, notice, visa, relocation…',
   answerBankTitle: 'Answer bank',
-  answerBankSub: 'Saved from forms you’ve filled',
   aboutYou: 'About you',
   careerHighlights: 'Career highlights',
   skillsTitle: 'Skills',
@@ -109,4 +108,6 @@ export const profile = {
   moreCount: 'more',
   nothingYet: 'Nothing here yet',
   oneCredit: '1 credit',
+  segProfile: 'Profile',
+  segUnanswered: 'Unanswered',
 }

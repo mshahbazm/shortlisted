@@ -19,14 +19,6 @@ export const home: tLocale['home'] = {
   tailorACvSub: 'Toegespitst op deze vacature, niets verzonnen',
   tailorACvSubGeneric: 'Toegespitst op één vacature, niets verzonnen',
   oneCredit: '1 credit',
-  questionsWaiting: (n: number) => `${n} vra${n === 1 ? 'ag wacht' : 'gen wachten'} op je`,
-  questionsTitle: 'Openstaande vragen',
-  questionsLede:
-    'Eén keer beantwoorden. Ik gebruik het opnieuw bij elk formulier dat hetzelfde vraagt, hoe het ook geformuleerd is — ik poets de zinnen op, jouw feiten blijven van jou.',
-  answeredCount: (n: number) => `Al beantwoord · ${n}`,
-  inYourProfile: 'In je profiel',
-  yourAnswer: 'In je eigen woorden',
-
   jobListTitle: 'Vacaturelijst',
   startApplying: 'Beginnen met solliciteren',
   addJobsLabel: 'Vacatures toevoegen',

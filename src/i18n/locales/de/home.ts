@@ -19,14 +19,6 @@ export const home: tLocale['home'] = {
   tailorACvSub: 'Auf diesen Job zugeschnitten, nichts erfunden',
   tailorACvSubGeneric: 'Auf einen Job zugeschnitten, nichts erfunden',
   oneCredit: '1 Credit',
-  questionsWaiting: (n: number) => `${n} Frage${n === 1 ? '' : 'n'} wartet auf dich`,
-  questionsTitle: 'Offene Fragen',
-  questionsLede:
-    'Einmal beantworten. Ich nutze es wieder, wo immer dasselbe gefragt wird, egal wie es formuliert ist — ich glätte die Sprache, deine Fakten bleiben deine.',
-  answeredCount: (n: number) => `Schon beantwortet · ${n}`,
-  inYourProfile: 'In deinem Profil',
-  yourAnswer: 'In deinen eigenen Worten',
-
   jobListTitle: 'Jobliste',
   startApplying: 'Loslegen',
   addJobsLabel: 'Jobs hinzufügen',

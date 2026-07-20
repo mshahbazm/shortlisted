@@ -1,4 +1,4 @@
-// Service worker: message routing, pending-questions badge, on-demand
+// Service worker: message routing, on-demand
 // injection for "Fill this page" on non-ATS sites.
 
 import { Msg, PageContext } from '../lib/messaging'
@@ -14,13 +14,10 @@ import contentScriptPath from '../content/index.ts?script'
 
 chrome.runtime.onInstalled.addListener(() => {
   void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
-  void refreshBadge()
-})
-
-// The badge must track pendingQuestions no matter WHO writes it — the side
-// panel edits the list directly, not only through messages.
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && changes.pendingQuestions) void refreshBadge()
+  // Unanswered questions used to show as a count on the toolbar icon. They
+  // now live on one tab inside Profile, which is the only place that number
+  // means anything. Clear any badge a previous version left behind.
+  void chrome.action.setBadgeText({ text: '' })
 })
 
 // Mirror local data to the signed-in account; load the account's data
@@ -45,13 +42,6 @@ async function injectContentScript(tabId: number): Promise<void> {
     target: { tabId, allFrames: true },
     files: contentScriptFiles(),
   })
-}
-
-async function refreshBadge() {
-  const pending = await store.get('pendingQuestions')
-  const n = pending.length
-  await chrome.action.setBadgeText({ text: n ? String(n) : '' })
-  await chrome.action.setBadgeBackgroundColor({ color: '#3d11ff' })
 }
 
 chrome.runtime.onMessage.addListener((msg: Msg, sender, sendResponse) => {
@@ -219,7 +209,6 @@ async function handle(msg: Msg): Promise<unknown> {
         }
         return next
       })
-      await refreshBadge()
       return { ok: true }
     }
 
@@ -228,7 +217,6 @@ async function handle(msg: Msg): Promise<unknown> {
       await store.update('pendingQuestions', (pending) =>
         pending.filter((p) => normalizeQuestion(p.questionRaw) !== norm),
       )
-      await refreshBadge()
       return { ok: true }
     }
 
@@ -406,7 +394,3 @@ function sameJob(a: string, b: string): boolean {
   }
 }
 
-// Keep the badge honest if storage changes from the side panel.
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && changes.pendingQuestions) void refreshBadge()
-})

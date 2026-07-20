@@ -19,14 +19,6 @@ export const home: tLocale['home'] = {
   tailorACvSub: 'Ricentrato su questa offerta, senza inventare nulla',
   tailorACvSubGeneric: 'Ricentrato su un’offerta, senza inventare nulla',
   oneCredit: '1 credito',
-  questionsWaiting: (n: number) => `${n} domand${n === 1 ? 'a ti aspetta' : 'e ti aspettano'}`,
-  questionsTitle: 'Domande in sospeso',
-  questionsLede:
-    'Rispondi una volta sola. Riuso la risposta su qualsiasi modulo chieda la stessa cosa, comunque sia formulata — sistemo la forma, i tuoi fatti restano tuoi.',
-  answeredCount: (n: number) => `Già risposte · ${n}`,
-  inYourProfile: 'Nel tuo profilo',
-  yourAnswer: 'Con parole tue',
-
   jobListTitle: 'Lista offerte',
   startApplying: 'Inizia a candidarti',
   addJobsLabel: 'Aggiungi offerte',

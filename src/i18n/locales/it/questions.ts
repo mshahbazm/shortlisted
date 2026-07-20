@@ -9,4 +9,6 @@ export const questions: tLocale['questions'] = {
   yourAnswerPlaceholder: 'La tua risposta…',
   emptyState: 'Compila una candidatura — ogni domanda a cui non so rispondere finisce qui, una volta sola.',
   timesUsed: (n: number) => `${n}×`,
+  noPending: 'Niente in sospeso. Le domande di un modulo a cui non so rispondere finiscono qui.',
+  pendingLede: 'Rispondi una volta. Riuso la risposta su qualsiasi modulo chieda la stessa cosa.',
 }

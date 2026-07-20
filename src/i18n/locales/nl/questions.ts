@@ -9,4 +9,6 @@ export const questions: tLocale['questions'] = {
   yourAnswerPlaceholder: 'Jouw antwoord…',
   emptyState: 'Vul een sollicitatie in — elke vraag die ik niet kan beantwoorden komt hier terecht, één keer.',
   timesUsed: (n: number) => `${n}×`,
+  noPending: 'Niets openstaand. Vragen uit formulieren die ik niet kan beantwoorden komen hier.',
+  pendingLede: 'Eén keer beantwoorden. Ik gebruik het opnieuw bij elk formulier dat hetzelfde vraagt.',
 }

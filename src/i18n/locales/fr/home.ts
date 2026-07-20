@@ -19,14 +19,6 @@ export const home: tLocale['home'] = {
   tailorACvSub: 'Recentré sur cette offre, rien d’inventé',
   tailorACvSubGeneric: 'Recentré sur une offre, rien d’inventé',
   oneCredit: '1 crédit',
-  questionsWaiting: (n: number) => `${n} question${n === 1 ? '' : 's'} vous attend${n === 1 ? '' : 'ent'}`,
-  questionsTitle: 'Questions en attente',
-  questionsLede:
-    'Répondez une fois. Je réutilise votre réponse sur tout formulaire qui pose la même question, quelle que soit la formulation — je soigne la tournure, vos faits restent les vôtres.',
-  answeredCount: (n: number) => `Déjà répondu · ${n}`,
-  inYourProfile: 'Dans votre profil',
-  yourAnswer: 'Avec vos propres mots',
-
   jobListTitle: 'Liste d’offres',
   startApplying: 'Commencer à postuler',
   addJobsLabel: 'Ajouter des offres',

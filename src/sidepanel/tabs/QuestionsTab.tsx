@@ -10,7 +10,10 @@ import * as store from '../../lib/store'
 // sentence), with the original question as small print. The user edits the
 // RAW answer — the truth source — and the polish is redone from it.
 
-export function QuestionsTab() {
+/** `bank` = what we already know about you. `pending` = what a form asked
+ *  that we could not answer. Two different jobs, so Profile shows them as
+ *  two tabs rather than one scroll. */
+export function QuestionsTab({ view }: { view: 'bank' | 'pending' }) {
   const t = useContent('questions')
   const [pending] = useStore('pendingQuestions')
   const [bank] = useStore('answerBank')
@@ -72,9 +75,10 @@ export function QuestionsTab() {
 
   return (
     <>
-      <p className="lede">{t.hint}</p>
+      {view === 'pending' ? <p className="lede">{t.pendingLede}</p> : <p className="lede">{t.hint}</p>}
 
-      {pending.map((q) => (
+      {view === 'pending' && pending.length === 0 && <div className="empty">{t.noPending}</div>}
+      {view === 'pending' && pending.map((q) => (
         <div key={q.id} className="qcard">
           <div className="q-meta">
             <a href={q.jobUrl} target="_blank" rel="noreferrer">{t.fromThisJob}</a>
@@ -95,9 +99,9 @@ export function QuestionsTab() {
         </div>
       ))}
 
-      {bank.length === 0 && pending.length === 0 && <div className="empty">{t.emptyState}</div>}
+      {view === 'bank' && bank.length === 0 && <div className="empty">{t.emptyState}</div>}
 
-      {bank.length > 0 && (
+      {view === 'bank' && bank.length > 0 && (
         <div className="rows">
           {[...bank].sort((a, b) => b.lastUsedAt - a.lastUsedAt).map((a) => (
             <div key={a.id} className="row" style={{ display: 'block' }}>

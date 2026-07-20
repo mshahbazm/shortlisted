@@ -20,14 +20,6 @@ export const home: tLocale['home'] = {
   tailorACvSub: 'Ustawione pod tę ofertę, nic zmyślonego',
   tailorACvSubGeneric: 'Ustawione pod jedną ofertę, nic zmyślonego',
   oneCredit: '1 kredyt',
-  questionsWaiting: (n: number) => `${n} ${plural(n, 'pytanie czeka', 'pytania czekają', 'pytań czeka')} na Ciebie`,
-  questionsTitle: 'Oczekujące pytania',
-  questionsLede:
-    'Odpowiedz raz. Użyję tego ponownie w każdym formularzu, który pyta o to samo, niezależnie od sformułowania — poprawiam styl, fakty zostają Twoje.',
-  answeredCount: (n: number) => `Już odpowiedziane · ${n}`,
-  inYourProfile: 'W Twoim profilu',
-  yourAnswer: 'Własnymi słowami',
-
   jobListTitle: 'Lista ofert',
   startApplying: 'Zacznij aplikować',
   addJobsLabel: 'Dodaj oferty',
