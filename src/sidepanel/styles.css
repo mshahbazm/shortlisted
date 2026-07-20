@@ -91,10 +91,13 @@ a:hover { text-decoration: underline; }
   color: var(--muted); font-variant-numeric: tabular-nums;
 }
 
+/* One rhythm for the whole panel: 20px between sections, 10px inside one.
+   Sections do not set their own outer margins — the body's gap owns the
+   vertical rhythm, so nothing can double up or collapse. */
 .p-body {
   flex: 1; min-height: 0; overflow-y: auto;
-  padding: 14px 14px 24px;
-  display: flex; flex-direction: column; gap: 14px;
+  padding: 16px 14px 28px;
+  display: flex; flex-direction: column; gap: 20px;
   /* Wide panels: keep lines readable rather than stretching them. */
   width: 100%; max-width: 640px; margin: 0 auto;
 }
@@ -117,21 +120,19 @@ a:hover { text-decoration: underline; }
 }
 .credits:hover { background: #e6e0ff; }
 
-/* Bottom tab bar — three destinations, always reachable. */
+/* Bottom tab bar — four destinations, always reachable. */
 .tabbar {
-  display: grid; grid-template-columns: repeat(3, 1fr); flex: none;
+  display: grid; grid-template-columns: repeat(4, 1fr); flex: none;
   border-top: 1px solid var(--border); background: #fcfcfb;
 }
 .tabbar button {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 9px 4px 10px; border: none; background: none; cursor: pointer;
-  font: inherit; font-size: 11px; font-weight: 600; color: var(--faint);
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 8px 4px 9px; border: none; background: none; cursor: pointer;
+  font: inherit; font-size: 10.5px; font-weight: 600; color: var(--faint);
+  transition: color 0.12s;
 }
-.tabbar button .tb-i {
-  width: 17px; height: 17px; border-radius: 5px; border: 1.6px solid currentColor;
-}
+.tabbar button .tb-i { width: 21px; height: 21px; display: block; }
 .tabbar button.active { color: var(--accent); }
-.tabbar button.active .tb-i { background: var(--accent); border-color: var(--accent); }
 .tabbar button:hover:not(.active) { color: var(--muted); }
 
 /* ---------- 4. buttons ---------- */
@@ -171,7 +172,7 @@ button.link.amber { color: var(--amber); }
 
 /* ---------- 5. rows + lists ---------- */
 
-.p-sec { display: flex; flex-direction: column; gap: 8px; }
+.p-sec { display: flex; flex-direction: column; gap: 10px; }
 .p-sec-h {
   display: flex; align-items: baseline; justify-content: space-between;
   font-size: 11px; font-weight: 650; letter-spacing: 0.07em;
@@ -312,19 +313,42 @@ button.link.amber { color: var(--amber); }
 }
 .qline .chev { margin-left: auto; color: var(--amber); }
 
-/* "Something new to add" — an open input, not a button that leads to one. */
+/* "Something new to add" — an open input, not a button that leads to one.
+   Deliberately the most inviting block on the screen after the primary
+   action: it is free, it takes one line, and it makes every later CV better. */
 .composer {
-  display: flex; flex-direction: column; gap: 7px;
-  border: 1px dashed #dcdcd6; border-radius: 10px; padding: 12px;
+  display: flex; flex-direction: column; gap: 8px;
+  border: 1px solid #d9d2ff; border-radius: 12px; padding: 14px;
+  background: linear-gradient(180deg, #faf9ff, #fff);
 }
-.composer.accent { border-color: #d5cdff; background: linear-gradient(180deg, #faf9ff, #fff); }
-.comp-l { font-size: 13px; font-weight: 650; }
-.comp-h { font-size: 11.5px; color: var(--faint); line-height: 1.45; }
+.comp-l { font-size: 14px; font-weight: 650; letter-spacing: -0.01em; }
+.comp-h { font-size: 11.5px; color: var(--muted); line-height: 1.45; }
 
-.paste { display: flex; flex-direction: column; gap: 7px; }
-.paste-l {
-  font-size: 11px; font-weight: 650; letter-spacing: 0.07em;
-  text-transform: uppercase; color: var(--muted);
+/* Full-width nav card — a section that is really a doorway to a screen. */
+.navcard {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  border: 1px solid var(--border); border-radius: 12px; padding: 14px;
+  background: var(--bg); cursor: pointer; font: inherit; color: inherit; text-align: left;
+  transition: border-color 0.13s, box-shadow 0.13s;
+}
+.navcard:hover { border-color: #cfcfc8; box-shadow: 0 3px 10px -3px rgba(0, 0, 0, 0.1); }
+.navcard-ic {
+  width: 34px; height: 34px; flex: none; border-radius: 9px;
+  display: grid; place-items: center; background: var(--accent-soft); color: var(--accent);
+}
+.navcard-b { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.navcard-t { font-size: 14px; font-weight: 650; letter-spacing: -0.01em; }
+.navcard-s { font-size: 12px; color: var(--muted); line-height: 1.4; }
+.navcard-n {
+  font-size: 12px; font-weight: 650; color: var(--accent);
+  background: var(--accent-soft); border-radius: 999px; padding: 3px 9px; white-space: nowrap;
+}
+
+/* A feature that does not exist yet. Said plainly, because an empty list
+   would read as "we looked and found nothing" — a worse and untrue claim. */
+.soon {
+  font-size: 12.5px; color: var(--muted); line-height: 1.55;
+  border: 1px dashed #dcdcd6; border-radius: 10px; padding: 13px 14px;
 }
 
 /* Applied list — status is user-set, never asserted by us. */

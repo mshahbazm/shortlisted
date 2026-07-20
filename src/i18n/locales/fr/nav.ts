@@ -4,4 +4,5 @@ export const nav: tLocale['nav'] = {
   home: 'Accueil',
   profile: 'Profil',
   cvs: 'CV',
+  jobs: 'Offres',
 }

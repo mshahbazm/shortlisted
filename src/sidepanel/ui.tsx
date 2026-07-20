@@ -21,7 +21,7 @@ const ICONS = {
   pen: 'M11.2 2.4 13.6 4.8 5.6 12.8 2.4 13.6l.8-3.2z',
 } as const
 
-export type IconName = keyof typeof ICONS | 'gear' | 'bolt' | 'doc'
+export type IconName = keyof typeof ICONS | 'gear' | 'bolt' | 'doc' | 'briefcase'
 
 /** 16px stroke icon. Inline rather than a sprite sheet — there are nine of
  *  them and a sprite would mean another asset to keep in sync. */
@@ -44,6 +44,15 @@ export function Icon({ name }: { name: IconName }) {
       </svg>
     )
   }
+  if (name === 'briefcase') {
+    return (
+      <svg className="ic" viewBox="0 0 16 16" aria-hidden="true">
+        <rect x="1.8" y="4.8" width="12.4" height="8.7" rx="1.4" fill="none" stroke="currentColor" strokeWidth="1.3" />
+        <path d="M5.8 4.8V3.6a1.1 1.1 0 0 1 1.1-1.1h2.2a1.1 1.1 0 0 1 1.1 1.1v1.2" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+        <path d="M1.8 8.3h12.4" fill="none" stroke="currentColor" strokeWidth="1.3" />
+      </svg>
+    )
+  }
   if (name === 'doc') {
     return (
       <svg className="ic" viewBox="0 0 16 16" aria-hidden="true">
@@ -55,6 +64,48 @@ export function Icon({ name }: { name: IconName }) {
   return (
     <svg className="ic" viewBox="0 0 16 16" aria-hidden="true">
       <path d={ICONS[name]} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+/** Tab bar glyph. Drawn here rather than pulled from an icon pack: four shapes
+ *  is not worth a dependency, and these match the stroke weight of Icon above.
+ *  24-unit grid so they stay crisp at the 20px the tab bar renders them at. */
+export function TabIcon({ name }: { name: 'home' | 'jobs' | 'profile' | 'cvs' }) {
+  const common = {
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.7,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+  }
+  return (
+    <svg className="tb-i" viewBox="0 0 24 24" aria-hidden="true">
+      {name === 'home' && (
+        <>
+          <path d="M3.5 10.2 12 3.5l8.5 6.7V20a1 1 0 0 1-1 1h-4.2v-5.6H8.7V21H4.5a1 1 0 0 1-1-1z" {...common} />
+        </>
+      )}
+      {name === 'jobs' && (
+        <>
+          <rect x="3" y="7.5" width="18" height="12.5" rx="2" {...common} />
+          <path d="M8.75 7.5V5.6a1.6 1.6 0 0 1 1.6-1.6h3.3a1.6 1.6 0 0 1 1.6 1.6v1.9" {...common} />
+          <path d="M3 12.5h18" {...common} />
+        </>
+      )}
+      {name === 'profile' && (
+        <>
+          <circle cx="12" cy="8.2" r="3.6" {...common} />
+          <path d="M4.8 20.4a7.4 7.4 0 0 1 14.4 0" {...common} />
+        </>
+      )}
+      {name === 'cvs' && (
+        <>
+          <path d="M6 3h7.5L19 8.5V21H6z" {...common} />
+          <path d="M13.2 3v5.5H19" {...common} />
+          <path d="M9 13h6M9 16.5h4" {...common} />
+        </>
+      )}
     </svg>
   )
 }

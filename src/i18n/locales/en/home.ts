@@ -36,7 +36,6 @@ export const home = {
 
   // --- job list ---
   jobListTitle: 'Job list',
-  savedCount: (n: number) => `${n} saved`,
   startApplying: 'Start applying',
   emptyJobList: 'No jobs saved yet. Paste a few links and I’ll work through them with you.',
   addJobsLabel: 'Add jobs',
@@ -73,7 +72,6 @@ export const home = {
   runProgress: (i: number, n: number) => `${i} of ${n}`,
   openAndFill: 'Open & fill',
   skipThisOne: 'Skip this one',
-  seeFullScore: 'See the full score',
   runDoneTitle: 'That’s the list',
   runDoneBody: (n: number) =>
     `You worked through ${n} job${n === 1 ? '' : 's'}. Add more whenever you’re ready.`,
@@ -101,4 +99,11 @@ export const home = {
   fillNoForm: 'No application form found on this page.',
 
   credits: (n: number) => `${n} credits`,
+  jobsTitle: 'Jobs',
+  yourList: 'Your list',
+  yourListSub: 'Jobs you saved or pasted in',
+  foundForYou: 'Found for you',
+  foundForYouSoon: 'Jobs matched to your profile will show up here. Not switched on yet — for now, bring your own.',
+  comingSoon: 'Coming soon',
+  noneSavedYet: 'Paste job links and apply through them one by one',
 }

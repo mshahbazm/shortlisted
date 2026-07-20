@@ -28,7 +28,6 @@ export const home: tLocale['home'] = {
   yourAnswer: 'In deinen eigenen Worten',
 
   jobListTitle: 'Jobliste',
-  savedCount: (n: number) => `${n} gespeichert`,
   startApplying: 'Loslegen',
   emptyJobList: 'Noch keine Jobs gespeichert. Füg ein paar Links ein und wir gehen sie zusammen durch.',
   addJobsLabel: 'Jobs hinzufügen',
@@ -62,7 +61,6 @@ export const home: tLocale['home'] = {
   runProgress: (i: number, n: number) => `${i} von ${n}`,
   openAndFill: 'Öffnen & ausfüllen',
   skipThisOne: 'Diesen überspringen',
-  seeFullScore: 'Ganze Bewertung ansehen',
   runDoneTitle: 'Das war die Liste',
   runDoneBody: (n: number) =>
     `Du hast ${n} Job${n === 1 ? '' : 's'} durchgearbeitet. Füg jederzeit weitere hinzu.`,
@@ -89,4 +87,11 @@ export const home: tLocale['home'] = {
   fillNoForm: 'Auf dieser Seite wurde kein Bewerbungsformular gefunden.',
 
   credits: (n: number) => `${n} Credits`,
+  jobsTitle: 'Jobs',
+  yourList: 'Deine Liste',
+  yourListSub: 'Jobs, die du gespeichert oder eingefügt hast',
+  foundForYou: 'Für dich gefunden',
+  foundForYouSoon: 'Jobs, die zu deinem Profil passen, erscheinen hier. Noch nicht aktiv — bring so lange eigene mit.',
+  comingSoon: 'Bald verfügbar',
+  noneSavedYet: 'Job-Links einfügen und sie nacheinander durchgehen',
 }

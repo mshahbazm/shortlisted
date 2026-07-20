@@ -29,7 +29,6 @@ export const home: tLocale['home'] = {
   yourAnswer: 'Własnymi słowami',
 
   jobListTitle: 'Lista ofert',
-  savedCount: (n: number) => `${n} ${plural(n, 'zapisana', 'zapisane', 'zapisanych')}`,
   startApplying: 'Zacznij aplikować',
   emptyJobList: 'Nie masz jeszcze zapisanych ofert. Wklej kilka linków, a przejdziemy przez nie razem.',
   addJobsLabel: 'Dodaj oferty',
@@ -63,7 +62,6 @@ export const home: tLocale['home'] = {
   runProgress: (i: number, n: number) => `${i} z ${n}`,
   openAndFill: 'Otwórz i wypełnij',
   skipThisOne: 'Pomiń tę',
-  seeFullScore: 'Zobacz pełną ocenę',
   runDoneTitle: 'To już cała lista',
   runDoneBody: (n: number) =>
     `Przeszedłeś przez ${n} ${plural(n, 'ofertę', 'oferty', 'ofert')}. Dodaj więcej, kiedy chcesz.`,
@@ -90,4 +88,11 @@ export const home: tLocale['home'] = {
   fillNoForm: 'Nie znaleziono formularza aplikacyjnego na tej stronie.',
 
   credits: (n: number) => `${n} ${plural(n, 'kredyt', 'kredyty', 'kredytów')}`,
+  jobsTitle: 'Oferty',
+  yourList: 'Twoja lista',
+  yourListSub: 'Oferty zapisane lub wklejone',
+  foundForYou: 'Znalezione dla Ciebie',
+  foundForYouSoon: 'Oferty pasujące do Twojego profilu pojawią się tutaj. Jeszcze nieaktywne — na razie dodaj własne.',
+  comingSoon: 'Wkrótce',
+  noneSavedYet: 'Wklej linki i aplikuj po kolei',
 }

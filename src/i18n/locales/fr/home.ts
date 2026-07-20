@@ -28,7 +28,6 @@ export const home: tLocale['home'] = {
   yourAnswer: 'Avec vos propres mots',
 
   jobListTitle: 'Liste d’offres',
-  savedCount: (n: number) => `${n} enregistrée${n === 1 ? '' : 's'}`,
   startApplying: 'Commencer à postuler',
   emptyJobList: 'Aucune offre enregistrée. Collez quelques liens et nous les parcourrons ensemble.',
   addJobsLabel: 'Ajouter des offres',
@@ -62,7 +61,6 @@ export const home: tLocale['home'] = {
   runProgress: (i: number, n: number) => `${i} sur ${n}`,
   openAndFill: 'Ouvrir et remplir',
   skipThisOne: 'Passer celle-ci',
-  seeFullScore: 'Voir l’évaluation complète',
   runDoneTitle: 'C’est toute la liste',
   runDoneBody: (n: number) =>
     `Vous avez traité ${n} offre${n === 1 ? '' : 's'}. Ajoutez-en d’autres quand vous voulez.`,
@@ -89,4 +87,11 @@ export const home: tLocale['home'] = {
   fillNoForm: 'Aucun formulaire de candidature trouvé sur cette page.',
 
   credits: (n: number) => `${n} crédits`,
+  jobsTitle: 'Offres',
+  yourList: 'Votre liste',
+  yourListSub: 'Offres que vous avez enregistrées ou collées',
+  foundForYou: 'Trouvées pour vous',
+  foundForYouSoon: 'Les offres correspondant à votre profil apparaîtront ici. Pas encore actif — apportez les vôtres pour l’instant.',
+  comingSoon: 'Bientôt',
+  noneSavedYet: 'Collez des liens d’offres et postulez une par une',
 }

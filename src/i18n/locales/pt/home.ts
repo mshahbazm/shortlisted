@@ -28,7 +28,6 @@ export const home: tLocale['home'] = {
   yourAnswer: 'Nas tuas palavras',
 
   jobListTitle: 'Lista de vagas',
-  savedCount: (n: number) => `${n} guardada${n === 1 ? '' : 's'}`,
   startApplying: 'Começar a candidatar',
   emptyJobList: 'Ainda não guardaste vagas. Cola uns links e vemos isto juntos.',
   addJobsLabel: 'Adicionar vagas',
@@ -62,7 +61,6 @@ export const home: tLocale['home'] = {
   runProgress: (i: number, n: number) => `${i} de ${n}`,
   openAndFill: 'Abrir e preencher',
   skipThisOne: 'Saltar esta',
-  seeFullScore: 'Ver a pontuação completa',
   runDoneTitle: 'A lista acaba aqui',
   runDoneBody: (n: number) =>
     `Passaste por ${n} vaga${n === 1 ? '' : 's'}. Acrescenta mais quando quiseres.`,
@@ -89,4 +87,11 @@ export const home: tLocale['home'] = {
   fillNoForm: 'Não foi encontrado nenhum formulário de candidatura nesta página.',
 
   credits: (n: number) => `${n} créditos`,
+  jobsTitle: 'Vagas',
+  yourList: 'A tua lista',
+  yourListSub: 'Vagas que guardaste ou colaste',
+  foundForYou: 'Encontradas para ti',
+  foundForYouSoon: 'As vagas que encaixam no teu perfil aparecem aqui. Ainda não está ligado — por agora, traz as tuas.',
+  comingSoon: 'Em breve',
+  noneSavedYet: 'Cola links de vagas e candidata-te uma a uma',
 }

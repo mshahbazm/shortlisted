@@ -28,7 +28,6 @@ export const home: tLocale['home'] = {
   yourAnswer: 'In je eigen woorden',
 
   jobListTitle: 'Vacaturelijst',
-  savedCount: (n: number) => `${n} bewaard`,
   startApplying: 'Beginnen met solliciteren',
   emptyJobList: 'Nog geen vacatures bewaard. Plak er een paar en we lopen ze samen door.',
   addJobsLabel: 'Vacatures toevoegen',
@@ -62,7 +61,6 @@ export const home: tLocale['home'] = {
   runProgress: (i: number, n: number) => `${i} van ${n}`,
   openAndFill: 'Openen & invullen',
   skipThisOne: 'Deze overslaan',
-  seeFullScore: 'Hele score bekijken',
   runDoneTitle: 'Dat was de lijst',
   runDoneBody: (n: number) =>
     `Je hebt ${n} vacature${n === 1 ? '' : 's'} doorlopen. Voeg er gerust meer toe.`,
@@ -89,4 +87,11 @@ export const home: tLocale['home'] = {
   fillNoForm: 'Geen sollicitatieformulier gevonden op deze pagina.',
 
   credits: (n: number) => `${n} credits`,
+  jobsTitle: 'Vacatures',
+  yourList: 'Jouw lijst',
+  yourListSub: 'Vacatures die je bewaarde of plakte',
+  foundForYou: 'Voor jou gevonden',
+  foundForYouSoon: 'Vacatures die bij je profiel passen komen hier. Nog niet aan — breng voorlopig je eigen mee.',
+  comingSoon: 'Binnenkort',
+  noneSavedYet: 'Plak vacaturelinks en werk ze één voor één af',
 }

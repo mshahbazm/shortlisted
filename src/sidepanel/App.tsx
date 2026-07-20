@@ -3,16 +3,18 @@ import { useStore } from './hooks'
 import { useContent } from '../i18n'
 import { Onboarding } from './Onboarding'
 import { HomeTab } from './tabs/HomeTab'
+import { JobsTab } from './tabs/JobsTab'
 import { ProfileTab } from './tabs/ProfileTab'
 import { ResumesTab } from './tabs/ResumesTab'
 import { SettingsTab } from './tabs/SettingsTab'
+import { TabIcon } from './ui'
 import { Toasts } from './toast'
 import * as store from '../lib/store'
 
-// Three destinations, down from five. Settings is rare enough to live behind
-// the gear, and the answer bank is profile data, so it lives inside Profile
-// rather than competing for a fifth of the tab bar.
-const TABS = ['home', 'profile', 'cvs'] as const
+// Four destinations. Settings is rare enough to live behind the gear, and the
+// answer bank is profile data, so it lives inside Profile rather than taking a
+// tab of its own. Jobs earns one: it is where a session actually starts.
+const TABS = ['home', 'jobs', 'profile', 'cvs'] as const
 type Tab = (typeof TABS)[number]
 
 export function App() {
@@ -72,15 +74,25 @@ export function App() {
     )
   }
 
-  const goProfile = () => {
-    setTab('profile')
+  const go = (next: Tab) => {
+    setTab(next)
     setSettingsOpen(false)
   }
+
+  const label: Record<Tab, string> = { home: t.home, jobs: t.jobs, profile: t.profile, cvs: t.cvs }
 
   return (
     <>
       <div className="shell">
-        {tab === 'home' && <HomeTab onGoProfile={goProfile} onOpenSettings={() => setSettingsOpen(true)} />}
+        {tab === 'home' && (
+          <HomeTab
+            onGoProfile={() => go('profile')}
+            onGoJobs={() => go('jobs')}
+            onGoCvs={() => go('cvs')}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
+        )}
+        {tab === 'jobs' && <JobsTab />}
         {tab === 'profile' && (
           <ProfileTab focusTellMe={focusTellMe} onOpenSettings={() => setSettingsOpen(true)} />
         )}
@@ -91,13 +103,14 @@ export function App() {
           <button
             key={name}
             className={name === tab ? 'active' : ''}
+            aria-current={name === tab ? 'page' : undefined}
             onClick={() => {
               setTab(name)
               setFocusTellMe(false)
             }}
           >
-            <span className="tb-i" />
-            {name === 'home' ? t.home : name === 'profile' ? t.profile : t.cvs}
+            <TabIcon name={name} />
+            {label[name]}
           </button>
         ))}
       </nav>
