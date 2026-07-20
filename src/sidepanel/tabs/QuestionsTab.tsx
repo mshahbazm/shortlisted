@@ -5,6 +5,8 @@ import { normalizeQuestion } from '../../lib/questions'
 import { BankAnswer, uid } from '../../lib/types'
 import { polishAnswer } from '../../ai/run'
 import * as store from '../../lib/store'
+import { Button, FIELD, Rows } from '../ui'
+import { cn } from '../../lib/cn'
 
 // "What I know about you": each entry reads as a statement (the AI-polished
 // sentence), with the original question as small print. The user edits the
@@ -73,65 +75,93 @@ export function QuestionsTab({ view }: { view: 'bank' | 'pending' }) {
     void repolish(a.id, a.questionRaw[0] ?? '', answer)
   }
 
+  const lede = 'm-0 text-[12.5px] leading-normal text-muted'
+  const card = 'flex flex-col gap-[9px] rounded-card border border-line p-3'
+  const blank = 'px-3 py-[26px] text-center text-[13px] text-faint'
+
   return (
     <>
-      {view === 'pending' ? <p className="lede">{t.pendingLede}</p> : <p className="lede">{t.hint}</p>}
+      <p className={lede}>{view === 'pending' ? t.pendingLede : t.hint}</p>
 
-      {view === 'pending' && pending.length === 0 && <div className="empty">{t.noPending}</div>}
-      {view === 'pending' && pending.map((q) => (
-        <div key={q.id} className="qcard">
-          <div className="q-meta">
-            <a href={q.jobUrl} target="_blank" rel="noreferrer">{t.fromThisJob}</a>
+      {view === 'pending' && pending.length === 0 && <div className={blank}>{t.noPending}</div>}
+      {view === 'pending' &&
+        pending.map((q) => (
+          <div key={q.id} className={card}>
+            <div className="text-[11px] text-faint">
+              <a href={q.jobUrl} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+                {t.fromThisJob}
+              </a>
+            </div>
+            <div className="text-[13.5px] leading-[1.4] font-semibold">{q.questionRaw}</div>
+            <textarea
+              rows={2}
+              className={cn(FIELD, 'resize-y leading-normal')}
+              placeholder={t.yourAnswerPlaceholder}
+              value={drafts[q.id] ?? ''}
+              onChange={(e) => setDrafts({ ...drafts, [q.id]: e.target.value })}
+            />
+            <div className="flex gap-1.5">
+              <Button size="sm" onClick={() => answerPending(q.id)} disabled={!(drafts[q.id] ?? '').trim()}>
+                {t.save}
+              </Button>
+              <Button variant="plain" size="sm" onClick={() => dismissPending(q.id)}>
+                {t.dismiss}
+              </Button>
+            </div>
           </div>
-          <div className="q-q">{q.questionRaw}</div>
-          <textarea
-            rows={2}
-            placeholder={t.yourAnswerPlaceholder}
-            value={drafts[q.id] ?? ''}
-            onChange={(e) => setDrafts({ ...drafts, [q.id]: e.target.value })}
-          />
-          <div className="q-act">
-            <button className="primary small" onClick={() => answerPending(q.id)} disabled={!(drafts[q.id] ?? '').trim()}>
-              {t.save}
-            </button>
-            <button className="plain small" onClick={() => dismissPending(q.id)}>{t.dismiss}</button>
-          </div>
-        </div>
-      ))}
+        ))}
 
-      {view === 'bank' && bank.length === 0 && <div className="empty">{t.emptyState}</div>}
+      {view === 'bank' && bank.length === 0 && <div className={blank}>{t.emptyState}</div>}
 
       {view === 'bank' && bank.length > 0 && (
-        <div className="rows">
-          {[...bank].sort((a, b) => b.lastUsedAt - a.lastUsedAt).map((a) => (
-            <div key={a.id} className="row" style={{ display: 'block' }}>
-              {editing === a.id ? (
-                <div className="qcard" style={{ border: 'none', padding: 0 }}>
-                  <div className="q-meta">{t.askedAs(a.questionRaw[0] ?? '')}</div>
-                  <textarea rows={3} value={editText} onChange={(e) => setEditText(e.target.value)} autoFocus />
-                  <div className="q-act">
-                    <button className="primary small" onClick={() => saveEdit(a)} disabled={!editText.trim()}>
-                      {t.save}
-                    </button>
-                    <button className="plain small" onClick={() => setEditing(null)}>{t.cancel}</button>
+        <Rows>
+          {[...bank]
+            .sort((a, b) => b.lastUsedAt - a.lastUsedAt)
+            .map((a) => (
+              <div key={a.id} className="block border-b border-line px-3 py-[11px] last:border-b-0">
+                {editing === a.id ? (
+                  <div className="flex flex-col gap-[9px]">
+                    <div className="text-[11px] text-faint">{t.askedAs(a.questionRaw[0] ?? '')}</div>
+                    <textarea
+                      rows={3}
+                      autoFocus
+                      className={cn(FIELD, 'resize-y leading-normal')}
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                    />
+                    <div className="flex gap-1.5">
+                      <Button size="sm" onClick={() => saveEdit(a)} disabled={!editText.trim()}>
+                        {t.save}
+                      </Button>
+                      <Button variant="plain" size="sm" onClick={() => setEditing(null)}>
+                        {t.cancel}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <>
-                  {/* The polished sentence reads as the answer; the question it
-                      came from is small print. */}
-                  <div className="row-t" style={{ whiteSpace: 'normal' }}>{a.polished ?? a.answer}</div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', marginTop: 3 }}>
-                    <span className="row-s" style={{ flex: 1 }}>{t.askedAs(a.questionRaw[0] ?? '')}</span>
-                    {a.timesUsed > 0 && <span className="minichip">{t.timesUsed(a.timesUsed)}</span>}
-                    <button className="link" onClick={() => { setEditing(a.id); setEditText(a.answer) }}>{t.edit}</button>
-                    <button className="link muted" onClick={() => removeAnswer(a.id)}>{t.remove}</button>
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
+                ) : (
+                  <>
+                    {/* The polished sentence reads as the answer; the question it
+                        came from is small print. */}
+                    <div className="text-[13.5px] font-semibold">{a.polished ?? a.answer}</div>
+                    <div className="mt-[3px] flex items-baseline gap-2">
+                      <span className="flex-1 text-[11.5px] text-muted">{t.askedAs(a.questionRaw[0] ?? '')}</span>
+                      {a.timesUsed > 0 && (
+                        <span className="rounded-[5px] bg-[#f5f5f3] px-[7px] py-[2.5px] text-[11px] whitespace-nowrap text-muted">
+                          {t.timesUsed(a.timesUsed)}
+                        </span>
+                      )}
+                      <Button variant="link" onClick={() => { setEditing(a.id); setEditText(a.answer) }}>
+                        {t.edit}
+                      </Button>
+                      <Button variant="link" className="text-faint" onClick={() => removeAnswer(a.id)}>
+                        {t.remove}
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+        </Rows>
       )}
     </>
   )

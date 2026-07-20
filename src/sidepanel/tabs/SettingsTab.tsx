@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
-import { Body, Row, ScreenHead, useStack } from '../ui'
+import { Body, Button, FIELD, Row, Rows, ScreenHead, useStack } from '../ui'
+import { cn } from '../../lib/cn'
 import { StorageShape, storageDefaults } from '../../lib/types'
 import { LOCALES, LOCALE_LABELS, isLocale, useContent } from '../../i18n'
 import { CloudUsage, UsageStatsRow, cloudUsage, cloudUsageStats, sendLoginCode, verifyLoginCode } from '../../ai/run'
 import { cloudBaseUrl, cloudUrlDefault, isDevInstall } from '../../lib/config'
 import { sendMsg } from '../../lib/messaging'
+
+const LEDE = 'm-0 text-[12.5px] leading-normal text-muted'
+const LABEL = 'flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted'
+const SELECT = cn(FIELD, 'appearance-none bg-[url(data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M4%206.5%208%2010.5l4-4%22%20fill%3D%22none%22%20stroke%3D%22%236f6f78%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E)] bg-[length:15px_15px] bg-[position:right_11px_center] bg-no-repeat pr-[34px]')
 
 export function SettingsTab({ onClose }: { onClose: () => void }) {
   const t = useContent('settings')
@@ -56,6 +61,7 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
     return (
       <Screen title={t.languageTitle} onBack={nav.back} t={t}>
         <select
+          className={SELECT}
           value={isLocale(s.locale) ? s.locale : 'auto'}
           onChange={(e) => set({ locale: e.target.value === 'auto' ? undefined : e.target.value })}
         >
@@ -71,10 +77,11 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
   if (nav.screen === 'detect') {
     return (
       <Screen title={t.whereILook} onBack={nav.back} t={t}>
-        <p className="lede">{t.detectHint}</p>
-        <label className="ct-row">
+        <p className={LEDE}>{t.detectHint}</p>
+        <label className="flex cursor-pointer items-center gap-2 rounded-md px-0.5 py-1 text-[13px] hover:bg-hover">
           <input
             type="checkbox"
+            className="accent-accent"
             checked={s.detectEverywhere !== false}
             onChange={(e) => set({ detectEverywhere: e.target.checked })}
           />
@@ -87,10 +94,10 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
   if (nav.screen === 'server') {
     return (
       <Screen title={t.serverTitle} onBack={nav.back} t={t}>
-        <p className="lede">{isDevInstall() ? t.serverDevHint : t.serverProdHint}</p>
-        <label className="fl">{t.serverUrlLabel}
+        <p className={LEDE}>{isDevInstall() ? t.serverDevHint : t.serverProdHint}</p>
+        <label className={LABEL}>{t.serverUrlLabel}
           <input
-            className="fin"
+            className={FIELD}
             type="text"
             placeholder={cloudUrlDefault()}
             value={s.cloudUrl ?? ''}
@@ -99,7 +106,7 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
           />
         </label>
         {s.cloudUrl?.trim() && (
-          <button className="ghost wide" onClick={() => set({ cloudUrl: '' })}>{t.serverReset}</button>
+          <Button variant="ghost" wide onClick={() => set({ cloudUrl: '' })}>{t.serverReset}</Button>
         )}
       </Screen>
     )
@@ -116,13 +123,13 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
   if (nav.screen === 'backup') {
     return (
       <Screen title={t.backupTitle} onBack={nav.back} t={t}>
-        <p className="lede">{t.backupSummary}</p>
-        <div className="duo tight">
-          <button className="ghost" onClick={exportAll}>{t.exportJson}</button>
-          <button className="ghost" onClick={() => importRef.current?.click()}>{t.importJson}</button>
+        <p className={LEDE}>{t.backupSummary}</p>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="ghost" onClick={exportAll}>{t.exportJson}</Button>
+          <Button variant="ghost" onClick={() => importRef.current?.click()}>{t.importJson}</Button>
         </div>
         {importInput}
-        {msg && <p className="microhint">{msg}</p>}
+        {msg && <p className="text-xs text-faint">{msg}</p>}
       </Screen>
     )
   }
@@ -134,7 +141,7 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
         {/* Account leads: this is where the money is. */}
         <AccountPanel />
 
-        <div className="rows nav">
+        <div className="overflow-hidden rounded-card border border-line bg-bg">
           <Row
             title={t.languageTitle}
             sub={isLocale(s.locale) ? LOCALE_LABELS[s.locale] : t.languageAuto}
@@ -157,12 +164,13 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
         </div>
 
         {s.accountEmail && (
-          <button
-            className="plain wide danger"
+          <Button
+            variant="danger"
+            wide
             onClick={() => saveSettings({ ...settings, accountEmail: undefined, cloudToken: undefined })}
           >
             {t.signOutDevice}
-          </button>
+          </Button>
         )}
       </Body>
     </>
@@ -208,27 +216,27 @@ function DevCosts() {
 
   return (
     <>
-      <p className="lede">
+      <p className={LEDE}>
         What your account has actually cost us so far (provider prices). Dev build only.
       </p>
-      <div className="meter">
-        <div className="meter-top">
+      <div className="flex flex-col gap-2 rounded-card border border-line p-3">
+        <div className="flex justify-between text-[12.5px] text-muted">
           <span>Total</span>
           <b>${total.toFixed(4)} · {(totalTokens / 1000).toFixed(1)}k tok</b>
         </div>
       </div>
-      {err && <p className="error">{err}</p>}
-      <div className="rows">
+      {err && <p className="my-1 text-[13px] text-bad">{err}</p>}
+      <Rows>
         {[...rows].sort((a, b) => b.costUsd - a.costUsd).map((r) => (
           <Row
             key={`${r.kind}:${r.endpoint}`}
             title={`${r.endpoint}${r.kind !== 'llm' ? ` (${r.kind})` : ''}`}
             sub={`${r.calls}× · ${r.inputTokens.toLocaleString()} in / ${r.outputTokens.toLocaleString()} out`}
-            right={<span className="minichip">${r.costUsd.toFixed(4)}</span>}
+            right={<span className="rounded-[5px] bg-[#f5f5f3] px-[7px] py-[2.5px] text-[11px] whitespace-nowrap text-muted">${r.costUsd.toFixed(4)}</span>}
           />
         ))}
-      </div>
-      <button className="ghost wide" onClick={refresh}>Refresh</button>
+      </Rows>
+      <Button variant="ghost" wide onClick={refresh}>Refresh</Button>
     </>
   )
 }
@@ -295,30 +303,30 @@ function AccountPanel() {
   const pct = usage && usage.creditsLimit > 0 ? (left / usage.creditsLimit) * 100 : 0
 
   return (
-    <div className="acct">
+    <div className="flex flex-col gap-3 rounded-[11px] border border-line p-3.5">
       {!signedIn && (
         <>
-          <p className="lede">{t.accountIntro}</p>
-          <label className="fl">{t.email}
+          <p className={LEDE}>{t.accountIntro}</p>
+          <label className={LABEL}>{t.email}
             <input
-              className="fin" type="email" placeholder={t.emailPlaceholder} value={email}
+              className={FIELD} type="email" placeholder={t.emailPlaceholder} value={email}
               onChange={(e) => setEmail(e.target.value)}
             /></label>
           {!codeSent ? (
-            <button className="primary wide" disabled={busy || !email.trim()} onClick={sendCode}>
+            <Button wide disabled={busy || !email.trim()} onClick={sendCode}>
               {busy ? t.sending : t.sendCode}
-            </button>
+            </Button>
           ) : (
             <>
-              <label className="fl">{t.codeLabel}
+              <label className={LABEL}>{t.codeLabel}
                 <input
-                  className="fin" type="text" inputMode="numeric" placeholder={t.codePlaceholder} value={otp}
+                  className={FIELD} type="text" inputMode="numeric" placeholder={t.codePlaceholder} value={otp}
                   onChange={(e) => setOtp(e.target.value)} autoFocus
                 /></label>
-              <button className="primary wide" disabled={busy || !otp.trim()} onClick={verify}>
+              <Button wide disabled={busy || !otp.trim()} onClick={verify}>
                 {busy ? t.checking : t.signIn}
-              </button>
-              <button className="link" disabled={busy} onClick={sendCode}>{t.resendCode}</button>
+              </Button>
+              <Button variant="link" disabled={busy} onClick={sendCode}>{t.resendCode}</Button>
             </>
           )}
         </>
@@ -326,35 +334,37 @@ function AccountPanel() {
 
       {signedIn && (
         <>
-          <div className="acct-top">
+          <div className="flex items-start gap-2.5">
             <div>
-              <div className="acct-l">{t.signedInLabel}</div>
-              <div className="acct-e">{settings.accountEmail}</div>
+              <div className="text-[11px] text-faint">{t.signedInLabel}</div>
+              <div className="text-[13.5px] font-semibold [overflow-wrap:anywhere]">{settings.accountEmail}</div>
             </div>
-            <span className="pill flat">{usage?.plan === 'pro' ? t.planPro : t.planFree}</span>
+            <span className="rounded-full bg-hover px-2 py-[3px] text-[10.5px] font-[650] whitespace-nowrap text-muted">{usage?.plan === 'pro' ? t.planPro : t.planFree}</span>
           </div>
 
           {/* Credits as a bar, not a sentence — it's the thing you check. */}
           {usage && (
-            <div className="cred">
-              <div className="cred-top">
+            <div className="flex flex-col gap-[7px]">
+              <div className="flex justify-between text-[12.5px] text-muted">
                 <span>{t.creditsLeft}</span>
                 <b>{left} {t.creditsOf} {usage.creditsLimit}</b>
               </div>
-              <div className="meter-bar"><i style={{ width: `${pct}%` }} /></div>
+              <div className="h-1.5 overflow-hidden rounded-[3px] bg-active">
+                <i className="block h-full rounded-[3px] bg-accent" style={{ width: `${pct}%` }} />
+              </div>
             </div>
           )}
 
           {usage?.plan !== 'pro' && (
             <>
-              <button className="primary wide">{t.goPro}</button>
-              <div className="acct-f">{t.proFoot}</div>
+              <Button wide>{t.goPro}</Button>
+              <div className="-mt-1.5 text-center text-[11.5px] leading-[1.45] text-faint">{t.proFoot}</div>
             </>
           )}
-          {!usage && <button className="ghost wide" onClick={refresh}>{t.checkCredits}</button>}
+          {!usage && <Button variant="ghost" wide onClick={refresh}>{t.checkCredits}</Button>}
         </>
       )}
-      {msg && <p className="microhint">{msg}</p>}
+      {msg && <p className="text-xs text-faint">{msg}</p>}
     </div>
   )
 }
