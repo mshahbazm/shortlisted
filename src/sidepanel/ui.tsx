@@ -418,12 +418,106 @@ export function Feature({
   )
 }
 
+/** A full-width choice card: a title, a line of explanation, usually a cost.
+ *  Used wherever the panel asks "which of these do you want" — the new-CV
+ *  sheet, the wizard's forks. Six copies of the same markup before this. */
+export function BigChoice({
+  title,
+  sub,
+  right,
+  disabled,
+  onClick,
+}: {
+  title: ReactNode
+  sub: ReactNode
+  /** Usually a Cost. */
+  right?: ReactNode
+  disabled?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        'flex w-full cursor-pointer flex-col gap-1 rounded-[11px] border border-line bg-bg p-[13px] text-left',
+        'hover:border-[#d4d4cf] hover:bg-hover',
+        'disabled:cursor-default disabled:opacity-85 disabled:hover:border-line disabled:hover:bg-bg',
+      )}
+    >
+      <span className="flex items-center gap-2 text-sm font-[650]">
+        {title}
+        {right}
+      </span>
+      <span className="text-xs leading-[1.45] text-muted">{sub}</span>
+    </button>
+  )
+}
+
 /* ---------- form fields ---------- */
 
-/** The one input look, shared by everything that takes typing. */
+/** The one input look. Exported because ChipInput and ListEditor compose it;
+ *  screens should reach for Input/Textarea instead, which cannot be forgotten
+ *  the way a hand-applied class can. */
 export const FIELD =
   'w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg ' +
   'placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none'
+
+/** A single-line field. */
+export function Input({ className, ...rest }: React.InputHTMLAttributes<HTMLInputElement>) {
+  return <input className={cn(FIELD, className)} {...rest} />
+}
+
+/** A multi-line field. Resizes vertically only — horizontal resize in a 400px
+ *  panel just breaks the layout. */
+export function Textarea({ className, ...rest }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return <textarea className={cn(FIELD, 'min-h-16 resize-y leading-normal', className)} {...rest} />
+}
+
+/** Label above a field. Wraps its control, so clicking the text focuses it
+ *  without anyone having to remember a matching htmlFor/id pair. */
+export function Label({ className, children, ...rest }: React.LabelHTMLAttributes<HTMLLabelElement>) {
+  return (
+    <label className={cn('flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted', className)} {...rest}>
+      {children}
+    </label>
+  )
+}
+
+/** A checkbox and its text, as one target. */
+export function Checkbox({
+  label,
+  className,
+  ...rest
+}: { label: ReactNode } & React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <label className={cn('flex cursor-pointer items-center gap-2 rounded-md px-0.5 py-1 text-[13px] hover:bg-hover', className)}>
+      <input type="checkbox" className="accent-accent" {...rest} />
+      <span>{label}</span>
+    </label>
+  )
+}
+
+const CARD_PAD = { none: '', sm: 'p-3', md: 'p-3.5' } as const
+
+/** A bordered surface. The panel has exactly one card look, and this is it —
+ *  which is the point, since the same box was being spelled out with slightly
+ *  different radii and padding in two dozen places. */
+export function Card({
+  pad = 'sm',
+  className,
+  children,
+  ...rest
+}: {
+  pad?: keyof typeof CARD_PAD
+  children: ReactNode
+} & React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn('flex flex-col gap-2 rounded-card border border-line bg-bg', CARD_PAD[pad], className)} {...rest}>
+      {children}
+    </div>
+  )
+}
 
 /** Short tokens — skills, industries, the tech used in a role.
  *

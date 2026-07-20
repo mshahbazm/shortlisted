@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { cn } from '../../lib/cn'
-import { Body, Button, Chip, Composer, Cost, FIELD, Feature, Icon, IconButton, Pill, Row, ScreenHead, TopBar, useStack } from '../ui'
+import { Body, Button, Card, Chip, Composer, Cost, FIELD, Feature, Icon, IconButton, Pill, Row, ScreenHead, Textarea, TopBar, useStack } from '../ui'
 import { PageContext, sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
 import { ApplicationRecord, base64ToBytes, uid } from '../../lib/types'
@@ -457,7 +457,7 @@ function AppliedCard({
   ]
 
   return (
-    <div className="flex flex-col gap-1 rounded-card border border-line p-3">
+    <Card className="gap-1">
       <div className="text-[13.5px] font-[650]">{app.title || app.company}</div>
       <div className="mb-1.5 text-[11.5px] text-muted">
         {app.company} · {new Date(app.appliedAt).toLocaleDateString()}
@@ -470,7 +470,7 @@ function AppliedCard({
           </button>
         ))}
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -609,8 +609,7 @@ function FitPanel({
 
   return (
     <>
-      <textarea
-        className={cn(FIELD, "min-h-[110px] resize-y leading-normal")}
+      <Textarea className={"min-h-[110px] resize-y leading-normal"}
         rows={6}
         placeholder={t.pasteJobPlaceholder}
         value={jobText}

@@ -5,8 +5,7 @@ import { normalizeQuestion } from '../../lib/questions'
 import { BankAnswer, uid } from '../../lib/types'
 import { polishAnswer } from '../../ai/run'
 import * as store from '../../lib/store'
-import { Button, FIELD, Rows } from '../ui'
-import { cn } from '../../lib/cn'
+import { Button, Rows, Textarea } from '../ui'
 
 // "What I know about you": each entry reads as a statement (the AI-polished
 // sentence), with the original question as small print. The user edits the
@@ -93,9 +92,7 @@ export function QuestionsTab({ view }: { view: 'bank' | 'pending' }) {
               </a>
             </div>
             <div className="text-[13.5px] leading-[1.4] font-semibold">{q.questionRaw}</div>
-            <textarea
-              rows={2}
-              className={cn(FIELD, 'resize-y leading-normal')}
+            <Textarea rows={2} className={'resize-y leading-normal'}
               placeholder={t.yourAnswerPlaceholder}
               value={drafts[q.id] ?? ''}
               onChange={(e) => setDrafts({ ...drafts, [q.id]: e.target.value })}
@@ -122,10 +119,9 @@ export function QuestionsTab({ view }: { view: 'bank' | 'pending' }) {
                 {editing === a.id ? (
                   <div className="flex flex-col gap-[9px]">
                     <div className="text-[11px] text-faint">{t.askedAs(a.questionRaw[0] ?? '')}</div>
-                    <textarea
+                    <Textarea
                       rows={3}
                       autoFocus
-                      className={cn(FIELD, 'resize-y leading-normal')}
                       value={editText}
                       onChange={(e) => setEditText(e.target.value)}
                     />

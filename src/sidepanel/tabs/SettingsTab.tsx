@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
-import { Bar, Body, Button, FIELD, Row, Rows, ScreenHead, Select, useStack } from '../ui'
+import { Bar, Body, Button, Card, Checkbox, FIELD, Input, Label, Row, Rows, ScreenHead, Select, useStack } from '../ui'
 import { cn } from '../../lib/cn'
 import { StorageShape, storageDefaults } from '../../lib/types'
 import { LOCALES, LOCALE_LABELS, isLocale, useContent } from '../../i18n'
@@ -75,15 +75,11 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
     return (
       <Screen title={t.whereILook} onBack={nav.back} t={t}>
         <p className={LEDE}>{t.detectHint}</p>
-        <label className="flex cursor-pointer items-center gap-2 rounded-md px-0.5 py-1 text-[13px] hover:bg-hover">
-          <input
-            type="checkbox"
-            className="accent-accent"
-            checked={s.detectEverywhere !== false}
-            onChange={(e) => set({ detectEverywhere: e.target.checked })}
-          />
-          <span>{t.detectToggle}</span>
-        </label>
+        <Checkbox
+          label={t.detectToggle}
+          checked={s.detectEverywhere !== false}
+          onChange={(e) => set({ detectEverywhere: e.target.checked })}
+        />
       </Screen>
     )
   }
@@ -92,16 +88,15 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
     return (
       <Screen title={t.serverTitle} onBack={nav.back} t={t}>
         <p className={LEDE}>{isDevInstall() ? t.serverDevHint : t.serverProdHint}</p>
-        <label className={LABEL}>{t.serverUrlLabel}
-          <input
-            className={FIELD}
+        <Label>{t.serverUrlLabel}
+          <Input
             type="text"
             placeholder={cloudUrlDefault()}
             value={s.cloudUrl ?? ''}
             onChange={(e) => set({ cloudUrl: e.target.value })}
             spellCheck={false}
           />
-        </label>
+        </Label>
         {s.cloudUrl?.trim() && (
           <Button variant="ghost" wide onClick={() => set({ cloudUrl: '' })}>{t.serverReset}</Button>
         )}
@@ -216,12 +211,12 @@ function DevCosts() {
       <p className={LEDE}>
         What your account has actually cost us so far (provider prices). Dev build only.
       </p>
-      <div className="flex flex-col gap-2 rounded-card border border-line p-3">
+      <Card>
         <div className="flex justify-between text-[12.5px] text-muted">
           <span>Total</span>
           <b>${total.toFixed(4)} · {(totalTokens / 1000).toFixed(1)}k tok</b>
         </div>
-      </div>
+      </Card>
       {err && <p className="my-1 text-[13px] text-bad">{err}</p>}
       <Rows>
         {[...rows].sort((a, b) => b.costUsd - a.costUsd).map((r) => (
@@ -300,26 +295,24 @@ function AccountPanel() {
   const pct = usage && usage.creditsLimit > 0 ? (left / usage.creditsLimit) * 100 : 0
 
   return (
-    <div className="flex flex-col gap-3 rounded-[11px] border border-line p-3.5">
+    <Card pad="md" className="gap-3">
       {!signedIn && (
         <>
           <p className={LEDE}>{t.accountIntro}</p>
-          <label className={LABEL}>{t.email}
-            <input
-              className={FIELD} type="email" placeholder={t.emailPlaceholder} value={email}
+          <Label>{t.email}
+            <Input type="email" placeholder={t.emailPlaceholder} value={email}
               onChange={(e) => setEmail(e.target.value)}
-            /></label>
+            /></Label>
           {!codeSent ? (
             <Button wide disabled={busy || !email.trim()} onClick={sendCode}>
               {busy ? t.sending : t.sendCode}
             </Button>
           ) : (
             <>
-              <label className={LABEL}>{t.codeLabel}
-                <input
-                  className={FIELD} type="text" inputMode="numeric" placeholder={t.codePlaceholder} value={otp}
+              <Label>{t.codeLabel}
+                <Input type="text" inputMode="numeric" placeholder={t.codePlaceholder} value={otp}
                   onChange={(e) => setOtp(e.target.value)} autoFocus
-                /></label>
+                /></Label>
               <Button wide disabled={busy || !otp.trim()} onClick={verify}>
                 {busy ? t.checking : t.signIn}
               </Button>
@@ -360,6 +353,6 @@ function AccountPanel() {
         </>
       )}
       {msg && <p className="text-xs text-faint">{msg}</p>}
-    </div>
+    </Card>
   )
 }

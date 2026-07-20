@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { cn } from '../lib/cn'
-import { FIELD } from './ui'
+import { FIELD, Input, Textarea } from './ui'
 
 // Notion-style key/value row: reads as text, click to edit in place.
 export function KV({
@@ -61,8 +61,7 @@ export function KV({
     <div className="flex flex-wrap items-baseline gap-3 p-1.5">
       <span className="w-[130px] shrink-0 pt-[7px] text-[12.5px] text-muted">{k}</span>
       {multiline ? (
-        <textarea
-          className={cn(FIELD, 'min-h-16 resize-y leading-normal')}
+        <Textarea className={'min-h-16 resize-y leading-normal'}
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -70,8 +69,7 @@ export function KV({
           rows={3}
         />
       ) : (
-        <input
-          className={FIELD}
+        <Input
           autoFocus
           type="text"
           value={draft}

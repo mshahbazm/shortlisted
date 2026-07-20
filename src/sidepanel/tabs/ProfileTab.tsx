@@ -11,7 +11,7 @@ import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { cn } from '../../lib/cn'
 import { KV } from '../components'
-import { Bar, Body, Button, Chip, ChipInput, Composer, Cost, Count, Icon, IconButton, ListEditor, Row, ScreenHead, Segments, Select, Sheet, TopBar, useStack } from '../ui'
+import { Bar, Body, Button, Card, Chip, ChipInput, Composer, Cost, Count, Icon, IconButton, Input, Label, ListEditor, RemoveButton, Row, ScreenHead, Segments, Select, Sheet, Textarea, TopBar, useStack } from '../ui'
 import { QuestionsTab } from './QuestionsTab'
 import {
   EducationEntry,
@@ -187,8 +187,8 @@ export function ProfileTab({
         {p.languages.map((l, i) => (
           <div key={i} className="flex items-start gap-1.5 border-b border-line pb-2.5 last:border-b-0">
             <div className="flex min-w-0 flex-1 flex-row items-center gap-1.5">
-              <input
-                className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" value={l.name} placeholder={t.languageName}
+              <Input
+                type="text" value={l.name} placeholder={t.languageName}
                 onChange={(e) => set({
                   languages: p.languages.map((x, j) => (j === i
                     ? { ...x, name: e.target.value, langCode: e.target.value.slice(0, 2).toLowerCase() }
@@ -205,12 +205,10 @@ export function ProfileTab({
                 options={LEVELS.map(([value, key]) => ({ value, label: t[key] }))}
               />
             </div>
-            <button
-              className="grid size-[30px] shrink-0 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-faint hover:bg-hover hover:text-bad" aria-label={t.removeItem}
+            <RemoveButton
+              label={t.removeItem}
               onClick={() => set({ languages: p.languages.filter((_, j) => j !== i) })}
-            >
-              <Icon name="close" />
-            </button>
+            />
           </div>
         ))}
         <Button variant="ghost" wide size="sm" onClick={() => set({
@@ -232,21 +230,19 @@ export function ProfileTab({
           return (
             <div key={i} className="flex items-start gap-1.5 border-b border-line pb-2.5 last:border-b-0">
               <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" value={c.name} placeholder={t.certName}
+                <Input type="text" value={c.name} placeholder={t.certName}
                   onChange={(e) => setCert({ name: e.target.value })} />
                 <div className="flex gap-2.5 [&>*]:flex-1">
-                  <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" value={c.issuingOrganization ?? ''} placeholder={t.issuer}
+                  <Input type="text" value={c.issuingOrganization ?? ''} placeholder={t.issuer}
                     onChange={(e) => setCert({ issuingOrganization: e.target.value || undefined })} />
-                  <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" inputMode="numeric" value={c.year ?? ''} placeholder={t.yearLabel}
+                  <Input type="text" inputMode="numeric" value={c.year ?? ''} placeholder={t.yearLabel}
                     onChange={(e) => setCert({ year: Number(e.target.value) || undefined })} />
                 </div>
               </div>
-              <button
-                className="grid size-[30px] shrink-0 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-faint hover:bg-hover hover:text-bad" aria-label={t.removeItem}
+              <RemoveButton
+                label={t.removeItem}
                 onClick={() => set({ certifications: p.certifications.filter((_, j) => j !== i) })}
-              >
-                <Icon name="close" />
-              </button>
+              />
             </div>
           )
         })}
@@ -271,9 +267,7 @@ export function ProfileTab({
           <div key={key} className="flex items-center gap-1">
             <KV k={label} v={p.links[key] ?? ''} url invalidHint={t.invalidUrl} onChange={(v) => setLinks(key, v)} />
             {p.links[key] && (
-              <button className="grid size-[30px] shrink-0 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-faint hover:bg-hover hover:text-bad" aria-label={`${t.clearLink} ${label}`} onClick={() => setLinks(key, '')}>
-                <Icon name="close" />
-              </button>
+              <RemoveButton label={`${t.clearLink} ${label}`} onClick={() => setLinks(key, '')} />
             )}
           </div>
         ))}
@@ -355,7 +349,7 @@ export function ProfileTab({
           <div className="text-[13px] text-muted">{p.headline || t.hint}</div>
         </div>
 
-        <div className="flex flex-col gap-2 rounded-card border border-line p-3">
+        <Card>
           <div className="flex justify-between text-[12.5px] text-muted">
             <span>{t.strengthTitle}</span>
             <b>{percent}%</b>
@@ -370,7 +364,7 @@ export function ProfileTab({
               ))}
             </div>
           )}
-        </div>
+        </Card>
 
         {/* 2. Add something new — high up, where it invites action */}
         <div ref={composerRef}>
@@ -518,7 +512,7 @@ export function ProfileTab({
         )}
 
         {/* 5. Re-import last: a destructive rebuild belongs at the bottom */}
-        <div className="mt-1.5 flex flex-col gap-[9px] rounded-card border border-line bg-[#fafaf8] p-3">
+        <Card className="mt-1.5 gap-[9px] bg-[#fafaf8]">
           <div className="text-[13px] font-[650]">{t.reimportTitle}</div>
           <div className="-mt-1.5 text-[11.5px] leading-[1.45] text-muted">{t.reimportBody}</div>
           <Button variant="ghost" size="sm" wide onClick={() => nav.push('reimport')}>
@@ -527,7 +521,7 @@ export function ProfileTab({
           <div className="flex items-center gap-[7px] text-[11.5px] text-faint">
             <Cost>{t.oneCredit}</Cost> {t.reimportReplaces}
           </div>
-        </div>
+        </Card>
           </>
         )}
       </Body>
@@ -587,14 +581,10 @@ function Band({
       <span>{title}</span>
       {count && <span className="ml-auto text-[11.5px] font-semibold text-faint">{count}</span>}
       {onAdd && (
-        <button className="ml-auto grid size-[26px] shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent p-0 text-faint hover:bg-hover hover:text-fg" onClick={onAdd} aria-label={addLabel ?? title}>
-          <Icon name="plus" />
-        </button>
+        <IconButton icon="plus" onClick={onAdd} aria-label={addLabel ?? title} className="ml-auto size-[26px] text-faint" />
       )}
       {onEdit && (
-        <button className="ml-auto grid size-[26px] shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent p-0 text-faint hover:bg-hover hover:text-fg" onClick={onEdit} aria-label={title}>
-          <Icon name={icon} />
-        </button>
+        <IconButton icon={icon} onClick={onEdit} aria-label={title} className="ml-auto size-[26px] text-faint" />
       )}
     </div>
   )
@@ -695,14 +685,14 @@ function AboutEditor({ p, set, t }: { p: Profile; set: (patch: Partial<Profile>)
       <KV k={t.countryIso} v={p.identity.country ?? ''} placeholder="PK" onChange={(v) => setIdentity('country', v)} />
       <KV k={t.headline} v={p.headline} placeholder={t.headlinePlaceholder} onChange={(v) => set({ headline: v })} />
       <KV k={t.summary} v={p.summary} multiline onChange={(v) => set({ summary: v })} />
-      <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.industries}
+      <Label>{t.industries}
         <ChipInput
           items={p.industries}
           placeholder={t.industryPlaceholder}
           removeLabel={t.removeItem}
           onChange={(v) => set({ industries: v })}
         />
-      </label>
+      </Label>
     </>
   )
 }
@@ -771,31 +761,31 @@ function WorkEditor({
     <>
       {incomplete && <div className="text-xs leading-[1.45] text-warn">{t.workNeedsDetail}</div>}
       <div className="flex gap-2.5 [&>*]:flex-1">
-        <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.roleTitle}
-          <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" autoFocus={!entry.title} value={entry.title}
-            onChange={(e) => onChange({ ...entry, title: e.target.value })} /></label>
-        <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.company}
-          <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" value={entry.company}
-            onChange={(e) => onChange({ ...entry, company: e.target.value })} /></label>
+        <Label>{t.roleTitle}
+          <Input type="text" autoFocus={!entry.title} value={entry.title}
+            onChange={(e) => onChange({ ...entry, title: e.target.value })} /></Label>
+        <Label>{t.company}
+          <Input type="text" value={entry.company}
+            onChange={(e) => onChange({ ...entry, company: e.target.value })} /></Label>
       </div>
       <div className="flex gap-2.5 [&>*]:flex-1">
-        <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.fromYm}
-          <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" placeholder="2021-03"
-            defaultValue={ymString(entry.startYear, entry.startMonth)} onBlur={(e) => setStart(e.target.value)} /></label>
-        <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.toYm}
-          <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text"
+        <Label>{t.fromYm}
+          <Input type="text" placeholder="2021-03"
+            defaultValue={ymString(entry.startYear, entry.startMonth)} onBlur={(e) => setStart(e.target.value)} /></Label>
+        <Label>{t.toYm}
+          <Input type="text"
             defaultValue={entry.isCurrent ? '' : ymString(entry.endYear, entry.endMonth)}
-            onBlur={(e) => setEnd(e.target.value)} /></label>
+            onBlur={(e) => setEnd(e.target.value)} /></Label>
       </div>
-      <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.techUsed}
+      <Label>{t.techUsed}
         <ChipInput
           items={entry.skills}
           placeholder={t.techPlaceholder}
           removeLabel={t.removeItem}
           onChange={(skills) => onChange({ ...entry, skills })}
         />
-      </label>
-      <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.workHighlights}
+      </Label>
+      <Label>{t.workHighlights}
         <ListEditor
           items={entry.highlights}
           onChange={(highlights) => onChange({ ...entry, highlights })}
@@ -803,7 +793,7 @@ function WorkEditor({
           addLabel={t.addHighlight}
           removeLabel={t.removeItem}
         />
-      </label>
+      </Label>
       <Button wide variant="danger" onClick={() => setConfirming(true)}>{t.remove}</Button>
       {confirming && (
         <ConfirmRemove
@@ -831,23 +821,23 @@ function EduEditor({
   return (
     <>
       <div className="flex gap-2.5 [&>*]:flex-1">
-        <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.degree}
-          <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" autoFocus={!entry.degree} value={entry.degree}
-            onChange={(e) => onChange({ ...entry, degree: e.target.value })} /></label>
-        <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.fieldOfStudy}
-          <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" value={entry.fieldOfStudy ?? ''}
-            onChange={(e) => onChange({ ...entry, fieldOfStudy: e.target.value })} /></label>
+        <Label>{t.degree}
+          <Input type="text" autoFocus={!entry.degree} value={entry.degree}
+            onChange={(e) => onChange({ ...entry, degree: e.target.value })} /></Label>
+        <Label>{t.fieldOfStudy}
+          <Input type="text" value={entry.fieldOfStudy ?? ''}
+            onChange={(e) => onChange({ ...entry, fieldOfStudy: e.target.value })} /></Label>
       </div>
-      <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.school}
-        <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" value={entry.school}
-          onChange={(e) => onChange({ ...entry, school: e.target.value })} /></label>
+      <Label>{t.school}
+        <Input type="text" value={entry.school}
+          onChange={(e) => onChange({ ...entry, school: e.target.value })} /></Label>
       <div className="flex gap-2.5 [&>*]:flex-1">
-        <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.fromYear}
-          <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" defaultValue={entry.startYear ?? ''}
-            onBlur={(e) => onChange({ ...entry, startYear: Number(e.target.value) || undefined })} /></label>
-        <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.toYear}
-          <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" defaultValue={entry.endYear ?? ''}
-            onBlur={(e) => onChange({ ...entry, endYear: Number(e.target.value) || undefined })} /></label>
+        <Label>{t.fromYear}
+          <Input type="text" defaultValue={entry.startYear ?? ''}
+            onBlur={(e) => onChange({ ...entry, startYear: Number(e.target.value) || undefined })} /></Label>
+        <Label>{t.toYear}
+          <Input type="text" defaultValue={entry.endYear ?? ''}
+            onBlur={(e) => onChange({ ...entry, endYear: Number(e.target.value) || undefined })} /></Label>
       </div>
       <Button wide variant="danger" onClick={() => setConfirming(true)}>{t.remove}</Button>
       {confirming && (
@@ -933,7 +923,7 @@ function ImportBox({
           }
         }}
       />
-      <textarea rows={5} placeholder={t.pasteCvPlaceholder} value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} />
+      <Textarea rows={5} placeholder={t.pasteCvPlaceholder} value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} />
       <Button wide disabled={busy || text.trim().length < 50}
         onClick={async () => {
           setErr('')

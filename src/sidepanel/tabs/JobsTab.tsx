@@ -9,7 +9,7 @@ import { useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { cn } from '../../lib/cn'
-import { Bar, Body, Button, FitChip, Icon, Row, ScreenHead, Segments, Sheet, TopBar, useStack } from '../ui'
+import { Bar, Body, Button, FitChip, Icon, IconButton, Row, ScreenHead, Segments, Sheet, Textarea, TopBar, useStack } from '../ui'
 import * as store from '../../lib/store'
 import { QueueItem, jobUrlKey, uid } from '../../lib/types'
 import { showToast } from '../toast'
@@ -129,9 +129,7 @@ export function JobsTab() {
       <TopBar
         title={t.jobsTitle}
         right={
-          <button className="grid size-7 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent p-0 text-muted hover:bg-hover hover:text-fg" onClick={() => setAdding(true)} aria-label={t.addJobsLabel}>
-            <Icon name="plus" />
-          </button>
+          <IconButton icon="plus" onClick={() => setAdding(true)} aria-label={t.addJobsLabel} />
         }
       />
       <Body screen={`jobs-${seg}`}>
@@ -197,7 +195,7 @@ function AddJobsSheet({ t, onAdd, onClose }: { t: T; onAdd: (text: string) => vo
   const [text, setText] = useState('')
   return (
     <Sheet title={t.addJobsLabel} sub={t.addJobsSub} closeLabel={t.cancel} onClose={onClose}>
-      <textarea
+      <Textarea
         rows={4}
         autoFocus
         placeholder={t.addJobsPlaceholder}

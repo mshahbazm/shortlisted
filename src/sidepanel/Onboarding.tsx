@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '../lib/cn'
-import { Button, FIELD, Select } from './ui'
+import { BigChoice, Button, Input, Label, Select, Textarea } from './ui'
 import { useStore } from './hooks'
 import { LOCALES, LOCALE_LABELS, isLocale, useContent } from '../i18n'
 import { cloudPdfText, runExtractProfile, sendLoginCode, verifyLoginCode } from '../ai/run'
@@ -182,16 +182,18 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
         <>
           <h1 className="mb-1.5 text-[21px] font-bold tracking-[-0.02em]">{t.welcomeTitle}</h1>
           <p className="mb-[26px] text-sm leading-relaxed text-muted">{t.welcomeLead}</p>
-          <button className="flex w-full cursor-pointer flex-col gap-1 rounded-[11px] border border-line bg-bg p-[13px] text-left hover:border-[#d4d4cf] hover:bg-hover disabled:cursor-default disabled:opacity-85" onClick={() => go('paste')}>
-            <div className="text-sm font-semibold text-fg">{t.importCvTitle}</div>
-            <div className="mt-0.5 text-[12.5px] text-muted">{t.importCvSub}</div>
-          </button>
+          <BigChoice
+            title={<>{t.importCvTitle}</>}
+            sub={<>{t.importCvSub}</>}
+            onClick={() => go('paste')}
+          />
           {/* No CV: don't interrogate them yet — sign them in first, the app
               helps build the profile and CV from inside. */}
-          <button className="flex w-full cursor-pointer flex-col gap-1 rounded-[11px] border border-line bg-bg p-[13px] text-left hover:border-[#d4d4cf] hover:bg-hover disabled:cursor-default disabled:opacity-85" onClick={() => go('done')}>
-            <div className="text-sm font-semibold text-fg">{t.startBlankTitle}</div>
-            <div className="mt-0.5 text-[12.5px] text-muted">{t.startBlankSub}</div>
-          </button>
+          <BigChoice
+            title={<>{t.startBlankTitle}</>}
+            sub={<>{t.startBlankSub}</>}
+            onClick={() => go('done')}
+          />
           <div className="mt-[22px] flex items-center gap-2.5">
             <Button variant="link" onClick={() => go('login')}>{t.welcomeLoginLink}</Button>
           </div>
@@ -202,11 +204,11 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
         <>
           <h1 className="mb-1.5 text-[21px] font-bold tracking-[-0.02em]">{t.loginTitle}</h1>
           <p className="mb-[26px] text-sm leading-relaxed text-muted">{t.loginLead}</p>
-          <label className="mb-2.5 block"><span>{t.email}</span>
-            <input className={FIELD}
+          <Label className="mb-2.5">{t.email}
+            <Input
               type="email" placeholder={t.emailPlaceholder} value={acctEmail}
               onChange={(e) => setAcctEmail(e.target.value)} autoFocus
-            /></label>
+            /></Label>
           {err && <p className="my-2 text-[13px] text-bad">{err}</p>}
           <div className="mt-[22px] flex items-center gap-2.5">
             <Button disabled={busy || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(acctEmail.trim())}
@@ -221,11 +223,11 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
         <>
           <h1 className="mb-1.5 text-[21px] font-bold tracking-[-0.02em]">{t.inboxTitle}</h1>
           <p className="mb-[26px] text-sm leading-relaxed text-muted">{t.inboxLead(acctEmail.trim())}</p>
-          <label className="mb-2.5 block"><span>{t.codeLabel}</span>
-            <input className={FIELD}
+          <Label className="mb-2.5">{t.codeLabel}
+            <Input
               inputMode="numeric" autoComplete="one-time-code" placeholder={t.codePlaceholder}
               value={otp} onChange={(e) => setOtp(e.target.value)} autoFocus
-            /></label>
+            /></Label>
           {err && <p className="my-2 text-[13px] text-bad">{err}</p>}
           <div className="mt-[22px] flex items-center gap-2.5">
             <Button disabled={busy || otp.trim().length < 4} onClick={verifyCode}>
@@ -243,13 +245,12 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
         <>
           <h1 className="mb-1.5 text-[21px] font-bold tracking-[-0.02em]">{t.pasteTitle}</h1>
           <p className="mb-[26px] text-sm leading-relaxed text-muted">{t.pasteLead}</p>
-          <button className="flex w-full cursor-pointer flex-col gap-1 rounded-[11px] border border-line bg-bg p-[13px] text-left hover:border-[#d4d4cf] hover:bg-hover disabled:cursor-default disabled:opacity-85" disabled={pdfBusy} onClick={() => fileRef.current?.click()}>
-            <div className="text-sm font-semibold text-fg">
-              {pdfBusy && <span className="mr-[7px] inline-block size-3 animate-spin rounded-full border-2 border-line border-t-fg align-[-1px]" />}
-              {pdfBusy ? t.readingCv : t.uploadPdf}
-            </div>
-            <div className="mt-0.5 text-[12.5px] text-muted">{pdfBusy ? t.readingCloudSub : t.uploadSubIdle}</div>
-          </button>
+          <BigChoice
+            title={<>{pdfBusy && <span className="mr-[7px] inline-block size-3 animate-spin rounded-full border-2 border-line border-t-fg align-[-1px]" />}
+              {pdfBusy ? t.readingCv : t.uploadPdf}</>}
+            sub={<>{pdfBusy ? t.readingCloudSub : t.uploadSubIdle}</>}
+            disabled={pdfBusy} onClick={() => fileRef.current?.click()}
+          />
           <input
             ref={fileRef} type="file" accept="application/pdf" className="hidden"
             onChange={(e) => {
@@ -258,7 +259,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
               e.target.value = ''
             }}
           />
-          <textarea className={cn(FIELD, "min-h-[150px] resize-y leading-normal")}
+          <Textarea className={"min-h-[150px] resize-y leading-normal"}
             placeholder={t.pastePlaceholder}
             value={cvText}
             onChange={(e) => setCvText(e.target.value)}
@@ -279,18 +280,18 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
           <h1 className="mb-1.5 text-[21px] font-bold tracking-[-0.02em]">{t.reviewTitle}</h1>
           <p className="mb-[26px] text-sm leading-relaxed text-muted">{t.reviewLead(profile.work.length, profile.skills.length)}</p>
           <div className="flex gap-2.5 [&>*]:flex-1">
-            <label className="mb-2.5 block"><span>{t.firstName}</span>
-              <input type="text" value={profile.identity.firstName} onChange={(e) => setIdentity('firstName', e.target.value)} /></label>
-            <label className="mb-2.5 block"><span>{t.lastName}</span>
-              <input type="text" value={profile.identity.lastName} onChange={(e) => setIdentity('lastName', e.target.value)} /></label>
+            <Label className="mb-2.5">{t.firstName}
+              <Input type="text" value={profile.identity.firstName} onChange={(e) => setIdentity('firstName', e.target.value)} /></Label>
+            <Label className="mb-2.5">{t.lastName}
+              <Input type="text" value={profile.identity.lastName} onChange={(e) => setIdentity('lastName', e.target.value)} /></Label>
           </div>
-          <label className="mb-2.5 block"><span>{t.email}</span>
-            <input type="text" value={profile.identity.email} onChange={(e) => setIdentity('email', e.target.value)} /></label>
+          <Label className="mb-2.5">{t.email}
+            <Input type="text" value={profile.identity.email} onChange={(e) => setIdentity('email', e.target.value)} /></Label>
           <div className="flex gap-2.5 [&>*]:flex-1">
-            <label className="mb-2.5 block"><span>{t.phone}</span>
-              <input type="text" value={profile.identity.phone} onChange={(e) => setIdentity('phone', e.target.value)} /></label>
-            <label className="mb-2.5 block"><span>{t.location}</span>
-              <input type="text" value={profile.identity.location} onChange={(e) => setIdentity('location', e.target.value)} /></label>
+            <Label className="mb-2.5">{t.phone}
+              <Input type="text" value={profile.identity.phone} onChange={(e) => setIdentity('phone', e.target.value)} /></Label>
+            <Label className="mb-2.5">{t.location}
+              <Input type="text" value={profile.identity.location} onChange={(e) => setIdentity('location', e.target.value)} /></Label>
           </div>
           <div className="mt-[22px] flex items-center gap-2.5">
             <Button onClick={() => go('answers')}>{t.looksRight}</Button>
@@ -302,24 +303,24 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
         <>
           <h1 className="mb-1.5 text-[21px] font-bold tracking-[-0.02em]">{t.answersTitle}</h1>
           <p className="mb-[26px] text-sm leading-relaxed text-muted">{t.answersLead}</p>
-          <label className="mb-2.5 block"><span>{t.salaryLabel}</span>
-            <input className={FIELD}
+          <Label className="mb-2.5">{t.salaryLabel}
+            <Input
               type="text" placeholder={t.salaryPlaceholder}
               value={profile.facts.salaryExpectation ?? ''}
               onChange={(e) => setFact('salaryExpectation', e.target.value)} autoFocus
-            /></label>
-          <label className="mb-2.5 block"><span>{t.noticeLabel}</span>
-            <input className={FIELD}
+            /></Label>
+          <Label className="mb-2.5">{t.noticeLabel}
+            <Input
               type="text" placeholder={t.noticePlaceholder}
               value={profile.facts.noticePeriod ?? ''}
               onChange={(e) => setFact('noticePeriod', e.target.value)}
-            /></label>
-          <label className="mb-2.5 block"><span>{t.sponsorshipLabel}</span>
-            <input className={FIELD}
+            /></Label>
+          <Label className="mb-2.5">{t.sponsorshipLabel}
+            <Input
               type="text" placeholder={t.sponsorshipPlaceholder}
               value={profile.facts.needsSponsorship ?? ''}
               onChange={(e) => setFact('needsSponsorship', e.target.value)}
-            /></label>
+            /></Label>
           <div className="mt-[22px] flex items-center gap-2.5">
             <Button onClick={finish}>{t.continue}</Button>
             <Button variant="link" onClick={finish}>{t.skip}</Button>
@@ -347,11 +348,11 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
         <>
           <h1 className="mb-1.5 text-[21px] font-bold tracking-[-0.02em]">{t.verifyTitle}</h1>
           <p className="mb-[26px] text-sm leading-relaxed text-muted">{t.verifyLead}</p>
-          <label className="mb-2.5 block"><span>{t.email}</span>
-            <input className={FIELD}
+          <Label className="mb-2.5">{t.email}
+            <Input
               type="email" placeholder={t.emailPlaceholder} value={acctEmail}
               onChange={(e) => setAcctEmail(e.target.value)} autoFocus
-            /></label>
+            /></Label>
           {err && <p className="my-2 text-[13px] text-bad">{err}</p>}
           <div className="mt-[22px] flex items-center gap-2.5">
             <Button disabled={busy || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(acctEmail.trim())}
@@ -366,11 +367,11 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
         <>
           <h1 className="mb-1.5 text-[21px] font-bold tracking-[-0.02em]">{t.inboxTitle}</h1>
           <p className="mb-[26px] text-sm leading-relaxed text-muted">{t.inboxLead(acctEmail.trim())}</p>
-          <label className="mb-2.5 block"><span>{t.codeLabel}</span>
-            <input className={FIELD}
+          <Label className="mb-2.5">{t.codeLabel}
+            <Input
               inputMode="numeric" autoComplete="one-time-code" placeholder={t.codePlaceholder}
               value={otp} onChange={(e) => setOtp(e.target.value)} autoFocus
-            /></label>
+            /></Label>
           {err && <p className="my-2 text-[13px] text-bad">{err}</p>}
           <div className="mt-[22px] flex items-center gap-2.5">
             <Button disabled={busy || otp.trim().length < 4} onClick={verifyCode}>

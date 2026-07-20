@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { cn } from '../../lib/cn'
-import { Body, Button, Chip, Cost, FIELD, Icon, Pill, ScreenHead, Sheet, TopBar, useStack } from '../ui'
+import { BigChoice, Body, Button, Checkbox, Chip, Cost, FIELD, Icon, Label, Pill, ScreenHead, Sheet, Textarea, TopBar, useStack } from '../ui'
 import { Profile, ResumeVariant, base64ToBytes, bytesToBase64, roleCompanyLabel, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
@@ -240,8 +240,7 @@ export function ResumesTab() {
         <ScreenHead title={t.tailorTitle} onBack={nav.back} backLabel={t.back} right={t.stepOf} />
         <Body screen={nav.screen}>
           <div className="text-[11px] font-[650] tracking-[0.07em] text-muted uppercase">{t.theJob}</div>
-          <textarea
-            className={cn(FIELD, "min-h-[110px] resize-y leading-normal")}
+          <Textarea className={"min-h-[110px] resize-y leading-normal"}
             rows={6}
             placeholder={t.pasteJobPlaceholder}
             value={jobText}
@@ -249,7 +248,7 @@ export function ResumesTab() {
           />
           <div className="flex flex-col gap-[7px]">
             <div className="text-[12.5px] font-semibold">{t.anythingToAdd} <span className="font-medium text-faint">{t.optionalLabel}</span></div>
-            <textarea
+            <Textarea
               rows={2}
               placeholder={t.tailorNotePlaceholder}
               value={tailorNote}
@@ -320,22 +319,25 @@ export function ResumesTab() {
           closeLabel={t.cancel}
           onClose={() => setSheetOpen(false)}
         >
-          <button className="flex w-full cursor-pointer flex-col gap-1 rounded-[11px] border border-line bg-bg p-[13px] text-left hover:border-[#d4d4cf] hover:bg-hover disabled:cursor-default disabled:opacity-85" onClick={() => { setSheetOpen(false); nav.push('tailor') }}>
-            <span className="flex items-center gap-2 text-sm font-[650]">{t.fromJobTitle} <Cost>{t.oneCredit}</Cost></span>
-            <span className="text-xs leading-[1.45] text-muted">{t.fromJobSub}</span>
-          </button>
-          <button
-            className="flex w-full cursor-pointer flex-col gap-1 rounded-[11px] border border-line bg-bg p-[13px] text-left hover:border-[#d4d4cf] hover:bg-hover disabled:cursor-default disabled:opacity-85"
+          <BigChoice
+            title={t.fromJobTitle}
+            right={<Cost>{t.oneCredit}</Cost>}
+            sub={t.fromJobSub}
+            onClick={() => { setSheetOpen(false); nav.push('tailor') }}
+          />
+          <BigChoice
+            title={t.fromProfileTitle}
+            right={<Cost free>{t.freeLabel}</Cost>}
+            sub={hasProfile ? t.fromProfileSub : t.fillProfileHint}
             disabled={!hasProfile}
             onClick={() => { setSheetOpen(false); setPicking('master') }}
-          >
-            <span className="flex items-center gap-2 text-sm font-[650]">{t.fromProfileTitle} <Cost free>{t.freeLabel}</Cost></span>
-            <span className="text-xs leading-[1.45] text-muted">{hasProfile ? t.fromProfileSub : t.fillProfileHint}</span>
-          </button>
-          <button className="flex w-full cursor-pointer flex-col gap-1 rounded-[11px] border border-line bg-bg p-[13px] text-left hover:border-[#d4d4cf] hover:bg-hover disabled:cursor-default disabled:opacity-85" onClick={() => { setSheetOpen(false); fileRef.current?.click() }}>
-            <span className="flex items-center gap-2 text-sm font-[650]">{t.fromUploadTitle} <Cost free>{t.freeLabel}</Cost></span>
-            <span className="text-xs leading-[1.45] text-muted">{t.fromUploadSub}</span>
-          </button>
+          />
+          <BigChoice
+            title={t.fromUploadTitle}
+            right={<Cost free>{t.freeLabel}</Cost>}
+            sub={t.fromUploadSub}
+            onClick={() => { setSheetOpen(false); fileRef.current?.click() }}
+          />
         </Sheet>
       )}
 
@@ -498,24 +500,19 @@ function ContentsEditor({ r, profile, onClose }: { r: ResumeVariant; profile: Pr
         {profile.work.map((w) => {
           const on = content.work.some((x) => x.sourceId === w.id)
           return (
-            <label key={w.id} className="flex cursor-pointer items-center gap-2 rounded-md px-0.5 py-1 text-[13px] hover:bg-hover">
-              <input
-                type="checkbox"
-                checked={on}
-                disabled={on && content.work.length === 1}
-                onChange={() => toggleWork(w.id)}
-              />
-              <span>{w.title}{w.company ? ` · ${w.company}` : ''}</span>
-            </label>
+            <Checkbox
+              key={w.id}
+              label={`${w.title}${w.company ? ` · ${w.company}` : ''}`}
+              checked={on}
+              disabled={on && content.work.length === 1}
+              onChange={() => toggleWork(w.id)}
+            />
           )
         })}
         <div className="mt-3 mb-1 text-[11px] font-bold tracking-[0.04em] text-muted uppercase">{t.contentsSkills}</div>
         <div className="grid grid-cols-2">
           {allSkills.map((name) => (
-            <label key={name} className="flex cursor-pointer items-center gap-2 rounded-md px-0.5 py-1 text-[13px] hover:bg-hover">
-              <input type="checkbox" checked={skillOn(name)} onChange={() => toggleSkill(name)} />
-              <span>{name}</span>
-            </label>
+            <Checkbox key={name} label={name} checked={skillOn(name)} onChange={() => toggleSkill(name)} />
           ))}
         </div>
         <div className="h-2.5" />
