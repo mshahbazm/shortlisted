@@ -112,4 +112,7 @@ export const profile: tLocale['profile'] = {
   newEducation: 'Nueva formación',
   addRoleShort: 'Añadir un puesto',
   addEducationShort: 'Añadir formación',
+  removeRoleTitle: '¿Eliminar este puesto?',
+  removeEducationTitle: '¿Eliminar esta formación?',
+  removeWarning: 'No se puede deshacer — tendrías que escribirlo todo otra vez. Los CV ya creados conservan lo que se usó para hacerlos.',
 }

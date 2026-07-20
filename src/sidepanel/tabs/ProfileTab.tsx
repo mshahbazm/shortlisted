@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { KV } from '../components'
-import { Body, Composer, Icon, Row, ScreenHead, TopBar, useStack } from '../ui'
+import { Body, Composer, Icon, Row, ScreenHead, Sheet, TopBar, useStack } from '../ui'
 import { QuestionsTab } from './QuestionsTab'
 import {
   EducationEntry,
@@ -42,6 +42,8 @@ export function ProfileTab({
   const t = useContent('profile')
   const nav = useStack()
   const [seg, setSeg] = useState<'profile' | 'bank' | 'pending'>('profile')
+  /** Band to scroll back to once we're on the root screen again. */
+  const [restore, setRestore] = useState('')
   const [profile, saveProfileRaw, loaded] = useStore('profile')
   const [settings] = useStore('settings')
   const [bank] = useStore('answerBank')
@@ -60,7 +62,21 @@ export function ProfileTab({
     return () => window.clearTimeout(id)
   }, [focusTellMe, loaded])
 
+  // Body resets scroll to the top whenever the screen changes, which is right
+  // for going INTO a screen and wrong for coming back out of one. Child
+  // effects run before parent effects, so this lands after that reset.
+  useEffect(() => {
+    if (!restore || nav.screen !== 'root') return
+    document.getElementById(`band-${restore}`)?.scrollIntoView({ block: 'start' })
+    setRestore('')
+  }, [restore, nav.screen])
+
   if (!loaded) return null
+
+  const leaveTo = (band: string) => {
+    setRestore(band)
+    nav.back()
+  }
 
   // Every edit persists immediately; the toast is the receipt. Patches merge
   // into the LIVE profile via store.update so a background write (CV intake
@@ -94,16 +110,17 @@ export function ProfileTab({
   // copy of the list where every row can expand.
   if (nav.screen.startsWith('work:')) {
     const id = nav.screen.slice(5)
+    const backToBand = () => leaveTo('work')
     const entry = p.work.find((w) => w.id === id)
     if (!entry) return <Pushed title={t.workTitle} nav={nav} t={t}><div className="empty">{t.nothingYet}</div></Pushed>
     return (
-      <Pushed title={entry.title || t.newRole} nav={nav} t={t}>
+      <Pushed title={entry.title || t.newRole} nav={nav} t={t} onBack={backToBand}>
         <WorkEditor
           entry={entry}
           onChange={(next) => set({ work: p.work.map((x) => (x.id === id ? next : x)) })}
           onRemove={() => {
             set({ work: p.work.filter((x) => x.id !== id) })
-            nav.back()
+            leaveTo('work')
           }}
         />
       </Pushed>
@@ -112,16 +129,17 @@ export function ProfileTab({
 
   if (nav.screen.startsWith('education:')) {
     const id = nav.screen.slice(10)
+    const backToBand = () => leaveTo('education')
     const entry = p.education.find((e) => e.id === id)
     if (!entry) return <Pushed title={t.educationTitle} nav={nav} t={t}><div className="empty">{t.nothingYet}</div></Pushed>
     return (
-      <Pushed title={entry.degree || t.newEducation} nav={nav} t={t}>
+      <Pushed title={entry.degree || t.newEducation} nav={nav} t={t} onBack={backToBand}>
         <EduEditor
           entry={entry}
           onChange={(next) => set({ education: p.education.map((x) => (x.id === id ? next : x)) })}
           onRemove={() => {
             set({ education: p.education.filter((x) => x.id !== id) })
-            nav.back()
+            leaveTo('education')
           }}
         />
       </Pushed>
@@ -302,6 +320,7 @@ export function ProfileTab({
         )}
 
         <Band
+          anchor="work"
           title={t.workTitle}
           addLabel={t.addRoleShort}
           onAdd={() => {
@@ -338,6 +357,7 @@ export function ProfileTab({
         )}
 
         <Band
+          anchor="education"
           title={t.educationTitle}
           addLabel={t.addEducationShort}
           onAdd={() => {
@@ -431,17 +451,20 @@ function Pushed({
   nav,
   t,
   right,
+  onBack,
   children,
 }: {
   title: string
   nav: ReturnType<typeof useStack>
   t: T
   right?: string
+  /** Overrides plain `back` when leaving should also restore a scroll spot. */
+  onBack?: () => void
   children: React.ReactNode
 }) {
   return (
     <>
-      <ScreenHead title={title} onBack={nav.back} backLabel={t.back} right={right} />
+      <ScreenHead title={title} onBack={onBack ?? nav.back} backLabel={t.back} right={right} />
       <Body screen={nav.screen}>{children}</Body>
     </>
   )
@@ -453,6 +476,7 @@ function Band({
   onEdit,
   onAdd,
   addLabel,
+  anchor,
   icon = 'pen',
 }: {
   title: string
@@ -462,10 +486,13 @@ function Band({
    *  opening a separate screen that repeats what is already on this one. */
   onAdd?: () => void
   addLabel?: string
+  /** Named so leaving an entry's editor can land back on this band rather
+   *  than at the top of a long screen. */
+  anchor?: string
   icon?: 'pen' | 'chev'
 }) {
   return (
-    <div className="band-h">
+    <div className="band-h" id={anchor ? `band-${anchor}` : undefined}>
       <span>{title}</span>
       {count && <span className="band-n">{count}</span>}
       {onAdd && (
@@ -635,6 +662,7 @@ function WorkEditor({
   onRemove: () => void
 }) {
   const t = useContent('profile')
+  const [confirming, setConfirming] = useState(false)
   const incomplete = needsCompletion(entry)
 
   const setStart = (v: string) => {
@@ -673,7 +701,15 @@ function WorkEditor({
       <label className="fl">{t.workHighlights}
         <textarea rows={5} value={entry.highlights.join('\n')}
           onChange={(e) => onChange({ ...entry, highlights: e.target.value.split('\n').filter((l) => l.trim()) })} /></label>
-      <button className="plain wide danger" onClick={onRemove}>{t.remove}</button>
+      <button className="plain wide danger" onClick={() => setConfirming(true)}>{t.remove}</button>
+      {confirming && (
+        <ConfirmRemove
+          title={t.removeRoleTitle}
+          t={t}
+          onCancel={() => setConfirming(false)}
+          onConfirm={onRemove}
+        />
+      )}
     </>
   )
 }
@@ -688,6 +724,7 @@ function EduEditor({
   onRemove: () => void
 }) {
   const t = useContent('profile')
+  const [confirming, setConfirming] = useState(false)
   return (
     <>
       <div className="field-row">
@@ -709,8 +746,37 @@ function EduEditor({
           <input className="fin" type="text" defaultValue={entry.endYear ?? ''}
             onBlur={(e) => onChange({ ...entry, endYear: Number(e.target.value) || undefined })} /></label>
       </div>
-      <button className="plain wide danger" onClick={onRemove}>{t.remove}</button>
+      <button className="plain wide danger" onClick={() => setConfirming(true)}>{t.remove}</button>
+      {confirming && (
+        <ConfirmRemove
+          title={t.removeEducationTitle}
+          t={t}
+          onCancel={() => setConfirming(false)}
+          onConfirm={onRemove}
+        />
+      )}
     </>
+  )
+}
+
+/** Deleting an entry cannot be undone and the user would have to retype the
+ *  whole thing, so it asks first. The sheet's own close button is the cancel,
+ *  which puts the safe choice where a mis-tap is most likely to land. */
+function ConfirmRemove({
+  title,
+  t,
+  onCancel,
+  onConfirm,
+}: {
+  title: string
+  t: T
+  onCancel: () => void
+  onConfirm: () => void
+}) {
+  return (
+    <Sheet title={title} sub={t.removeWarning} closeLabel={t.cancel} onClose={onCancel}>
+      <button className="destructive wide" onClick={onConfirm}>{t.remove}</button>
+    </Sheet>
   )
 }
 

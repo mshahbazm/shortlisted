@@ -112,4 +112,7 @@ export const profile: tLocale['profile'] = {
   newEducation: 'Neue Ausbildung',
   addRoleShort: 'Station hinzufügen',
   addEducationShort: 'Ausbildung hinzufügen',
+  removeRoleTitle: 'Diese Station entfernen?',
+  removeEducationTitle: 'Diese Ausbildung entfernen?',
+  removeWarning: 'Das lässt sich nicht rückgängig machen — du müsstest alles neu eintippen. Fertige Lebensläufe behalten, womit sie gebaut wurden.',
 }

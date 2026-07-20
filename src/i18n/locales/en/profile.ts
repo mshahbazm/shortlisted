@@ -112,4 +112,7 @@ export const profile = {
   newEducation: 'New education',
   addRoleShort: 'Add a role',
   addEducationShort: 'Add education',
+  removeRoleTitle: 'Remove this role?',
+  removeEducationTitle: 'Remove this education?',
+  removeWarning: 'This can’t be undone — you’d have to type it all in again. CVs already made keep what they were built with.',
 }

@@ -160,7 +160,8 @@ a:hover { text-decoration: underline; }
 
 /* ---------- 4. buttons ---------- */
 
-button.primary, button.ghost, button.plain, button.danger, button.small, button.link {
+button.primary, button.ghost, button.plain, button.danger, button.destructive,
+button.small, button.link {
   border-radius: var(--radius); cursor: pointer; font-family: inherit;
   font-size: 13.5px; font-weight: 600; padding: 10px 14px; min-height: 40px;
   border: 1px solid transparent;
@@ -175,6 +176,8 @@ button.ghost:hover { background: var(--hover); }
 button.plain { background: none; color: var(--muted); font-weight: 550; }
 button.plain:hover { background: var(--hover); }
 button.plain.danger, button.danger { background: none; color: var(--red); border-color: transparent; }
+button.destructive { background: var(--red); color: #fff; }
+button.destructive:hover { background: #b91c1c; }
 button.danger:hover { background: #fef2f2; }
 button.big { min-height: 46px; font-size: 14.5px; width: 100%; }
 button.wide { width: 100%; }

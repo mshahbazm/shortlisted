@@ -114,4 +114,7 @@ export const profile: tLocale['profile'] = {
   newEducation: 'Nowe wykształcenie',
   addRoleShort: 'Dodaj stanowisko',
   addEducationShort: 'Dodaj wykształcenie',
+  removeRoleTitle: 'Usunąć to stanowisko?',
+  removeEducationTitle: 'Usunąć to wykształcenie?',
+  removeWarning: 'Tego nie da się cofnąć — trzeba by wpisać wszystko od nowa. Gotowe CV zachowują to, z czego powstały.',
 }

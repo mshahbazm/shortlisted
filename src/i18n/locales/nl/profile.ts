@@ -112,4 +112,7 @@ export const profile: tLocale['profile'] = {
   newEducation: 'Nieuwe opleiding',
   addRoleShort: 'Functie toevoegen',
   addEducationShort: 'Opleiding toevoegen',
+  removeRoleTitle: 'Deze functie verwijderen?',
+  removeEducationTitle: 'Deze opleiding verwijderen?',
+  removeWarning: 'Dit kan niet ongedaan gemaakt worden — je zou alles opnieuw moeten typen. Al gemaakte cv’s houden waarmee ze gebouwd zijn.',
 }
