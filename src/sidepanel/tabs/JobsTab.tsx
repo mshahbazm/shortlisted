@@ -8,7 +8,8 @@
 import { useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
-import { Body, FitChip, Icon, Row, ScreenHead, Sheet, TopBar, useStack } from '../ui'
+import { cn } from '../../lib/cn'
+import { Body, Button, FitChip, Icon, Row, ScreenHead, Segments, Sheet, TopBar, useStack } from '../ui'
 import * as store from '../../lib/store'
 import { QueueItem, jobUrlKey, uid } from '../../lib/types'
 import { showToast } from '../toast'
@@ -61,12 +62,12 @@ export function JobsTab() {
         <>
           <ScreenHead title={t.applyingTitle} onBack={() => { setRunAt(0); nav.back() }} backLabel={t.back} />
           <Body center screen="run-done">
-            <div className="done">
-              <div className="done-ring"><Icon name="check" /></div>
-              <div className="done-t">{t.runDoneTitle}</div>
-              <div className="done-s">{t.runDoneBody(runAt)}</div>
+            <div className="flex flex-col items-center gap-[7px] px-1 pt-2.5 pb-0.5 text-center">
+              <div className="mb-[5px] grid size-[42px] place-items-center rounded-full bg-good-bg text-good"><Icon name="check" /></div>
+              <div className="text-base font-[650] tracking-[-0.01em]">{t.runDoneTitle}</div>
+              <div className="max-w-[32ch] text-[12.5px] leading-normal text-muted">{t.runDoneBody(runAt)}</div>
             </div>
-            <button className="primary wide" onClick={() => { setRunAt(0); nav.back() }}>{t.backToHome}</button>
+            <Button wide onClick={() => { setRunAt(0); nav.back() }}>{t.backToHome}</Button>
           </Body>
         </>
       )
@@ -82,40 +83,38 @@ export function JobsTab() {
           backLabel={t.back}
           right={t.runProgress(runAt + 1, todo.length)}
         />
-        <div className="runbar"><i style={{ width: `${((runAt + 1) / todo.length) * 100}%` }} /></div>
+        <div className="h-[3px] flex-none bg-active"><i style={{ width: `${((runAt + 1) / todo.length) * 100}%` }} /></div>
         <Body center screen={`run-${runAt}`}>
-          <div className="runcard">
+          <div className="flex flex-col items-center gap-[5px] rounded-[14px] border border-line px-[18px] py-5 text-center">
             {score !== undefined && (
               <>
-                <div className={`fitbig ${low ? 'low' : ''}`}>
-                  <span className="fit-n">{score}</span>
-                  <span className="fit-d">/10</span>
+                <div className={cn('flex items-baseline tabular-nums', low ? 'text-warn' : 'text-good')}>
+                  <span className="text-[44px] leading-none font-bold tracking-[-0.03em]">{score}</span>
+                  <span className="text-[17px] font-semibold opacity-55">/10</span>
                 </div>
-                <div className={`fit-w ${low ? 'low' : ''}`}>{bandWord(band, t)}</div>
+                <div className={cn('mb-2.5 text-[11px] font-bold tracking-[0.09em] uppercase', low ? 'text-warn' : 'text-good')}>{bandWord(band, t)}</div>
               </>
             )}
-            <div className="run-t">{job.title || urlLabel(job.url)}</div>
-            <div className="run-c">{job.company || urlLabel(job.url)}</div>
+            <div className="text-[17px] leading-[1.25] font-[650] tracking-[-0.015em]">{job.title || urlLabel(job.url)}</div>
+            <div className="text-[12.5px] text-muted">{job.company || urlLabel(job.url)}</div>
             {fitScores[jobUrlKey(job.url)]?.verdict && (
-              <div className="run-note">{fitScores[jobUrlKey(job.url)].verdict}</div>
+              <div className="my-3 rounded-[9px] bg-hover px-3 py-2.5 text-left text-[12.5px] leading-normal text-muted">{fitScores[jobUrlKey(job.url)].verdict}</div>
             )}
-            <button
-              className="primary big"
-              onClick={() => {
+            <Button size="lg" onClick={() => {
                 void chrome.tabs.create({ url: job.url })
                 setRunAt(runAt + 1)
               }}
             >
               {t.openAndFill}
-            </button>
-            <div className="run-alt">
+            </Button>
+            <div className="mt-[11px] flex w-full justify-between">
               <span />
-              <button className="link muted" onClick={() => setRunAt(runAt + 1)}>{t.skipThisOne}</button>
+              <Button variant="link" className="text-faint" onClick={() => setRunAt(runAt + 1)}>{t.skipThisOne}</Button>
             </div>
           </div>
-          <div className="dots">
+          <div className="flex justify-center gap-1.5">
             {todo.slice(0, 12).map((q, i) => (
-              <i key={q.id} className={i < runAt ? 'done' : i === runAt ? 'now' : ''} />
+              <i key={q.id} className={cn('size-1.5 rounded-full', i < runAt ? 'bg-[#c4c4bd]' : i === runAt ? 'w-[18px] rounded-[3px] bg-accent' : 'bg-[#e4e4e0]')} />
             ))}
           </div>
         </Body>
@@ -130,61 +129,59 @@ export function JobsTab() {
       <TopBar
         title={t.jobsTitle}
         right={
-          <button className="iconbtn" onClick={() => setAdding(true)} aria-label={t.addJobsLabel}>
+          <button className="grid size-7 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent p-0 text-muted hover:bg-hover hover:text-fg" onClick={() => setAdding(true)} aria-label={t.addJobsLabel}>
             <Icon name="plus" />
           </button>
         }
       />
       <Body screen={`jobs-${seg}`}>
-        <div className="segs">
-          <button className={`seg ${seg === 'all' ? 'on' : ''}`} onClick={() => setSeg('all')}>
-            {t.segAll}{todo.length > 0 ? ` ${todo.length}` : ''}
-          </button>
-          <button className={`seg ${seg === 'yours' ? 'on' : ''}`} onClick={() => setSeg('yours')}>
-            {t.segYours}{todo.length > 0 ? ` ${todo.length}` : ''}
-          </button>
-          <button className={`seg ${seg === 'found' ? 'on' : ''}`} onClick={() => setSeg('found')}>
-            {t.foundForYou}
-          </button>
-        </div>
+        <Segments
+          value={seg}
+          onChange={setSeg}
+          options={[
+            { value: 'all', label: t.segAll + (todo.length ? ` ${todo.length}` : '') },
+            { value: 'yours', label: t.segYours + (todo.length ? ` ${todo.length}` : '') },
+            { value: 'found', label: t.foundForYou },
+          ]}
+        />
 
         {/* Harvesting isn't switched on. Said plainly — an empty list here would
             read as "we looked and found nothing", which is a worse claim. */}
         {seg === 'found' && (
-          <div className="soon">
+          <div className="rounded-card border border-dashed border-[#dcdcd6] bg-bg px-3.5 py-[13px] text-[12.5px] leading-[1.55] text-muted">
             <b>{t.comingSoon}.</b> {t.foundForYouSoon}
           </div>
         )}
 
         {seg !== 'found' && shown.length === 0 && (
-          <div className="blank">
-            <div className="blank-t">{t.jobListTitle}</div>
-            <div className="blank-s">{t.noYoursYet}</div>
-            <button className="primary" onClick={() => setAdding(true)}>
+          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-[#dcdcd6] bg-bg px-[18px] py-[30px] text-center">
+            <div className="text-[15px] font-[650] tracking-[-0.01em]">{t.jobListTitle}</div>
+            <div className="max-w-[32ch] text-[12.5px] leading-[1.55] text-muted">{t.noYoursYet}</div>
+            <Button onClick={() => setAdding(true)}>
               <Icon name="plus" /> {t.addJobsLabel}
-            </button>
+            </Button>
           </div>
         )}
 
         {shown.length > 0 && (
           <>
-            <div className="rows tall">
+            <div className="overflow-hidden rounded-card border border-line bg-bg">
               {shown.map((q) => (
                 <Row
                   key={q.id}
                   lead={<FitChip score={scoreOf(q.url)} />}
                   title={q.title || urlLabel(q.url)}
                   sub={q.company || (scoreOf(q.url) === undefined ? t.notScoredYet : urlLabel(q.url))}
-                  right={<button className="link muted" onClick={() => skip(q.id)}>{t.skip}</button>}
+                  right={<Button variant="link" className="text-faint" onClick={() => skip(q.id)}>{t.skip}</Button>}
                 />
               ))}
             </div>
-            <button className="primary big" onClick={() => { setRunAt(0); nav.push('run') }}>
+            <Button size="lg" onClick={() => { setRunAt(0); nav.push('run') }}>
               {t.startApplying} &rarr;
-            </button>
-            <button className="ghost wide" onClick={() => setAdding(true)}>
+            </Button>
+            <Button variant="ghost" wide onClick={() => setAdding(true)}>
               <Icon name="plus" /> {t.addJobsLabel}
-            </button>
+            </Button>
           </>
         )}
       </Body>
@@ -207,9 +204,9 @@ function AddJobsSheet({ t, onAdd, onClose }: { t: T; onAdd: (text: string) => vo
         value={text}
         onChange={(e) => setText(e.target.value)}
       />
-      <button className="primary wide" disabled={!text.trim()} onClick={() => onAdd(text)}>
+      <Button wide disabled={!text.trim()} onClick={() => onAdd(text)}>
         {t.addToList}
-      </button>
+      </Button>
     </Sheet>
   )
 }

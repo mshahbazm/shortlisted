@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
-import { Body, Icon, ScreenHead, Sheet, TopBar, useStack } from '../ui'
+import { cn } from '../../lib/cn'
+import { Body, Button, Chip, Cost, FIELD, Icon, Pill, ScreenHead, Sheet, TopBar, useStack } from '../ui'
 import { Profile, ResumeVariant, base64ToBytes, bytesToBase64, roleCompanyLabel, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
@@ -12,6 +13,10 @@ import { ALL_TAGS, ResumeTemplate, TEMPLATES, TemplateTag } from '../../pdf/temp
 import { runTailorCv } from '../../ai/run'
 import { showToast } from '../toast'
 import type { tMerged } from '../../i18n/content'
+
+const FCHIP = 'cursor-pointer rounded-full border px-2.5 py-[5px] text-[11.5px] font-semibold'
+const FCHIP_ON = 'border-primary bg-primary text-primary-fg'
+const FCHIP_OFF = 'border-line bg-transparent text-muted hover:bg-hover'
 
 /** "Modern clean" → "Modern clean (2)" when the name is taken. */
 function uniqueLabel(base: string, existing: { label: string }[]): string {
@@ -199,25 +204,25 @@ export function ResumesTab() {
       <>
         <ScreenHead title={t.cvReady} onBack={() => nav.reset()} backLabel={t.back} />
         <Body screen={nav.screen}>
-          <div className="done">
-            <div className="done-ring"><Icon name="check" /></div>
-            <div className="done-t">{justMade}</div>
-            <div className="done-s">{t.tailoredBody}</div>
+          <div className="flex flex-col items-center gap-[7px] px-1 pt-2.5 pb-0.5 text-center">
+            <div className="mb-[5px] grid size-[42px] place-items-center rounded-full bg-good-bg text-good"><Icon name="check" /></div>
+            <div className="text-base font-[650] tracking-[-0.01em]">{justMade}</div>
+            <div className="max-w-[32ch] text-[12.5px] leading-normal text-muted">{t.tailoredBody}</div>
           </div>
-          <div className="duo tight">
-            <button className="ghost" disabled={!made} onClick={() => made && void openPreview(made)}>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="ghost" disabled={!made} onClick={() => made && void openPreview(made)}>
               {t.previewLabel}
-            </button>
-            <button className="primary" disabled={!made} onClick={() => { if (made) makeDefault(made.id); nav.reset() }}>
+            </Button>
+            <Button disabled={!made} onClick={() => { if (made) makeDefault(made.id); nav.reset() }}>
               {t.makeDefault}
-            </button>
+            </Button>
           </div>
           {gaps.length > 0 && (
-            <div className="gaps">
-              <div className="gaps-h">{t.gapsShort}</div>
-              <div className="gaps-s">{t.gapsKeptOff}</div>
-              <div className="gaps-c">
-                {gaps.map((g, i) => <span key={i} className="minichip amber">{g}</span>)}
+            <div className="flex flex-col gap-2 rounded-card border border-warn-line bg-warn-bg p-3">
+              <div className="text-[12.5px] font-[650] text-warn">{t.gapsShort}</div>
+              <div className="-mt-[5px] text-[11.5px] leading-[1.45] text-warn opacity-85">{t.gapsKeptOff}</div>
+              <div className="flex flex-wrap gap-1.5">
+                {gaps.map((g, i) => <Chip key={i} tone="amber">{g}</Chip>)}
               </div>
             </div>
           )}
@@ -234,35 +239,33 @@ export function ResumesTab() {
       <>
         <ScreenHead title={t.tailorTitle} onBack={nav.back} backLabel={t.back} right={t.stepOf} />
         <Body screen={nav.screen}>
-          <div className="step">{t.theJob}</div>
+          <div className="text-[11px] font-[650] tracking-[0.07em] text-muted uppercase">{t.theJob}</div>
           <textarea
-            className="tall"
+            className={cn(FIELD, "min-h-[110px] resize-y leading-normal")}
             rows={6}
             placeholder={t.pasteJobPlaceholder}
             value={jobText}
             onChange={(e) => setJobText(e.target.value)}
           />
-          <div className="opt">
-            <div className="opt-l">{t.anythingToAdd} <span className="opt-o">{t.optionalLabel}</span></div>
+          <div className="flex flex-col gap-[7px]">
+            <div className="text-[12.5px] font-semibold">{t.anythingToAdd} <span className="font-medium text-faint">{t.optionalLabel}</span></div>
             <textarea
               rows={2}
               placeholder={t.tailorNotePlaceholder}
               value={tailorNote}
               onChange={(e) => setTailorNote(e.target.value)}
             />
-            <div className="opt-h">{t.tailorNoteHint}</div>
+            <div className="text-[11.5px] leading-[1.45] text-faint">{t.tailorNoteHint}</div>
           </div>
-          {!hasProfile && <p className="microhint">{t.fillProfileHint}</p>}
-          <button
-            className="primary big"
-            disabled={!!busyStep || !hasProfile || jobText.trim().length < 80}
+          {!hasProfile && <p className="mt-1.5 text-xs leading-[1.45] text-faint">{t.fillProfileHint}</p>}
+          <Button size="lg" disabled={!!busyStep || !hasProfile || jobText.trim().length < 80}
             onClick={() => setPicking('tailor')}
           >
             {busyStep ? t.working : t.nextPickStyle}
-            {!busyStep && <span className="cost onbtn">{t.oneCredit}</span>}
-          </button>
-          {busyStep && <p className="progress">{busyStep}</p>}
-          {err && <p className="error">{err}</p>}
+            {!busyStep && <Cost onDark>{t.oneCredit}</Cost>}
+          </Button>
+          {busyStep && <p className="my-1 text-[13px] text-muted">{busyStep}</p>}
+          {err && <p className="my-1 text-[13px] text-bad">{err}</p>}
           {picking && <TemplatePicker profile={profile} onPick={onPickTemplate} onCancel={() => setPicking(null)} />}
         </Body>
       </>
@@ -273,34 +276,34 @@ export function ResumesTab() {
     <>
       <TopBar title={t.title} />
       <Body screen={nav.screen}>
-        <button className="primary big" onClick={() => setSheetOpen(true)} disabled={!!busyStep}>
+        <Button size="lg" onClick={() => setSheetOpen(true)} disabled={!!busyStep}>
           <Icon name="plus" /> {busyStep ? t.working : t.newCv}
-        </button>
-        <p className="lede">{t.hint}</p>
-        {busyStep && <p className="progress">{busyStep}</p>}
-        {err && <p className="error">{err}</p>}
+        </Button>
+        <p className="m-0 text-[12.5px] leading-normal text-muted">{t.hint}</p>
+        {busyStep && <p className="my-1 text-[13px] text-muted">{busyStep}</p>}
+        {err && <p className="my-1 text-[13px] text-bad">{err}</p>}
 
-        {resumes.length === 0 && <div className="empty">{t.emptyList}</div>}
+        {resumes.length === 0 && <div className="px-3 py-[26px] text-center text-[13px] text-faint">{t.emptyList}</div>}
         {resumes.length > 0 && (
-          <div className="cvs">
+          <div className="flex flex-col gap-[9px]">
             {resumes.map((r) => (
-              <div key={r.id} className={`cv-item ${r.isDefault ? 'star' : ''}`}>
-                <div className="cv-head">
-                  <span className="cv-label">{r.label}</span>
-                  {r.isDefault && <span className="pill good">{t.defaultChip}</span>}
-                  {r.source === 'uploaded' && !r.isDefault && <span className="pill flat">{t.fromUploadTitle}</span>}
+              <div key={r.id} className={cn('flex flex-col gap-2 rounded-card border p-3', r.isDefault ? 'border-[#cfe8da] bg-gradient-to-b from-[#f8fdfa] to-bg' : 'border-line')}>
+                <div className="flex items-center gap-2">
+                  <span className="min-w-0 flex-1 truncate text-[13.5px] font-[650]">{r.label}</span>
+                  {r.isDefault && <Pill tone="good">{t.defaultChip}</Pill>}
+                  {r.source === 'uploaded' && !r.isDefault && <Pill>{t.fromUploadTitle}</Pill>}
                 </div>
                 {r.tags.length > 0 && (
-                  <div className="cv-tags">
-                    {r.tags.slice(0, 3).map((tag) => <span key={tag} className="minichip">{tag}</span>)}
+                  <div className="flex flex-wrap gap-[5px]">
+                    {r.tags.slice(0, 3).map((tag) => <Chip key={tag}>{tag}</Chip>)}
                   </div>
                 )}
-                <div className="cv-actions">
-                  <button className="link" onClick={() => void openPreview(r)}>{t.previewLabel}</button>
-                  <button className="link" onClick={() => download(r)}>{t.pdf}</button>
-                  {r.content && <button className="link" onClick={() => setEditingCv(r.id)}>{t.contentsLabel}</button>}
-                  {!r.isDefault && <button className="link" onClick={() => makeDefault(r.id)}>{t.makeDefault}</button>}
-                  <button className="link muted" onClick={() => setDeleting(r.id)}>{t.deleteLabel}</button>
+                <div className="flex flex-wrap gap-[13px] pt-0.5">
+                  <Button variant="link" onClick={() => void openPreview(r)}>{t.previewLabel}</Button>
+                  <Button variant="link" onClick={() => download(r)}>{t.pdf}</Button>
+                  {r.content && <Button variant="link" onClick={() => setEditingCv(r.id)}>{t.contentsLabel}</Button>}
+                  {!r.isDefault && <Button variant="link" onClick={() => makeDefault(r.id)}>{t.makeDefault}</Button>}
+                  <Button variant="link" className="text-faint" onClick={() => setDeleting(r.id)}>{t.deleteLabel}</Button>
                 </div>
               </div>
             ))}
@@ -317,21 +320,21 @@ export function ResumesTab() {
           closeLabel={t.cancel}
           onClose={() => setSheetOpen(false)}
         >
-          <button className="bigchoice" onClick={() => { setSheetOpen(false); nav.push('tailor') }}>
-            <span className="bc-t">{t.fromJobTitle} <span className="cost">{t.oneCredit}</span></span>
-            <span className="bc-s">{t.fromJobSub}</span>
+          <button className="flex w-full cursor-pointer flex-col gap-1 rounded-[11px] border border-line bg-bg p-[13px] text-left hover:border-[#d4d4cf] hover:bg-hover disabled:cursor-default disabled:opacity-85" onClick={() => { setSheetOpen(false); nav.push('tailor') }}>
+            <span className="flex items-center gap-2 text-sm font-[650]">{t.fromJobTitle} <Cost>{t.oneCredit}</Cost></span>
+            <span className="text-xs leading-[1.45] text-muted">{t.fromJobSub}</span>
           </button>
           <button
-            className="bigchoice"
+            className="flex w-full cursor-pointer flex-col gap-1 rounded-[11px] border border-line bg-bg p-[13px] text-left hover:border-[#d4d4cf] hover:bg-hover disabled:cursor-default disabled:opacity-85"
             disabled={!hasProfile}
             onClick={() => { setSheetOpen(false); setPicking('master') }}
           >
-            <span className="bc-t">{t.fromProfileTitle} <span className="cost free">{t.freeLabel}</span></span>
-            <span className="bc-s">{hasProfile ? t.fromProfileSub : t.fillProfileHint}</span>
+            <span className="flex items-center gap-2 text-sm font-[650]">{t.fromProfileTitle} <Cost free>{t.freeLabel}</Cost></span>
+            <span className="text-xs leading-[1.45] text-muted">{hasProfile ? t.fromProfileSub : t.fillProfileHint}</span>
           </button>
-          <button className="bigchoice" onClick={() => { setSheetOpen(false); fileRef.current?.click() }}>
-            <span className="bc-t">{t.fromUploadTitle} <span className="cost free">{t.freeLabel}</span></span>
-            <span className="bc-s">{t.fromUploadSub}</span>
+          <button className="flex w-full cursor-pointer flex-col gap-1 rounded-[11px] border border-line bg-bg p-[13px] text-left hover:border-[#d4d4cf] hover:bg-hover disabled:cursor-default disabled:opacity-85" onClick={() => { setSheetOpen(false); fileRef.current?.click() }}>
+            <span className="flex items-center gap-2 text-sm font-[650]">{t.fromUploadTitle} <Cost free>{t.freeLabel}</Cost></span>
+            <span className="text-xs leading-[1.45] text-muted">{t.fromUploadSub}</span>
           </button>
         </Sheet>
       )}
@@ -343,15 +346,13 @@ export function ResumesTab() {
           closeLabel={t.cancel}
           onClose={() => setDeleting(null)}
         >
-          <button
-            className="destructive wide"
-            onClick={() => {
+          <Button variant="destructive" wide onClick={() => {
               removeResume(deleting)
               setDeleting(null)
             }}
           >
             {t.deleteLabel}
-          </button>
+          </Button>
         </Sheet>
       )}
 
@@ -379,14 +380,14 @@ function PreviewSheet({
   t: tMerged<'resumes'>
 }) {
   return (
-    <div className="tpl-overlay" onClick={onClose}>
-      <div className="pv-sheet" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4" onClick={onClose}>
+      <div className="max-h-[90vh] w-full max-w-[680px] overflow-y-auto rounded-xl bg-bg p-4 shadow-[0_16px_48px_rgba(0,0,0,0.2)]" onClick={(e) => e.stopPropagation()}>
         <h3>{preview.label}</h3>
-        {preview.pages.length === 0 && <p className="progress">{t.working}</p>}
+        {preview.pages.length === 0 && <p className="my-1 text-[13px] text-muted">{t.working}</p>}
         {preview.pages.map((p, i) => (
           <img key={i} src={p} alt="" />
         ))}
-        <button className="ghost wide" onClick={onClose}>{t.done}</button>
+        <Button variant="ghost" wide onClick={onClose}>{t.done}</Button>
       </div>
     </div>
   )
@@ -415,28 +416,28 @@ function TemplatePicker({
   }
 
   return (
-    <div className="tpl-overlay" onClick={onCancel}>
-      <div className="tpl-sheet" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4" onClick={onCancel}>
+      <div className="max-h-[88vh] w-full max-w-[640px] overflow-y-auto rounded-xl bg-bg p-4 shadow-[0_16px_48px_rgba(0,0,0,0.2)]" onClick={(e) => e.stopPropagation()}>
         <h3>{t.pickStyleTitle}</h3>
-        <p className="lede">{t.pickStyleHint}</p>
-        <div className="filters">
-          <button className={`fchip ${tag === null ? 'on' : ''}`} onClick={() => setTag(null)}>{t.allStyles}</button>
+        <p className="m-0 text-[12.5px] leading-normal text-muted">{t.pickStyleHint}</p>
+        <div className="my-2.5 flex flex-wrap gap-[5px]">
+          <button className={cn(FCHIP, tag === null ? FCHIP_ON : FCHIP_OFF)} onClick={() => setTag(null)}>{t.allStyles}</button>
           {ALL_TAGS.map((tg) => (
-            <button key={tg} className={`fchip ${tag === tg ? 'on' : ''}`} onClick={() => setTag(tg)}>
+            <button key={tg} className={cn(FCHIP, tag === tg ? FCHIP_ON : FCHIP_OFF)} onClick={() => setTag(tg)}>
               {tagLabel[tg]}
             </button>
           ))}
         </div>
-        <div className="tpl-grid">
+        <div className="mb-3 grid grid-cols-1 gap-2.5 min-[440px]:grid-cols-2">
           {shown.map((tpl) => (
-            <button key={tpl.id} className="tpl-card" onClick={() => onPick(tpl.id)}>
+            <button key={tpl.id} className="flex cursor-pointer flex-col gap-1.5 rounded-[9px] border border-transparent p-1 text-left" onClick={() => onPick(tpl.id)}>
               <PdfThumb tpl={tpl} profile={profile} cache={cache.current} />
-              <span className="tpl-name">{styleName(t, tpl.id)}</span>
-              <span className="tpl-for">{tpl.tags.slice(0, 2).map((tg) => tagLabel[tg]).join(' · ')}</span>
+              <span className="text-center text-[11.5px] font-semibold text-muted">{styleName(t, tpl.id)}</span>
+              <span className="text-[10.5px] text-muted">{tpl.tags.slice(0, 2).map((tg) => tagLabel[tg]).join(' · ')}</span>
             </button>
           ))}
         </div>
-        <button className="ghost wide" onClick={onCancel}>{t.cancel}</button>
+        <Button variant="ghost" wide onClick={onCancel}>{t.cancel}</Button>
       </div>
     </div>
   )
@@ -489,15 +490,15 @@ function ContentsEditor({ r, profile, onClose }: { r: ResumeVariant; profile: Pr
   }
 
   return (
-    <div className="tpl-overlay" onClick={onClose}>
-      <div className="pv-sheet" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4" onClick={onClose}>
+      <div className="max-h-[90vh] w-full max-w-[680px] overflow-y-auto rounded-xl bg-bg p-4 shadow-[0_16px_48px_rgba(0,0,0,0.2)]" onClick={(e) => e.stopPropagation()}>
         <h3>{r.label}</h3>
-        <p className="microhint" style={{ margin: '0 0 10px' }}>{t.contentsHint}</p>
-        <div className="ct-h">{t.contentsWork}</div>
+        <p className="mt-1.5 text-xs leading-[1.45] text-faint" style={{ margin: '0 0 10px' }}>{t.contentsHint}</p>
+        <div className="mb-1 text-[11px] font-bold tracking-[0.04em] text-muted uppercase">{t.contentsWork}</div>
         {profile.work.map((w) => {
           const on = content.work.some((x) => x.sourceId === w.id)
           return (
-            <label key={w.id} className="ct-row">
+            <label key={w.id} className="flex cursor-pointer items-center gap-2 rounded-md px-0.5 py-1 text-[13px] hover:bg-hover">
               <input
                 type="checkbox"
                 checked={on}
@@ -508,17 +509,17 @@ function ContentsEditor({ r, profile, onClose }: { r: ResumeVariant; profile: Pr
             </label>
           )
         })}
-        <div className="ct-h" style={{ marginTop: 12 }}>{t.contentsSkills}</div>
-        <div className="ct-skills">
+        <div className="mb-1 text-[11px] font-bold tracking-[0.04em] text-muted uppercase" style={{ marginTop: 12 }}>{t.contentsSkills}</div>
+        <div className="grid grid-cols-2">
           {allSkills.map((name) => (
-            <label key={name} className="ct-row">
+            <label key={name} className="flex cursor-pointer items-center gap-2 rounded-md px-0.5 py-1 text-[13px] hover:bg-hover">
               <input type="checkbox" checked={skillOn(name)} onChange={() => toggleSkill(name)} />
               <span>{name}</span>
             </label>
           ))}
         </div>
-        <div className="spacer" />
-        <button className="ghost small" onClick={onClose}>{t.done}</button>
+        <div className="h-2.5" />
+        <Button variant="ghost" size="sm" onClick={onClose}>{t.done}</Button>
       </div>
     </div>
   )
@@ -555,5 +556,5 @@ function PdfThumb({
     }
   }, [tpl.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return <div className="tpl-thumb">{src && <img src={src} alt="" />}</div>
+  return <div className="aspect-[210/280] overflow-hidden rounded-[5px] border border-line bg-white">{src && <img src={src} alt="" />}</div>
 }

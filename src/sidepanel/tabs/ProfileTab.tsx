@@ -9,8 +9,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
+import { cn } from '../../lib/cn'
 import { KV } from '../components'
-import { Body, ChipInput, Composer, Icon, ListEditor, Row, ScreenHead, Sheet, TopBar, useStack } from '../ui'
+import { Body, Button, Chip, ChipInput, Composer, Cost, Count, Icon, IconButton, ListEditor, Row, ScreenHead, Segments, Sheet, TopBar, useStack } from '../ui'
 import { QuestionsTab } from './QuestionsTab'
 import {
   EducationEntry,
@@ -112,7 +113,7 @@ export function ProfileTab({
     const id = nav.screen.slice(5)
     const backToBand = () => leaveTo('work')
     const entry = p.work.find((w) => w.id === id)
-    if (!entry) return <Pushed title={t.workTitle} nav={nav} t={t}><div className="empty">{t.nothingYet}</div></Pushed>
+    if (!entry) return <Pushed title={t.workTitle} nav={nav} t={t}><div className="px-3 py-[26px] text-center text-[13px] text-faint">{t.nothingYet}</div></Pushed>
     return (
       <Pushed title={entry.title || t.newRole} nav={nav} t={t} onBack={backToBand}>
         <WorkEditor
@@ -131,7 +132,7 @@ export function ProfileTab({
     const id = nav.screen.slice(10)
     const backToBand = () => leaveTo('education')
     const entry = p.education.find((e) => e.id === id)
-    if (!entry) return <Pushed title={t.educationTitle} nav={nav} t={t}><div className="empty">{t.nothingYet}</div></Pushed>
+    if (!entry) return <Pushed title={t.educationTitle} nav={nav} t={t}><div className="px-3 py-[26px] text-center text-[13px] text-faint">{t.nothingYet}</div></Pushed>
     return (
       <Pushed title={entry.degree || t.newEducation} nav={nav} t={t} onBack={backToBand}>
         <EduEditor
@@ -184,10 +185,10 @@ export function ProfileTab({
     return (
       <Pushed title={t.languagesTitle} nav={nav} t={t}>
         {p.languages.map((l, i) => (
-          <div key={i} className="subrow">
-            <div className="subrow-f side">
+          <div key={i} className="flex items-start gap-1.5 border-b border-line pb-2.5 last:border-b-0">
+            <div className="flex min-w-0 flex-1 flex-row items-center gap-1.5">
               <input
-                className="fin" type="text" value={l.name} placeholder={t.languageName}
+                className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" value={l.name} placeholder={t.languageName}
                 onChange={(e) => set({
                   languages: p.languages.map((x, j) => (j === i
                     ? { ...x, name: e.target.value, langCode: e.target.value.slice(0, 2).toLowerCase() }
@@ -207,21 +208,19 @@ export function ProfileTab({
               </select>
             </div>
             <button
-              className="lrow-x" aria-label={t.removeItem}
+              className="grid size-[30px] shrink-0 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-faint hover:bg-hover hover:text-bad" aria-label={t.removeItem}
               onClick={() => set({ languages: p.languages.filter((_, j) => j !== i) })}
             >
               <Icon name="close" />
             </button>
           </div>
         ))}
-        <button
-          className="ghost wide small"
-          onClick={() => set({
+        <Button variant="ghost" wide size="sm" onClick={() => set({
             languages: [...p.languages, { langCode: '', name: '', proficiency: 'professional_working' }],
           })}
         >
           <Icon name="plus" /> {t.addLanguage}
-        </button>
+        </Button>
       </Pushed>
     )
   }
@@ -233,19 +232,19 @@ export function ProfileTab({
           const setCert = (patch: Partial<typeof c>) =>
             set({ certifications: p.certifications.map((x, j) => (j === i ? { ...x, ...patch } : x)) })
           return (
-            <div key={i} className="subrow">
-              <div className="subrow-f">
-                <input className="fin" type="text" value={c.name} placeholder={t.certName}
+            <div key={i} className="flex items-start gap-1.5 border-b border-line pb-2.5 last:border-b-0">
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" value={c.name} placeholder={t.certName}
                   onChange={(e) => setCert({ name: e.target.value })} />
-                <div className="field-row">
-                  <input className="fin" type="text" value={c.issuingOrganization ?? ''} placeholder={t.issuer}
+                <div className="flex gap-2.5 [&>*]:flex-1">
+                  <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" value={c.issuingOrganization ?? ''} placeholder={t.issuer}
                     onChange={(e) => setCert({ issuingOrganization: e.target.value || undefined })} />
-                  <input className="fin" type="text" inputMode="numeric" value={c.year ?? ''} placeholder={t.yearLabel}
+                  <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" inputMode="numeric" value={c.year ?? ''} placeholder={t.yearLabel}
                     onChange={(e) => setCert({ year: Number(e.target.value) || undefined })} />
                 </div>
               </div>
               <button
-                className="lrow-x" aria-label={t.removeItem}
+                className="grid size-[30px] shrink-0 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-faint hover:bg-hover hover:text-bad" aria-label={t.removeItem}
                 onClick={() => set({ certifications: p.certifications.filter((_, j) => j !== i) })}
               >
                 <Icon name="close" />
@@ -253,12 +252,10 @@ export function ProfileTab({
             </div>
           )
         })}
-        <button
-          className="ghost wide small"
-          onClick={() => set({ certifications: [...p.certifications, { name: '' }] })}
+        <Button variant="ghost" wide size="sm" onClick={() => set({ certifications: [...p.certifications, { name: '' }] })}
         >
           <Icon name="plus" /> {t.addCertification}
-        </button>
+        </Button>
       </Pushed>
     )
   }
@@ -273,10 +270,10 @@ export function ProfileTab({
         {/* Fixed slots, so removing one means clearing it — but there was no
             way to do that at all short of selecting the text and deleting. */}
         {slots.map(([key, label]) => (
-          <div key={key} className="linkrow">
+          <div key={key} className="flex items-center gap-1">
             <KV k={label} v={p.links[key] ?? ''} url invalidHint={t.invalidUrl} onChange={(v) => setLinks(key, v)} />
             {p.links[key] && (
-              <button className="lrow-x" aria-label={`${t.clearLink} ${label}`} onClick={() => setLinks(key, '')}>
+              <button className="grid size-[30px] shrink-0 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-faint hover:bg-hover hover:text-bad" aria-label={`${t.clearLink} ${label}`} onClick={() => setLinks(key, '')}>
                 <Icon name="close" />
               </button>
             )}
@@ -290,7 +287,7 @@ export function ProfileTab({
     const setFacts = (k: keyof typeof p.facts, v: string) => set({ facts: { ...p.facts, [k]: v } })
     return (
       <Pushed title={t.standardAnswersTitle} nav={nav} t={t} right={t.answeredOf(factsFilled, 9)}>
-        <p className="lede">{t.standardAnswersHint}</p>
+        <p className="m-0 text-[12.5px] leading-normal text-muted">{t.standardAnswersHint}</p>
         <KV k={t.salaryExpectation} v={p.facts.salaryExpectation ?? ''} onChange={(v) => setFacts('salaryExpectation', v)} />
         <KV k={t.noticePeriod} v={p.facts.noticePeriod ?? ''} placeholder={t.noticePlaceholder} onChange={(v) => setFacts('noticePeriod', v)} />
         <KV k={t.yearsOfExperience} v={p.facts.yearsOfExperience ?? ''} placeholder={t.yearsPlaceholder} onChange={(v) => setFacts('yearsOfExperience', v)} />
@@ -307,7 +304,7 @@ export function ProfileTab({
   if (nav.screen === 'reimport') {
     return (
       <Pushed title={t.reimportTitle} nav={nav} t={t}>
-        <p className="lede">{t.reimportBody}</p>
+        <p className="m-0 text-[12.5px] leading-normal text-muted">{t.reimportBody}</p>
         <ImportBox
           cloudPdf={async (file) => {
             const { profile: extracted } = await cloudParseResumePdf(settings, await file.arrayBuffer())
@@ -333,25 +330,21 @@ export function ProfileTab({
       <TopBar
         title={t.yourProfile}
         right={
-          <button className="iconbtn" onClick={onOpenSettings} aria-label={t.settings}>
-            <Icon name="gear" />
-          </button>
+          <IconButton icon="gear" onClick={onOpenSettings} aria-label={t.settings} />
         }
       />
       <Body screen={`profile-${seg}`}>
         {/* Three jobs, three tabs. The unanswered count lives here and nowhere
             else — it is only actionable on this screen. */}
-        <div className="segs">
-          <button className={`seg ${seg === 'profile' ? 'on' : ''}`} onClick={() => setSeg('profile')}>
-            {t.segProfile}
-          </button>
-          <button className={`seg ${seg === 'bank' ? 'on' : ''}`} onClick={() => setSeg('bank')}>
-            {t.answerBankTitle}{bank.length > 0 ? ` ${bank.length}` : ''}
-          </button>
-          <button className={`seg ${seg === 'pending' ? 'on' : ''}`} onClick={() => setSeg('pending')}>
-            {t.segUnanswered}{pending.length > 0 ? ` ${pending.length}` : ''}
-          </button>
-        </div>
+        <Segments
+          value={seg}
+          onChange={setSeg}
+          options={[
+            { value: 'profile', label: t.segProfile },
+            { value: 'bank', label: t.answerBankTitle + (bank.length ? ` ${bank.length}` : '') },
+            { value: 'pending', label: t.segUnanswered + (pending.length ? ` ${pending.length}` : '') },
+          ]}
+        />
 
         {seg === 'bank' && <QuestionsTab view="bank" />}
         {seg === 'pending' && <QuestionsTab view="pending" />}
@@ -359,21 +352,21 @@ export function ProfileTab({
         {seg === 'profile' && (
           <>
         {/* 1. Where you stand */}
-        <div className="ident">
-          <div className="ident-n">{name || t.yourProfile}</div>
-          <div className="ident-h">{p.headline || t.hint}</div>
+        <div className="flex flex-col gap-0.5">
+          <div className="text-lg leading-tight font-[650] tracking-[-0.02em]">{name || t.yourProfile}</div>
+          <div className="text-[13px] text-muted">{p.headline || t.hint}</div>
         </div>
 
-        <div className="meter">
-          <div className="meter-top">
+        <div className="flex flex-col gap-2 rounded-card border border-line p-3">
+          <div className="flex justify-between text-[12.5px] text-muted">
             <span>{t.strengthTitle}</span>
             <b>{percent}%</b>
           </div>
-          <div className="meter-bar"><i style={{ width: `${percent}%` }} /></div>
+          <div className="h-1.5 overflow-hidden rounded-[3px] bg-active"><i style={{ width: `${percent}%` }} /></div>
           {gaps.length > 0 && (
-            <div className="meter-gaps">
+            <div className="mt-0.5 flex flex-wrap gap-1.5">
               {gaps.map((g) => (
-                <button key={g.key} className="gapchip" onClick={() => nav.push(gapTarget(g, p))}>
+                <button key={g.key} className="cursor-pointer rounded-full border-0 bg-warn-bg px-2.5 py-1 text-[11.5px] font-semibold text-warn hover:bg-[#fdf2d8]" onClick={() => nav.push(gapTarget(g, p))}>
                   {gapLabel(g.key, t)}
                 </button>
               ))}
@@ -387,14 +380,14 @@ export function ProfileTab({
         </div>
 
         {/* 3. What employers ask — profile data, so it lives here, not in a tab */}
-        <div className="p-sec">
-          <div className="p-sec-h"><span>{t.whatEmployersAsk}</span></div>
-          <div className="rows nav">
+        <div className="flex flex-col gap-2.5">
+          <div className="flex items-baseline justify-between text-[11px] font-[650] tracking-[0.07em] text-muted uppercase"><span>{t.whatEmployersAsk}</span></div>
+          <div className="overflow-hidden rounded-card border border-line bg-bg">
             <Row
               title={t.standardAnswersTitle}
               sub={t.standardAnswersSub}
               warn={factsFilled < 5}
-              right={<span className={`cnt ${factsFilled < 5 ? 'warn' : ''}`}>{t.answeredOf(factsFilled, 9)}</span>}
+              right={<Count warn={factsFilled < 5}>{t.answeredOf(factsFilled, 9)}</Count>}
               onClick={() => nav.push('facts')}
             />
           </div>
@@ -402,18 +395,18 @@ export function ProfileTab({
 
         {/* 4. The profile itself, rendered */}
         <Band title={t.aboutYou} onEdit={() => nav.push('about')} icon="pen" />
-        <div className="facts">
+        <div className="flex flex-col gap-1.5">
           {p.identity.email && <Fact k={t.email} v={p.identity.email} />}
           {p.identity.phone && <Fact k={t.phone} v={p.identity.phone} />}
           {p.identity.location && <Fact k={t.location} v={p.identity.location} />}
           {p.industries.length > 0 && <Fact k={t.industries} v={p.industries.join(', ')} />}
         </div>
-        {p.summary && <p className="summary">{p.summary}</p>}
+        {p.summary && <p className="m-0 text-[12.5px] leading-[1.55] text-muted">{p.summary}</p>}
 
         {p.highlights.length > 0 && (
           <>
             <Band title={t.careerHighlights} count={`${p.highlights.length} / 3`} onEdit={() => nav.push('highlights')} icon="pen" />
-            <ul className="hl">
+            <ul className="m-0 flex list-disc flex-col gap-[5px] pl-[17px]">
               {p.highlights.map((h, i) => <li key={i}>{h}</li>)}
             </ul>
           </>
@@ -430,23 +423,23 @@ export function ProfileTab({
           }}
         />
         {p.work.length === 0 ? (
-          <div className="empty">{t.nothingYet}</div>
+          <div className="px-3 py-[26px] text-center text-[13px] text-faint">{t.nothingYet}</div>
         ) : (
-          <div className="tline">
+          <div className="flex flex-col">
             {p.work.map((w) => {
               const incomplete = needsCompletion(w)
               return (
-                <button key={w.id} className={`tl-item ${incomplete ? 'bad' : ''}`} onClick={() => nav.push(`work:${w.id}`)}>
-                  <span className={`tl-dot ${incomplete ? 'warn' : w.isCurrent ? 'now' : ''}`} />
-                  <span className="tl-body">
-                    <span className={`tl-when ${incomplete ? 'missing' : ''}`}>
+                <button key={w.id} className={cn('relative flex w-full cursor-pointer gap-3 border-b border-line py-3 text-left last:border-b-0', incomplete ? 'bg-[#fffdf7] hover:bg-[#fdf9ee]' : 'hover:bg-hover')} onClick={() => nav.push(`work:${w.id}`)}>
+                  <span className={cn('mt-[5px] size-[9px] shrink-0 rounded-full', incomplete ? 'bg-warn' : w.isCurrent ? 'bg-accent' : 'bg-[#d4d4cf]')} />
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className={cn('flex items-center text-[11px] font-semibold tracking-[0.03em] tabular-nums', incomplete ? 'text-warn' : 'text-muted')}>
                       {incomplete ? t.workNeedsDetail : workPeriodLabel(w) || '—'}
                     </span>
-                    <span className="tl-t">{w.title || t.untitled}</span>
-                    <span className="tl-c">{w.company || '—'}</span>
+                    <span className="text-[13.5px] font-[650] tracking-[-0.01em]">{w.title || t.untitled}</span>
+                    <span className="text-[12.5px] text-muted">{w.company || '—'}</span>
                     {w.skills.length > 0 && (
-                      <span className="tl-tags">
-                        {w.skills.slice(0, 3).map((s) => <span key={s} className="minichip">{s}</span>)}
+                      <span className="mt-[5px] flex flex-wrap gap-[5px]">
+                        {w.skills.slice(0, 3).map((s) => <Chip key={s}>{s}</Chip>)}
                       </span>
                     )}
                   </span>
@@ -467,12 +460,12 @@ export function ProfileTab({
           }}
         />
         {p.education.length === 0 ? (
-          <div className="empty">{t.nothingYet}</div>
+          <div className="px-3 py-[26px] text-center text-[13px] text-faint">{t.nothingYet}</div>
         ) : (
           p.education.map((e) => (
-            <button key={e.id} className="edu" onClick={() => nav.push(`education:${e.id}`)}>
-              <span className="edu-t">{[e.degree, e.fieldOfStudy].filter(Boolean).join(', ') || e.school}</span>
-              <span className="edu-c">
+            <button key={e.id} className="flex w-full cursor-pointer flex-col gap-0.5 rounded-lg p-1.5 text-left hover:bg-hover" onClick={() => nav.push(`education:${e.id}`)}>
+              <span className="text-[13.5px] font-[650]">{[e.degree, e.fieldOfStudy].filter(Boolean).join(', ') || e.school}</span>
+              <span className="text-[12.5px] text-muted">
                 {[e.school, [e.startYear, e.endYear].filter(Boolean).join(' — ')].filter(Boolean).join(' · ')}
               </span>
             </button>
@@ -481,23 +474,23 @@ export function ProfileTab({
 
         <Band title={t.skillsTitle} count={String(skills.length)} onEdit={() => nav.push('skills')} icon="pen" />
         {skills.length === 0 ? (
-          <div className="empty">{t.nothingYet}</div>
+          <div className="px-3 py-[26px] text-center text-[13px] text-faint">{t.nothingYet}</div>
         ) : (
-          <div className="chipwrap">
-            {skills.slice(0, 12).map((s) => <span key={s} className="minichip">{s}</span>)}
+          <div className="flex flex-wrap gap-[5px]">
+            {skills.slice(0, 12).map((s) => <Chip key={s}>{s}</Chip>)}
             {skills.length > 12 && (
-              <button className="minichip more" onClick={() => nav.push('skills')}>
+              <Chip tone="accent" onClick={() => nav.push('skills')}>
                 +{skills.length - 12} {t.moreCount}
-              </button>
+              </Chip>
             )}
           </div>
         )}
 
         <Band title={t.languagesTitle} onEdit={() => nav.push('languages')} icon="pen" />
         {p.languages.length === 0 ? (
-          <div className="empty">{t.nothingYet}</div>
+          <div className="px-3 py-[26px] text-center text-[13px] text-faint">{t.nothingYet}</div>
         ) : (
-          <div className="facts">
+          <div className="flex flex-col gap-1.5">
             {p.languages.map((l, i) => (
               <Fact key={i} k={l.name} v={levelLabel(l.proficiency, t)} />
             ))}
@@ -506,9 +499,9 @@ export function ProfileTab({
 
         <Band title={t.certificationsTitle} onEdit={() => nav.push('certifications')} icon="pen" />
         {p.certifications.length === 0 ? (
-          <div className="empty">{t.nothingYet}</div>
+          <div className="px-3 py-[26px] text-center text-[13px] text-faint">{t.nothingYet}</div>
         ) : (
-          <div className="facts">
+          <div className="flex flex-col gap-1.5">
             {p.certifications.map((c, i) => (
               <Fact key={i} k={c.name} v={[c.issuingOrganization, c.year].filter(Boolean).join(' · ')} />
             ))}
@@ -517,24 +510,24 @@ export function ProfileTab({
 
         <Band title={t.linksTitle} onEdit={() => nav.push('links')} icon="pen" />
         {Object.values(p.links).filter(Boolean).length === 0 ? (
-          <div className="empty">{t.nothingYet}</div>
+          <div className="px-3 py-[26px] text-center text-[13px] text-faint">{t.nothingYet}</div>
         ) : (
-          <div className="chipwrap">
+          <div className="flex flex-wrap gap-[5px]">
             {Object.values(p.links).filter(Boolean).map((l) => (
-              <span key={l} className="linkchip">{prettyLink(l)}</span>
+              <span key={l} className="max-w-full truncate rounded-[5px] bg-accent-soft px-2 py-[3px] text-[11.5px] text-accent">{prettyLink(l)}</span>
             ))}
           </div>
         )}
 
         {/* 5. Re-import last: a destructive rebuild belongs at the bottom */}
-        <div className="reimport">
-          <div className="ri-t">{t.reimportTitle}</div>
-          <div className="ri-s">{t.reimportBody}</div>
-          <button className="ghost small wide" onClick={() => nav.push('reimport')}>
+        <div className="mt-1.5 flex flex-col gap-[9px] rounded-card border border-line bg-[#fafaf8] p-3">
+          <div className="text-[13px] font-[650]">{t.reimportTitle}</div>
+          <div className="-mt-1.5 text-[11.5px] leading-[1.45] text-muted">{t.reimportBody}</div>
+          <Button variant="ghost" size="sm" wide onClick={() => nav.push('reimport')}>
             <Icon name="up" /> {t.reimportTitle}
-          </button>
-          <div className="ri-c">
-            <span className="cost">{t.oneCredit}</span> {t.reimportReplaces}
+          </Button>
+          <div className="flex items-center gap-[7px] text-[11.5px] text-faint">
+            <Cost>{t.oneCredit}</Cost> {t.reimportReplaces}
           </div>
         </div>
           </>
@@ -592,16 +585,16 @@ function Band({
   icon?: 'pen' | 'chev'
 }) {
   return (
-    <div className="band-h" id={anchor ? `band-${anchor}` : undefined}>
+    <div className="mt-0.5 flex items-center gap-2 border-t border-line pt-3.5 text-[11px] font-[650] tracking-[0.07em] text-muted uppercase" id={anchor ? `band-${anchor}` : undefined}>
       <span>{title}</span>
-      {count && <span className="band-n">{count}</span>}
+      {count && <span className="ml-auto text-[11.5px] font-semibold text-faint">{count}</span>}
       {onAdd && (
-        <button className="editbtn" onClick={onAdd} aria-label={addLabel ?? title}>
+        <button className="ml-auto grid size-[26px] shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent p-0 text-faint hover:bg-hover hover:text-fg" onClick={onAdd} aria-label={addLabel ?? title}>
           <Icon name="plus" />
         </button>
       )}
       {onEdit && (
-        <button className="editbtn" onClick={onEdit} aria-label={title}>
+        <button className="ml-auto grid size-[26px] shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent p-0 text-faint hover:bg-hover hover:text-fg" onClick={onEdit} aria-label={title}>
           <Icon name={icon} />
         </button>
       )}
@@ -611,9 +604,9 @@ function Band({
 
 function Fact({ k, v }: { k: string; v: string }) {
   return (
-    <div className="fact">
-      <span className="f-k">{k}</span>
-      <span className="f-v">{v}</span>
+    <div className="flex items-baseline gap-3 text-[12.5px]">
+      <span className="w-[78px] shrink-0 text-faint">{k}</span>
+      <span className="min-w-0 truncate text-fg">{v}</span>
     </div>
   )
 }
@@ -686,7 +679,7 @@ function TellMe({ t, settings }: { t: T; settings: Parameters<typeof cloudProfil
             .finally(() => setBusy(false))
         }}
       />
-      {msg && <p className="microhint">{msg}</p>}
+      {msg && <p className="mt-1.5 text-xs leading-[1.45] text-faint">{msg}</p>}
     </>
   )
 }
@@ -704,7 +697,7 @@ function AboutEditor({ p, set, t }: { p: Profile; set: (patch: Partial<Profile>)
       <KV k={t.countryIso} v={p.identity.country ?? ''} placeholder="PK" onChange={(v) => setIdentity('country', v)} />
       <KV k={t.headline} v={p.headline} placeholder={t.headlinePlaceholder} onChange={(v) => set({ headline: v })} />
       <KV k={t.summary} v={p.summary} multiline onChange={(v) => set({ summary: v })} />
-      <label className="fl">{t.industries}
+      <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.industries}
         <ChipInput
           items={p.industries}
           placeholder={t.industryPlaceholder}
@@ -778,25 +771,25 @@ function WorkEditor({
 
   return (
     <>
-      {incomplete && <div className="ec-warn">{t.workNeedsDetail}</div>}
-      <div className="field-row">
-        <label className="fl">{t.roleTitle}
-          <input className="fin" type="text" autoFocus={!entry.title} value={entry.title}
+      {incomplete && <div className="text-xs leading-[1.45] text-warn">{t.workNeedsDetail}</div>}
+      <div className="flex gap-2.5 [&>*]:flex-1">
+        <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.roleTitle}
+          <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" autoFocus={!entry.title} value={entry.title}
             onChange={(e) => onChange({ ...entry, title: e.target.value })} /></label>
-        <label className="fl">{t.company}
-          <input className="fin" type="text" value={entry.company}
+        <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.company}
+          <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" value={entry.company}
             onChange={(e) => onChange({ ...entry, company: e.target.value })} /></label>
       </div>
-      <div className="field-row">
-        <label className="fl">{t.fromYm}
-          <input className="fin" type="text" placeholder="2021-03"
+      <div className="flex gap-2.5 [&>*]:flex-1">
+        <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.fromYm}
+          <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" placeholder="2021-03"
             defaultValue={ymString(entry.startYear, entry.startMonth)} onBlur={(e) => setStart(e.target.value)} /></label>
-        <label className="fl">{t.toYm}
-          <input className="fin" type="text"
+        <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.toYm}
+          <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text"
             defaultValue={entry.isCurrent ? '' : ymString(entry.endYear, entry.endMonth)}
             onBlur={(e) => setEnd(e.target.value)} /></label>
       </div>
-      <label className="fl">{t.techUsed}
+      <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.techUsed}
         <ChipInput
           items={entry.skills}
           placeholder={t.techPlaceholder}
@@ -804,7 +797,7 @@ function WorkEditor({
           onChange={(skills) => onChange({ ...entry, skills })}
         />
       </label>
-      <label className="fl">{t.workHighlights}
+      <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.workHighlights}
         <ListEditor
           items={entry.highlights}
           onChange={(highlights) => onChange({ ...entry, highlights })}
@@ -813,7 +806,7 @@ function WorkEditor({
           removeLabel={t.removeItem}
         />
       </label>
-      <button className="plain wide danger" onClick={() => setConfirming(true)}>{t.remove}</button>
+      <Button wide variant="danger" onClick={() => setConfirming(true)}>{t.remove}</Button>
       {confirming && (
         <ConfirmRemove
           title={t.removeRoleTitle}
@@ -839,26 +832,26 @@ function EduEditor({
   const [confirming, setConfirming] = useState(false)
   return (
     <>
-      <div className="field-row">
-        <label className="fl">{t.degree}
-          <input className="fin" type="text" autoFocus={!entry.degree} value={entry.degree}
+      <div className="flex gap-2.5 [&>*]:flex-1">
+        <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.degree}
+          <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" autoFocus={!entry.degree} value={entry.degree}
             onChange={(e) => onChange({ ...entry, degree: e.target.value })} /></label>
-        <label className="fl">{t.fieldOfStudy}
-          <input className="fin" type="text" value={entry.fieldOfStudy ?? ''}
+        <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.fieldOfStudy}
+          <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" value={entry.fieldOfStudy ?? ''}
             onChange={(e) => onChange({ ...entry, fieldOfStudy: e.target.value })} /></label>
       </div>
-      <label className="fl">{t.school}
-        <input className="fin" type="text" value={entry.school}
+      <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.school}
+        <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" value={entry.school}
           onChange={(e) => onChange({ ...entry, school: e.target.value })} /></label>
-      <div className="field-row">
-        <label className="fl">{t.fromYear}
-          <input className="fin" type="text" defaultValue={entry.startYear ?? ''}
+      <div className="flex gap-2.5 [&>*]:flex-1">
+        <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.fromYear}
+          <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" defaultValue={entry.startYear ?? ''}
             onBlur={(e) => onChange({ ...entry, startYear: Number(e.target.value) || undefined })} /></label>
-        <label className="fl">{t.toYear}
-          <input className="fin" type="text" defaultValue={entry.endYear ?? ''}
+        <label className="flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted">{t.toYear}
+          <input className="w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none" type="text" defaultValue={entry.endYear ?? ''}
             onBlur={(e) => onChange({ ...entry, endYear: Number(e.target.value) || undefined })} /></label>
       </div>
-      <button className="plain wide danger" onClick={() => setConfirming(true)}>{t.remove}</button>
+      <Button wide variant="danger" onClick={() => setConfirming(true)}>{t.remove}</Button>
       {confirming && (
         <ConfirmRemove
           title={t.removeEducationTitle}
@@ -887,7 +880,7 @@ function ConfirmRemove({
 }) {
   return (
     <Sheet title={title} sub={t.removeWarning} closeLabel={t.cancel} onClose={onCancel}>
-      <button className="destructive wide" onClick={onConfirm}>{t.remove}</button>
+      <Button variant="destructive" wide onClick={onConfirm}>{t.remove}</Button>
     </Sheet>
   )
 }
@@ -921,9 +914,9 @@ function ImportBox({
 
   return (
     <>
-      <button className="ghost wide" disabled={busy} onClick={() => fileRef.current?.click()}>
+      <Button variant="ghost" wide disabled={busy} onClick={() => fileRef.current?.click()}>
         <Icon name="up" /> {busy ? t.readingPdf : t.uploadPdf}
-      </button>
+      </Button>
       <input
         ref={fileRef} type="file" accept="application/pdf" style={{ display: 'none' }}
         onChange={async (e) => {
@@ -943,9 +936,7 @@ function ImportBox({
         }}
       />
       <textarea rows={5} placeholder={t.pasteCvPlaceholder} value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} />
-      <button
-        className="primary wide"
-        disabled={busy || text.trim().length < 50}
+      <Button wide disabled={busy || text.trim().length < 50}
         onClick={async () => {
           setErr('')
           setBusy(true)
@@ -960,9 +951,9 @@ function ImportBox({
         }}
       >
         {busy ? t.reading : t.rebuildProfile}
-        {!busy && <span className="cost onbtn">{t.oneCredit}</span>}
-      </button>
-      {err && <p className="error">{err}</p>}
+        {!busy && <Cost onDark>{t.oneCredit}</Cost>}
+      </Button>
+      {err && <p className="my-1 text-[13px] text-bad">{err}</p>}
     </>
   )
 }

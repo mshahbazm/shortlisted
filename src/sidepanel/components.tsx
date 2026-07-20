@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { cn } from '../lib/cn'
+import { FIELD } from './ui'
 
 // Notion-style key/value row: reads as text, click to edit in place.
 export function KV({
@@ -46,17 +48,21 @@ export function KV({
 
   if (!editing) {
     return (
-      <div className="kv" onClick={() => { setDraft(v); setEditing(true) }}>
-        <span className="k">{k}</span>
-        <span className={`v ${v ? '' : 'empty-v'}`}>{v || placeholder}</span>
+      <div
+        className="flex cursor-pointer items-baseline gap-3 rounded-md p-1.5 hover:bg-hover"
+        onClick={() => { setDraft(v); setEditing(true) }}
+      >
+        <span className="w-[130px] shrink-0 text-[12.5px] text-muted">{k}</span>
+        <span className={cn('text-[13.5px] [overflow-wrap:anywhere]', !v && 'text-faint')}>{v || placeholder}</span>
       </div>
     )
   }
   return (
-    <div className="kv" style={{ cursor: 'default', flexWrap: 'wrap' }}>
-      <span className="k" style={{ paddingTop: 7 }}>{k}</span>
+    <div className="flex flex-wrap items-baseline gap-3 p-1.5">
+      <span className="w-[130px] shrink-0 pt-[7px] text-[12.5px] text-muted">{k}</span>
       {multiline ? (
         <textarea
+          className={cn(FIELD, 'min-h-16 resize-y leading-normal')}
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -65,6 +71,7 @@ export function KV({
         />
       ) : (
         <input
+          className={FIELD}
           autoFocus
           type="text"
           value={draft}
@@ -73,7 +80,7 @@ export function KV({
           onKeyDown={(e) => e.key === 'Enter' && commit()}
         />
       )}
-      {invalid && <span className="kv-error" style={{ width: '100%' }}>{invalidHint}</span>}
+      {invalid && <span className="my-0.5 w-full text-[11.5px] text-bad">{invalidHint}</span>}
     </div>
   )
 }

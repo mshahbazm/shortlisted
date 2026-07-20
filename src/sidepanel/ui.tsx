@@ -683,3 +683,116 @@ export function FitChip({ score }: { score?: number }) {
     </span>
   )
 }
+
+/* ---------- small repeated pieces ---------- */
+
+const CHIP_TONE = {
+  plain: 'bg-[#f5f5f3] text-muted',
+  amber: 'bg-warn-bg text-warn',
+  accent: 'bg-accent-soft text-accent',
+  dim: 'bg-[#f5f5f3] text-faint',
+} as const
+
+/** Small square-ish tag: a skill, a tool, a gap. */
+export function Chip({
+  tone = 'plain',
+  onClick,
+  children,
+}: {
+  tone?: keyof typeof CHIP_TONE
+  onClick?: () => void
+  children: ReactNode
+}) {
+  const cls = cn(
+    'inline-block rounded-[5px] px-[7px] py-[2.5px] text-[11px] whitespace-nowrap',
+    CHIP_TONE[tone],
+  )
+  if (!onClick) return <span className={cls}>{children}</span>
+  return (
+    <button className={cn(cls, 'cursor-pointer border-0 hover:brightness-95')} onClick={onClick}>
+      {children}
+    </button>
+  )
+}
+
+const PILL_TONE = {
+  good: 'bg-good-bg text-good',
+  flat: 'bg-hover text-muted',
+  amber: 'bg-warn-bg text-warn',
+  accent: 'bg-accent-soft text-accent',
+} as const
+
+/** Rounded status label: Default, Applied, Current, Coming soon. */
+export function Pill({ tone = 'flat', children }: { tone?: keyof typeof PILL_TONE; children: ReactNode }) {
+  return (
+    <span
+      className={cn(
+        'inline-block rounded-full px-2 py-[3px] text-[10.5px] font-[650] whitespace-nowrap',
+        PILL_TONE[tone],
+      )}
+    >
+      {children}
+    </span>
+  )
+}
+
+/** What an action costs, stated before the click. Muted amber states a fact;
+ *  red would make our own paid features read as a penalty. */
+export function Cost({ children, free, onDark }: { children: ReactNode; free?: boolean; onDark?: boolean }) {
+  return (
+    <span
+      className={cn(
+        'rounded-full px-[7px] py-0.5 text-[10.5px] font-semibold whitespace-nowrap',
+        onDark ? 'bg-white/[0.17] text-white' : free ? 'bg-good-bg text-good' : 'bg-warn-bg text-warn',
+      )}
+    >
+      {children}
+    </span>
+  )
+}
+
+/** Count badge on the right of a row. */
+export function Count({ children, warn }: { children: ReactNode; warn?: boolean }) {
+  return (
+    <span
+      className={cn(
+        'rounded-full px-2 py-0.5 text-[11.5px] font-[650] whitespace-nowrap',
+        warn ? 'bg-warn-bg text-warn' : 'bg-hover text-muted',
+      )}
+    >
+      {children}
+    </span>
+  )
+}
+
+/** Segmented filter over one list. Same data, several views — not several
+ *  places. Segments ellipsis rather than wrap, so a long label cannot push the
+ *  control onto two lines. */
+export function Segments<T extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T
+  options: { value: T; label: string }[]
+  onChange: (v: T) => void
+}) {
+  return (
+    <div className="flex gap-[3px] rounded-card bg-hover p-[3px]">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          onClick={() => onChange(o.value)}
+          className={cn(
+            'min-w-0 flex-1 truncate rounded-lg border-0 px-1.5 py-[7px] text-center text-xs font-semibold transition-colors',
+            o.value === value
+              ? 'bg-bg text-fg shadow-[0_1px_2px_rgba(0,0,0,0.07)]'
+              : 'cursor-pointer bg-transparent text-muted hover:text-fg',
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  )
+}

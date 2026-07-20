@@ -8,6 +8,7 @@ import { ProfileTab } from './tabs/ProfileTab'
 import { ResumesTab } from './tabs/ResumesTab'
 import { SettingsTab } from './tabs/SettingsTab'
 import { TabIcon } from './ui'
+import { cn } from '../lib/cn'
 import { Toasts } from './toast'
 import * as store from '../lib/store'
 
@@ -66,7 +67,7 @@ export function App() {
   if (settingsOpen) {
     return (
       <>
-        <div className="shell">
+        <div className="flex min-h-0 flex-1 flex-col">
           <SettingsTab onClose={() => setSettingsOpen(false)} />
         </div>
         <Toasts />
@@ -83,7 +84,7 @@ export function App() {
 
   return (
     <>
-      <div className="shell">
+      <div className="flex min-h-0 flex-1 flex-col">
         {tab === 'home' && (
           <HomeTab
             onGoProfile={() => go('profile')}
@@ -98,11 +99,15 @@ export function App() {
         )}
         {tab === 'cvs' && <ResumesTab />}
       </div>
-      <nav className="tabbar">
+      <nav className="grid flex-none grid-cols-4 border-t border-line bg-[#fcfcfb]">
         {TABS.map((name) => (
           <button
             key={name}
-            className={name === tab ? 'active' : ''}
+            className={cn(
+              'flex cursor-pointer flex-col items-center gap-[3px] border-0 bg-transparent px-1 pt-2 pb-[9px]',
+              'text-[10.5px] font-semibold transition-colors',
+              name === tab ? 'text-accent' : 'text-faint hover:text-muted',
+            )}
             aria-current={name === tab ? 'page' : undefined}
             onClick={() => {
               setTab(name)

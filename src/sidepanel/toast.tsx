@@ -26,5 +26,5 @@ export function Toasts() {
   }, [])
 
   if (!msg) return null
-  return <div className="toast">{msg}</div>
+  return <div className="fixed bottom-[18px] left-1/2 z-[60] -translate-x-1/2 rounded-full bg-primary px-4 py-2 text-[12.5px] font-semibold text-primary-fg shadow-[0_6px_20px_rgba(0,0,0,0.25)]">{msg}</div>
 }

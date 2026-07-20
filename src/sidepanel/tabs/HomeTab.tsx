@@ -8,7 +8,8 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
-import { Body, Composer, Feature, Icon, Row, ScreenHead, TopBar, useStack } from '../ui'
+import { cn } from '../../lib/cn'
+import { Body, Button, Chip, Composer, Cost, FIELD, Feature, Icon, IconButton, Pill, Row, ScreenHead, TopBar, useStack } from '../ui'
 import { PageContext, sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
 import { ApplicationRecord, base64ToBytes, uid } from '../../lib/types'
@@ -199,15 +200,15 @@ export function HomeTab({
       <>
         <ScreenHead title={t.appliedTitle(apps.length)} onBack={nav.back} backLabel={t.back} />
         <Body screen={nav.screen}>
-          {apps.length === 0 && <div className="empty">{t.appliedEmpty}</div>}
+          {apps.length === 0 && <div className="px-3 py-[26px] text-center text-[13px] text-faint">{t.appliedEmpty}</div>}
           {apps.length > 0 && (
             <>
               {/* We filled the form, so we know it was sent. We have no inbox
                   access, so everything past that is the user's to mark. */}
-              <div className="honest">
+              <div className="rounded-[9px] bg-hover px-3 py-[11px] text-[12.5px] leading-[1.55] text-muted">
                 <b>{t.noInbox}</b> {t.noInboxBody}
               </div>
-              <div className="applist">
+              <div className="flex flex-col gap-2.5">
                 {[...apps]
                   .sort((a, b) => b.appliedAt - a.appliedAt)
                   .map((a) => (
@@ -250,19 +251,17 @@ export function HomeTab({
         right={
           <>
             {credits !== undefined && (
-              <button className="credits" onClick={onOpenSettings}>{t.credits(credits)}</button>
+              <button className="cursor-pointer rounded-full border-0 bg-accent-soft px-2.5 py-1 text-[11.5px] font-semibold text-accent hover:bg-[#e6e0ff]" onClick={onOpenSettings}>{t.credits(credits)}</button>
             )}
-            <button className="iconbtn" onClick={onOpenSettings} aria-label={t.settings}>
-              <Icon name="gear" />
-            </button>
+            <IconButton icon="gear" onClick={onOpenSettings} aria-label={t.settings} />
           </>
         }
       />
       <Body screen={nav.screen}>
         <ContextSlot page={page} t={t} onFill={fillCurrent} onFit={() => nav.push('fit')} onSave={saveCurrentJob} />
-        {notice && <p className="progress">{notice}</p>}
+        {notice && <p className="my-1 text-[13px] text-muted">{notice}</p>}
 
-        <div className="duo">
+        <div className="grid grid-cols-2 gap-[9px]">
           <Feature
             icon="bolt"
             accent
@@ -286,7 +285,7 @@ export function HomeTab({
             detector decided. `page === null` means a chrome:// or restricted
             page, where we genuinely cannot help, so nothing is offered. */}
         {page && !page.hasFields && !page.bubbleOpen && (
-          <div className="tryline">
+          <div className="-mt-1 flex flex-wrap items-center gap-2 text-xs leading-normal text-faint">
             <span>{t.missedJob}</span>
             <button onClick={fillCurrent}>{t.fillAnyway} &rarr;</button>
           </div>
@@ -295,13 +294,13 @@ export function HomeTab({
 
         {/* A doorway, not a section. Adding jobs happens on the Jobs screen —
             the dashboard should never carry a paste box. */}
-        <button className="navcard" onClick={onGoJobs}>
-          <span className="navcard-ic"><Icon name="briefcase" /></span>
-          <span className="navcard-b">
-            <span className="navcard-t">{t.jobListTitle}</span>
-            <span className="navcard-s">{todo.length > 0 ? t.yourListSub : t.noneSavedYet}</span>
+        <button className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-line bg-bg p-3.5 text-left transition hover:border-[#dcdcd6] hover:shadow-lift-hover" onClick={onGoJobs}>
+          <span className="grid size-[34px] shrink-0 place-items-center rounded-[9px] bg-accent-soft text-accent"><Icon name="briefcase" /></span>
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="text-sm font-[650] tracking-[-0.01em]">{t.jobListTitle}</span>
+            <span className="text-xs leading-[1.4] text-muted">{todo.length > 0 ? t.yourListSub : t.noneSavedYet}</span>
           </span>
-          {todo.length > 0 && <span className="navcard-n">{todo.length}</span>}
+          {todo.length > 0 && <span className="rounded-full bg-accent-soft px-[9px] py-[3px] text-xs font-[650] whitespace-nowrap text-accent">{todo.length}</span>}
           <Icon name="chev" />
         </button>
 
@@ -310,12 +309,12 @@ export function HomeTab({
         {apps.length > 0 && (
           /* `apart` — a different subject from the composer above it, so it gets
              twice the usual gap. */
-          <div className="p-sec apart">
-            <div className="p-sec-h">
+          <div className="mt-5 flex flex-col gap-2.5">
+            <div className="flex items-baseline justify-between text-[11px] font-[650] tracking-[0.07em] text-muted uppercase">
               <span>{t.recentlyApplied}</span>
-              <button className="link" onClick={() => nav.push('applied')}>{t.seeAllApplied(apps.length)}</button>
+              <Button variant="link" onClick={() => nav.push('applied')}>{t.seeAllApplied(apps.length)}</Button>
             </div>
-            <div className="rows">
+            <div className="overflow-hidden rounded-card border border-line bg-bg">
               {[...apps]
                 .sort((a, b) => b.appliedAt - a.appliedAt)
                 .slice(0, 2)
@@ -324,7 +323,7 @@ export function HomeTab({
                     key={a.id}
                     title={a.title || a.company}
                     sub={`${a.company} · ${new Date(a.appliedAt).toLocaleDateString()}`}
-                    right={<span className="pill flat">{t.statusApplied}</span>}
+                    right={<Pill>{t.statusApplied}</Pill>}
                   />
                 ))}
             </div>
@@ -365,12 +364,12 @@ function ContextSlot({
   // The bubble is up: stand back, name the job, offer a way in.
   if (page.bubbleOpen) {
     return (
-      <div className="ctx quiet">
-        <div className="ctx-l"><span className="live" /> {t.onThisPage}</div>
-        <div className="ctx-job">{page.title}</div>
-        <div className="ctx-co">{page.company}{page.ats ? ` · ${page.ats}` : ''}</div>
-        <div className="ctx-note">
-          {t.bubbleOpenNote} <button className="link" onClick={onFill}>{t.bringItHere}</button>
+      <div className="flex flex-col gap-[3px] rounded-xl border border-dashed border-line bg-[#fafaf8] p-3.5">
+        <div className="mb-[5px] flex items-center gap-[7px] text-[11px] font-[650] tracking-[0.05em] text-accent uppercase"><span className="size-[7px] shrink-0 rounded-full bg-current motion-safe:animate-[pulse_2.4s_ease-in-out_infinite]" /> {t.onThisPage}</div>
+        <div className="text-base leading-[1.25] font-[650] tracking-[-0.01em]">{page.title}</div>
+        <div className="mb-[11px] text-[12.5px] text-muted">{page.company}{page.ats ? ` · ${page.ats}` : ''}</div>
+        <div className="-mt-[5px] text-[12.5px] leading-normal text-muted">
+          {t.bubbleOpenNote} <Button variant="link" onClick={onFill}>{t.bringItHere}</Button>
         </div>
       </div>
     )
@@ -380,14 +379,14 @@ function ContextSlot({
   // assert it, and the only case where the page title is a job title.
   if (isJob && page.hasFields) {
     return (
-      <div className="ctx">
-        <div className="ctx-l"><span className="live" /> {t.formOnThisTab}</div>
-        <div className="ctx-job">{page.title}</div>
-        <div className="ctx-co">
+      <div className="flex flex-col gap-[3px] rounded-xl border border-line bg-gradient-to-b from-[#faf9ff] to-bg p-3.5">
+        <div className="mb-[5px] flex items-center gap-[7px] text-[11px] font-[650] tracking-[0.05em] text-accent uppercase"><span className="size-[7px] shrink-0 rounded-full bg-current motion-safe:animate-[pulse_2.4s_ease-in-out_infinite]" /> {t.formOnThisTab}</div>
+        <div className="text-base leading-[1.25] font-[650] tracking-[-0.01em]">{page.title}</div>
+        <div className="mb-[11px] text-[12.5px] text-muted">
           {page.company}{page.ats ? ` · ${page.ats}` : ''} · {t.fieldCount(page.fieldCount)}
         </div>
-        <button className="primary big" onClick={onFill}>{t.fillThisApplication}</button>
-        <div className="ctx-foot">{t.fillFoot}</div>
+        <Button size="lg" onClick={onFill}>{t.fillThisApplication}</Button>
+        <div className="mt-[7px] text-center text-[11.5px] text-faint">{t.fillFoot}</div>
       </div>
     )
   }
@@ -396,14 +395,14 @@ function ContextSlot({
   // fill, so the two useful moves are saving it and scoring it.
   if (isJob) {
     return (
-      <div className="ctx">
-        <div className="ctx-l">{t.jobOnThisPage}</div>
-        <div className="ctx-job">{page.title}</div>
-        <div className="ctx-co">{page.company}</div>
-        <div className="ctx-note plain">{t.noFormHere}</div>
-        <div className="duo tight">
-          <button className="ghost" onClick={onSave}>{t.saveToList}</button>
-          <button className="primary" onClick={onFit}>{t.checkMyFit}</button>
+      <div className="flex flex-col gap-[3px] rounded-xl border border-line bg-gradient-to-b from-[#faf9ff] to-bg p-3.5">
+        <div className="mb-[5px] flex items-center gap-[7px] text-[11px] font-[650] tracking-[0.05em] text-accent uppercase">{t.jobOnThisPage}</div>
+        <div className="text-base leading-[1.25] font-[650] tracking-[-0.01em]">{page.title}</div>
+        <div className="mb-[11px] text-[12.5px] text-muted">{page.company}</div>
+        <div className="mb-[11px] text-[12.5px] leading-normal text-muted">{t.noFormHere}</div>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="ghost" onClick={onSave}>{t.saveToList}</Button>
+          <Button onClick={onFit}>{t.checkMyFit}</Button>
         </div>
       </div>
     )
@@ -414,15 +413,15 @@ function ContextSlot({
   // still stands — quietly, and phrased as the guess it is.
   if (page.hasFields) {
     return (
-      <div className="ctx ask">
+      <div className="flex flex-col gap-[3px] rounded-xl border border-dashed border-line bg-bg p-3.5">
         {/* The uncertainty belongs in the headline, not in the button. We are
             unsure whether this is an application; we are not unsure about our
             ability to fill it once the user says it is. */}
-        <div className="ctx-job">{t.applyingHere}</div>
-        <div className="ctx-co">{hostOf(page.url)} · {t.fieldCount(page.fieldCount)}</div>
-        <div className="ctx-note plain">{t.notRecognised}</div>
-        <button className="primary big" onClick={onFill}>{t.fillThisPage}</button>
-        <div className="ctx-foot">{t.fillFoot}</div>
+        <div className="text-base leading-[1.25] font-[650] tracking-[-0.01em]">{t.applyingHere}</div>
+        <div className="mb-[11px] text-[12.5px] text-muted">{hostOf(page.url)} · {t.fieldCount(page.fieldCount)}</div>
+        <div className="mb-[11px] text-[12.5px] leading-normal text-muted">{t.notRecognised}</div>
+        <Button size="lg" onClick={onFill}>{t.fillThisPage}</Button>
+        <div className="mt-[7px] text-center text-[11.5px] text-faint">{t.fillFoot}</div>
       </div>
     )
   }
@@ -458,15 +457,15 @@ function AppliedCard({
   ]
 
   return (
-    <div className="app">
-      <div className="app-t">{app.title || app.company}</div>
-      <div className="app-c">
+    <div className="flex flex-col gap-1 rounded-card border border-line p-3">
+      <div className="text-[13.5px] font-[650]">{app.title || app.company}</div>
+      <div className="mb-1.5 text-[11.5px] text-muted">
         {app.company} · {new Date(app.appliedAt).toLocaleDateString()}
-        {cv && <> · <button className="link" onClick={openPdf}>{t.cvSent}</button></>}
+        {cv && <> · <Button variant="link" onClick={openPdf}>{t.cvSent}</Button></>}
       </div>
-      <div className="statuses">
+      <div className="flex flex-wrap gap-[5px]">
         {options.map(([value, label]) => (
-          <button key={value} className={`st ${app.status === value ? 'on' : ''}`} onClick={() => set(value)}>
+          <button key={value} className={cn('cursor-pointer rounded-full border px-2.5 py-[5px] text-[11.5px] font-semibold', app.status === value ? 'border-primary bg-primary text-primary-fg' : 'border-line bg-transparent text-muted hover:bg-hover')} onClick={() => set(value)}>
             {label}
           </button>
         ))}
@@ -516,7 +515,7 @@ function TellMeComposer({ t }: { t: ReturnType<typeof useContent<'home'>> }) {
             .finally(() => setBusy(false))
         }}
       />
-      {msg && <p className="microhint">{msg}</p>}
+      {msg && <p className="mt-1.5 text-xs leading-[1.45] text-faint">{msg}</p>}
     </>
   )
 }
@@ -548,33 +547,42 @@ function FitPanel({
     const low = band === 'longShot' || band === 'borderline'
     return (
       <>
-        <div className="fithero">
-          <div className={`fitbig ${low ? 'low' : ''}`}>
-            <span className="fit-n">{score}</span>
-            <span className="fit-d">/10</span>
+        <div className="flex flex-col items-center pt-1 text-center">
+          <div className={cn('flex items-baseline tabular-nums', low ? 'text-warn' : 'text-good')}>
+            <span className="text-[44px] leading-none font-bold tracking-[-0.03em]">{score}</span>
+            <span className="text-[17px] font-semibold opacity-55">/10</span>
           </div>
-          <div className={`fit-w ${low ? 'low' : ''}`}>{bandWord(band, t)}</div>
-          <div className="fit-v">{result.fit.verdict}</div>
+          <div className={cn('mb-2.5 text-[11px] font-bold tracking-[0.09em] uppercase', low ? 'text-warn' : 'text-good')}>{bandWord(band, t)}</div>
+          <div className="max-w-[34ch] text-[13px] leading-[1.55] text-muted">{result.fit.verdict}</div>
         </div>
         {result.fit.strengths.length > 0 && (
-          <div className="leadwith">
+          <div className="rounded-[9px] bg-accent-soft px-3 py-[11px] text-[12.5px] leading-normal text-[#2a1a7a]">
             <b>{t.leadWith}</b> {result.fit.strengths.join(' · ')}
           </div>
         )}
-        <div className="p-sec">
-          <div className="p-sec-h"><span>{t.howYouMatchUp}</span></div>
-          <div className="crits">
+        <div className="flex flex-col gap-2.5">
+          <div className="flex items-baseline justify-between text-[11px] font-[650] tracking-[0.07em] text-muted uppercase"><span>{t.howYouMatchUp}</span></div>
+          <div className="overflow-hidden rounded-card border border-line">
             {result.fit.criteria.map((c, i) => (
-              <div key={i} className="crit">
-                <span className={`crit-s ${c.score >= 4 ? 'good' : c.score >= 3 ? 'mid' : 'low'}`}>{c.score}</span>
-                <span className="crit-b">
-                  <span className="crit-t">{c.requirement}</span>
-                  {!c.notObserved && c.commentary && <span className="crit-x">{c.commentary}</span>}
+              <div key={i} className="flex items-start gap-2.5 border-b border-line px-3 py-[11px] last:border-b-0">
+                <span className={cn('mt-px grid size-[22px] shrink-0 place-items-center rounded-md text-[11.5px] font-bold tabular-nums', c.score >= 4 ? 'bg-good-bg text-good' : c.score >= 3 ? 'bg-accent-soft text-accent' : 'bg-warn-bg text-warn')}>{c.score}</span>
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="text-[13px] leading-[1.35] font-semibold">{c.requirement}</span>
+                  {!c.notObserved && c.commentary && <span className="text-[11.5px] leading-[1.4] text-muted">{c.commentary}</span>}
                 </span>
                 {c.notObserved ? (
-                  <span className="rel none">{t.notShown}</span>
+                  <span className="mt-0.5 text-[10px] font-[650] tracking-[0.04em] whitespace-nowrap text-warn uppercase">{t.notShown}</span>
                 ) : (
-                  <span className={`rel ${c.relevance === 'direct' ? '' : c.relevance === 'transferable' ? 'soft' : 'none'}`}>
+                  <span
+                    className={cn(
+                      'mt-0.5 text-[10px] font-[650] tracking-[0.04em] whitespace-nowrap uppercase',
+                      c.relevance === 'direct'
+                        ? 'text-good'
+                        : c.relevance === 'transferable'
+                          ? 'text-accent'
+                          : 'text-warn',
+                    )}
+                  >
                     {c.relevance === 'direct' ? t.relDirect : c.relevance === 'transferable' ? t.relTransferable : t.relGap}
                   </span>
                 )}
@@ -583,17 +591,17 @@ function FitPanel({
           </div>
         </div>
         {result.fit.gaps.length > 0 && (
-          <div className="gaps">
-            <div className="gaps-h">{t.beReadyFor}</div>
-            <div className="gaps-c">
-              {result.fit.gaps.map((g) => <span key={g} className="minichip amber">{g}</span>)}
+          <div className="flex flex-col gap-2 rounded-card border border-warn-line bg-warn-bg p-3">
+            <div className="text-[12.5px] font-[650] text-warn">{t.beReadyFor}</div>
+            <div className="flex flex-wrap gap-1.5">
+              {result.fit.gaps.map((g) => <Chip key={g} tone="amber">{g}</Chip>)}
             </div>
-            <button className="link amber" onClick={onUpdateProfile}>{t.gapsAddPrompt} &rarr;</button>
+            <Button variant="link" className="text-warn" onClick={onUpdateProfile}>{t.gapsAddPrompt} &rarr;</Button>
           </div>
         )}
-        <div className="duo tight">
-          <button className="ghost" onClick={() => onResult(null)}>{t.scoreMyFit}</button>
-          <button className="primary" onClick={onSaveJob}>{t.saveTheJob}</button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="ghost" onClick={() => onResult(null)}>{t.scoreMyFit}</Button>
+          <Button onClick={onSaveJob}>{t.saveTheJob}</Button>
         </div>
       </>
     )
@@ -602,16 +610,14 @@ function FitPanel({
   return (
     <>
       <textarea
-        className="tall"
+        className={cn(FIELD, "min-h-[110px] resize-y leading-normal")}
         rows={6}
         placeholder={t.pasteJobPlaceholder}
         value={jobText}
         onChange={(e) => setJobText(e.target.value)}
       />
-      {disabled && <p className="microhint">{t.fillProfileFirst}</p>}
-      <button
-        className="primary big"
-        disabled={disabled || !!step || jobText.trim().length < 80}
+      {disabled && <p className="mt-1.5 text-xs leading-[1.45] text-faint">{t.fillProfileFirst}</p>}
+      <Button size="lg" disabled={disabled || !!step || jobText.trim().length < 80}
         onClick={() => {
           setErr('')
           run(jobText, setStep)
@@ -621,10 +627,10 @@ function FitPanel({
         }}
       >
         {step ? t.scoring : t.scoreMyFit}
-        {!step && <span className="cost onbtn">{t.oneCredit}</span>}
-      </button>
-      {step && <p className="progress">{step}</p>}
-      {err && <p className="error">{err}</p>}
+        {!step && <Cost onDark>{t.oneCredit}</Cost>}
+      </Button>
+      {step && <p className="my-1 text-[13px] text-muted">{step}</p>}
+      {err && <p className="my-1 text-[13px] text-bad">{err}</p>}
     </>
   )
 }
