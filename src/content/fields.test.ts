@@ -7,7 +7,7 @@
 
 import { expect, test, describe } from 'bun:test'
 import { Window, Element as HappyElement } from 'happy-dom'
-import { collectFields, isSensitiveField } from './fields'
+import { collectFields, fileFieldRole, isSensitiveField } from './fields'
 
 // collectFields is browser code: it uses `instanceof HTMLInputElement` and
 // getComputedStyle. Publish one happy-dom window's constructors as globals and
@@ -134,5 +134,59 @@ describe('sensitive fields never enter the field list', () => {
     expect(isSensitiveField(el('b'))).toBe(true)
     expect(isSensitiveField(el('c'))).toBe(false)
     expect(isSensitiveField(el('d'))).toBe(false)
+  })
+})
+
+// Which file input is the CV. Greenhouse labels BOTH its CV and cover-letter
+// inputs "Attach" — the label is the button you press — so reading the label
+// alone recognises neither, and the CV silently never attaches. The id is the
+// thing that actually says what the field is for.
+describe('telling a CV slot from a cover-letter slot', () => {
+  const fileInput = (html: string, id: string) => {
+    doc.body.innerHTML = html
+    return doc.getElementById(id) as HTMLInputElement
+  }
+
+  test('Greenhouse: label is "Attach", id carries the meaning', () => {
+    const html = `
+      <div>
+        <label for="resume">Attach</label>
+        <input id="resume" type="file" class="visually-hidden" accept=".pdf,.doc">
+      </div>
+      <div>
+        <label for="cover_letter">Attach</label>
+        <input id="cover_letter" type="file" class="visually-hidden" accept=".pdf,.doc">
+      </div>`
+    expect(fileFieldRole(fileInput(html, 'resume'), 'Attach')).toBe('resume')
+    expect(fileFieldRole(fileInput(html, 'cover_letter'), 'Attach')).toBe('cover-letter')
+  })
+
+  test('a plainly labelled CV input', () => {
+    const el = fileInput(`<label for="f">Upload your CV</label><input id="f" type="file">`, 'f')
+    expect(fileFieldRole(el, 'Upload your CV')).toBe('resume')
+  })
+
+  test('cover letter wins over resume when the element names both', () => {
+    const el = fileInput(`<input id="f" type="file" name="cover_letter_resume">`, 'f')
+    expect(fileFieldRole(el, '')).toBe('cover-letter')
+  })
+
+  test('nearby text is used when the element itself says nothing', () => {
+    const el = fileInput(`<div><h3>Resume</h3><div><input id="f" type="file"></div></div>`, 'f')
+    expect(fileFieldRole(el, '')).toBe('resume')
+  })
+
+  // A shared wrapper naming both is not this field's description.
+  test('an ancestor mentioning both is treated as unknown, not guessed', () => {
+    const el = fileInput(
+      `<div><h3>Resume and cover letter</h3><div><input id="f" type="file"></div></div>`,
+      'f',
+    )
+    expect(fileFieldRole(el, '')).toBe('unknown')
+  })
+
+  test('a bare file input with no wording at all', () => {
+    const el = fileInput(`<input id="f" type="file">`, 'f')
+    expect(fileFieldRole(el, '')).toBe('unknown')
   })
 })

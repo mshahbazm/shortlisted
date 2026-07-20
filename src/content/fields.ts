@@ -2,6 +2,7 @@
 // forms and React/Vue-controlled inputs (Greenhouse, Ashby, Workable are SPAs).
 
 import { comboboxContainer, comboboxLabel, comboboxOptionsSync, isCombobox } from './combobox'
+import { COVER_LETTER_FILE_RE, RESUME_FILE_RE } from './profileMap'
 
 export type Fillable = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
 
@@ -121,6 +122,39 @@ export function labelFor(el: Fillable): string {
 }
 
 const PLACEHOLDER_OPTION = /^(select|choose|please select|pick one|--)/i
+
+/**
+ * Everything that hints at what a file input is FOR. The visible label is not
+ * enough on its own: Greenhouse labels both its CV and cover-letter inputs
+ * "Attach", because the label is the button you click. Read that alone and
+ * neither field is recognised, so the CV silently never attaches.
+ *
+ * Attributes come first and separately from surrounding text. On a form where
+ * the CV and cover-letter blocks sit side by side, one shared ancestor
+ * mentions both, so nearby text is only consulted when the element itself says
+ * nothing — otherwise a cover-letter slot can look like a CV slot and get the
+ * CV attached to it.
+ */
+export function fileFieldRole(el: HTMLInputElement, label: string): 'resume' | 'cover-letter' | 'unknown' {
+  const own = [el.id, el.name, el.getAttribute('aria-label') ?? '', el.getAttribute('accept') ?? '', label]
+    .join(' ')
+    .replace(/[_-]+/g, ' ')
+  if (COVER_LETTER_FILE_RE.test(own)) return 'cover-letter'
+  if (RESUME_FILE_RE.test(own)) return 'resume'
+
+  let near = ''
+  let node: HTMLElement | null = el.parentElement
+  for (let i = 0; node && i < 3; i++, node = node.parentElement) near = node.textContent ?? ''
+  near = near.replace(/[_-]+/g, ' ')
+  const cover = COVER_LETTER_FILE_RE.test(near)
+  const resume = RESUME_FILE_RE.test(near)
+  // Both mentioned nearby means we are reading a shared wrapper, not this
+  // field's own description — better to say nothing than to guess wrong.
+  if (cover && resume) return 'unknown'
+  if (cover) return 'cover-letter'
+  if (resume) return 'resume'
+  return 'unknown'
+}
 
 /** The real answer choices of a select/radio field; undefined for free-text fields. */
 export function optionsOf(f: FormField): string[] | undefined {

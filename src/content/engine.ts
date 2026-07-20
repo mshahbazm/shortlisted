@@ -6,11 +6,12 @@ import {
   FormField,
   attachFile,
   collectFields,
+  fileFieldRole,
   setNativeValue,
   setRadioValue,
   setSelectValue,
 } from './fields'
-import { COVER_LETTER_FILE_RE, DEMOGRAPHIC_RE, RESUME_FILE_RE, profileValueFor } from './profileMap'
+import { DEMOGRAPHIC_RE, profileValueFor } from './profileMap'
 
 export type FillSource = 'profile' | 'bank' | 'bank-fuzzy' | 'resume'
 
@@ -25,13 +26,20 @@ export async function fillForm(adapter: Adapter, state: FillState): Promise<Fill
   const root = findFormRoot(adapter)
   const fields = collectFields(root)
   const result: FillResult = { filled: [], unknown: [], resumeFields: [], skipped: [] }
+  // File inputs that name neither a CV nor a cover letter. A form with exactly
+  // one file input and no wording at all is asking for a CV; a form with
+  // several is ambiguous, and guessing there risks putting the CV in a slot
+  // meant for something else.
+  const unnamedFiles: FormField[] = []
 
   for (const field of fields) {
     const label = field.label
 
     if (field.kind === 'file') {
-      if (COVER_LETTER_FILE_RE.test(label)) continue // never auto-attach cover letters
-      if (RESUME_FILE_RE.test(label) || label === '') result.resumeFields.push(field)
+      const role = fileFieldRole(field.el as HTMLInputElement, label)
+      if (role === 'cover-letter') continue // never auto-attach cover letters
+      if (role === 'resume') result.resumeFields.push(field)
+      else unnamedFiles.push(field)
       continue
     }
 
@@ -67,6 +75,10 @@ export async function fillForm(adapter: Adapter, state: FillState): Promise<Fill
     if (label.length > 4 && field.kind !== 'checkbox') {
       result.unknown.push(field)
     }
+  }
+
+  if (result.resumeFields.length === 0 && unnamedFiles.length === 1) {
+    result.resumeFields.push(unnamedFiles[0])
   }
 
   return result
