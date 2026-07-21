@@ -190,6 +190,13 @@ export function totalExperienceYears(profile: Profile): number | null {
 
 export const skillNames = (p: Profile) => p.skills.map((s) => s.name)
 
+/** Whether a profile holds any real content. This is the signal the app routes
+ *  on — a set-up returning user (→ Home) vs. someone who still needs the builder
+ *  — and what the cloud mirror uses to decide push-up vs. pull-down. */
+export function hasProfileContent(p: Profile): boolean {
+  return Boolean(p.identity.firstName || p.headline || p.work.length || p.skills.length)
+}
+
 // ---------- v1 -> v2 migration (applied on load; see store.ts) ----------
 
 export function normalizeProfile(raw: unknown): Profile {

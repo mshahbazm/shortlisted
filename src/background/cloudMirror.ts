@@ -6,7 +6,7 @@
 
 import { fetchCloudData, pushCloudData } from '../ai/run'
 import * as store from '../lib/store'
-import { StorageShape } from '../lib/types'
+import { StorageShape, hasProfileContent } from '../lib/types'
 
 /** local storage key → /v1/data wire key */
 const SYNCED = {
@@ -131,6 +131,3 @@ async function applyList<K extends SyncedKey>(
   else if (Array.isArray(local) && local.length) up[SYNCED[localKey]] = local
 }
 
-function hasProfileContent(p: StorageShape['profile']): boolean {
-  return Boolean(p.identity.firstName || p.headline || p.work.length || p.skills.length)
-}

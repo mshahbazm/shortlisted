@@ -9,7 +9,7 @@
 // Run: bun test
 
 import { expect, test, describe } from 'bun:test'
-import { emptyProfile, normalizeProfile, normalizeSettings } from './types'
+import { emptyProfile, hasProfileContent, normalizeProfile, normalizeSettings } from './types'
 
 describe('normalizeSettings', () => {
   test('keeps auth fields — a migration must never sign the user out', () => {
@@ -66,5 +66,17 @@ describe('normalizeProfile', () => {
   test('tolerates junk input', () => {
     expect(normalizeProfile(undefined)).toEqual(emptyProfile())
     expect(normalizeProfile(null)).toEqual(emptyProfile())
+  })
+})
+
+describe('hasProfileContent', () => {
+  test('empty profile has no content (→ the builder wizard)', () => {
+    expect(hasProfileContent(emptyProfile())).toBe(false)
+  })
+
+  test('any of name / headline / work / skills counts as content (→ Home)', () => {
+    expect(hasProfileContent({ ...emptyProfile(), identity: { ...emptyProfile().identity, firstName: 'Sam' } })).toBe(true)
+    expect(hasProfileContent({ ...emptyProfile(), headline: 'Engineer' })).toBe(true)
+    expect(hasProfileContent({ ...emptyProfile(), skills: [{ name: 'TypeScript' }] })).toBe(true)
   })
 })

@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from './hooks'
 import { useContent } from '../i18n'
-import { Onboarding } from './Onboarding'
+import { EntryWizard } from './wizards/entry'
+import { BuildWizard } from './wizards/build'
 import { HomeTab } from './tabs/HomeTab'
 import { JobsTab } from './tabs/JobsTab'
 import { ProfileTab } from './tabs/ProfileTab'
@@ -11,6 +12,8 @@ import { TabIcon } from './ui'
 import { cn } from '../lib/cn'
 import { Toasts } from './toast'
 import * as store from '../lib/store'
+import { hasProfileContent } from '../lib/types'
+import { sendMsg } from '../lib/messaging'
 
 // Four destinations. Settings is rare enough to live behind the gear, and the
 // answer bank is profile data, so it lives inside Profile rather than taking a
@@ -38,47 +41,70 @@ export function App() {
     return store.onChange('pendingNav', consume)
   }, [])
 
-  // Read settings once for the initial decision (the useStore default would
-  // flash the wizard for signed-in users while storage loads), then stay
-  // subscribed so signing out re-engages the gate.
-  const [ready, setReady] = useState(false)
-  const [signedIn, setSignedIn] = useState(false)
-  const wasSignedIn = useRef(false)
+  // ---------- routing ----------
+  // Which screen the panel shows is decided by DATA, not a flag: are you signed
+  // in, and does your account have a profile? Both are server-synced, so a plain
+  // reload always lands on the right screen. Three destinations:
+  //   - not signed in            -> the Entry wizard (import CV / start / log in)
+  //   - signed in, has a profile -> the app (Home)
+  //   - signed in, no profile    -> the Build wizard ("let's build your resume")
+  const [settings, , settingsLoaded] = useStore('settings')
+  const [profile, , profileLoaded] = useStore('profile')
+  const loaded = settingsLoaded && profileLoaded
+  const loggedIn = Boolean(settings.accountEmail)
+  const hasProfile = hasProfileContent(profile)
 
+  // Cold cache: signed in but this device hasn't pulled the profile yet. Kick a
+  // pull and wait (bounded) rather than mistaking an empty local cache for a new
+  // user. A warm cache (hasProfile) short-circuits this — no wait, no flash.
+  const [pulled, setPulled] = useState(false)
   useEffect(() => {
-    // Both flags matter: sign-in happens mid-wizard now (review/answers can
-    // follow it), so only accountEmail + onboarded together open the app.
-    const open = (s: { accountEmail?: string; onboarded?: boolean } | undefined) => {
-      const next = Boolean(s?.accountEmail && s?.onboarded)
-      // Landing after sign-in: the moment we cross signed-out → signed-in
-      // (the wizard finishing, for a new or a returning user), force Home with
-      // no overlay. Only on the transition, so an ordinary settings change
-      // while signed in doesn't yank the user off whatever tab they're on.
-      if (next && !wasSignedIn.current) {
-        setTab('home')
-        setSettingsOpen(false)
-      }
-      wasSignedIn.current = next
-      setSignedIn(next)
-      // Otherwise signing out while Settings is open leaves it open for
-      // whoever signs in next — they'd land on Settings instead of Home.
-      if (!next) {
-        setSettingsOpen(false)
-        setTab('home')
-      }
+    if (!loggedIn) {
+      setPulled(false)
+      return
     }
-    void store.get('settings').then((s) => {
-      open(s)
-      setReady(true)
-    })
-    return store.onChange('settings', open)
-  }, [])
+    let alive = true
+    void sendMsg({ type: 'cloudPull' }).finally(() => alive && setPulled(true))
+    const timer = setTimeout(() => alive && setPulled(true), 4000)
+    return () => {
+      alive = false
+      clearTimeout(timer)
+    }
+  }, [loggedIn])
 
-  if (!ready) return null
-  // No local mode: the panel requires an account. The wizard carries both
-  // paths — new users verify their email mid-flow, returning users log in
-  // from the welcome screen.
-  if (!signedIn) return <Onboarding onDone={() => undefined} />
+  const desired: 'checking' | 'entry' | 'build' | 'home' = !loaded
+    ? 'checking'
+    : !loggedIn
+      ? 'entry'
+      : hasProfile
+        ? 'home'
+        : !pulled
+          ? 'checking'
+          : 'build'
+
+  // Latch: `desired` STARTS a wizard, the wizard ENDS itself (onDone). Once one
+  // is showing it stays until then — so saving the profile mid-build (or
+  // extracting mid-review) can't yank the user to Home. Sign-out drops back to
+  // Entry.
+  const [activeWizard, setActiveWizard] = useState<null | 'entry' | 'build'>(null)
+  useEffect(() => {
+    if (activeWizard === null && (desired === 'entry' || desired === 'build')) setActiveWizard(desired)
+    else if (activeWizard === 'build' && desired === 'entry') setActiveWizard('entry')
+  }, [activeWizard, desired])
+
+  const leaveWizard = () => {
+    setActiveWizard(null)
+    setTab('home')
+    setSettingsOpen(false)
+  }
+
+  if (!loaded) return null
+  // Fall back to `desired` on the render before the latch effect fires, so a
+  // wizard shows immediately with no flash of the app underneath.
+  const wizardScreen = activeWizard ?? (desired === 'entry' || desired === 'build' ? desired : null)
+  if (wizardScreen === 'entry') return <EntryWizard onDone={leaveWizard} />
+  if (wizardScreen === 'build') return <BuildWizard onDone={leaveWizard} />
+  if (desired === 'checking') return <Splash />
 
   // Settings takes the whole panel rather than sitting behind a tab: it's a
   // place you visit deliberately and leave, not somewhere you switch between.
@@ -139,5 +165,14 @@ export function App() {
       </nav>
       <Toasts />
     </>
+  )
+}
+
+/** The brief "settling the profile question" state — a warm cache never sees it. */
+function Splash() {
+  return (
+    <div className="flex min-h-full items-center justify-center">
+      <span className="inline-block size-5 animate-spin rounded-full border-2 border-line border-t-fg" />
+    </div>
   )
 }
