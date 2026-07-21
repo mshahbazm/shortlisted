@@ -40,7 +40,7 @@ export const home: tLocale['home'] = {
   statusOffer: 'Offre',
   statusRejected: 'Refusée',
 
-  composerLabel: 'Quelque chose de nouveau à ajouter ?',
+  composerLabel: 'Mettre à jour le profil',
   composerPlaceholder: 'Une formation, un projet, une compétence oubliée…',
   composerHint: 'Je le range au bon endroit dans votre profil. Gratuit.',
   composerSubmit: 'Ajouter au profil',

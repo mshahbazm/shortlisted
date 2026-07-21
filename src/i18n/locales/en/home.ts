@@ -49,7 +49,7 @@ export const home = {
   statusRejected: 'No',
 
   // --- composer ---
-  composerLabel: 'Something new to add?',
+  composerLabel: 'Update Profile',
   composerPlaceholder: 'A course, a project, a skill you forgot…',
   composerHint: 'I’ll file it in the right part of your profile. Free.',
   composerSubmit: 'Add to profile',

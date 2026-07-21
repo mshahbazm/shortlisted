@@ -40,7 +40,7 @@ export const home: tLocale['home'] = {
   statusOffer: 'Aanbod',
   statusRejected: 'Afgewezen',
 
-  composerLabel: 'Iets nieuws toe te voegen?',
+  composerLabel: 'Profiel bijwerken',
   composerPlaceholder: 'Een cursus, een project, een vaardigheid die je vergat…',
   composerHint: 'Ik zet het op de juiste plek in je profiel. Gratis.',
   composerSubmit: 'Aan profiel toevoegen',

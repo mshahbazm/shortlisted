@@ -55,7 +55,7 @@ export const profile: tLocale['profile'] = {
   hoursPlaceholder: '"4+ ore con la costa est USA"',
   englishLevel: 'Livello di inglese',
 
-  tellMeTitle: 'Raccontami qualcosa di nuovo',
+  tellMeTitle: 'Aggiorna il profilo',
   tellMeSummary: 'una nuova competenza, un certificato, qualcosa di dimenticato',
   tellMePlaceholder: 'Qualsiasi cosa su di te — una competenza appena imparata, un certificato ottenuto, una lingua che parli o qualcosa di un vecchio lavoro che non hai mai scritto. Parole semplici.',
   tellMeButton: 'Aggiungi al profilo',

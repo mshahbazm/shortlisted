@@ -55,7 +55,7 @@ export const profile = {
   hoursPlaceholder: '"4+ hours with US East"',
   englishLevel: 'English level',
 
-  tellMeTitle: 'Tell me something new',
+  tellMeTitle: 'Update Profile',
   tellMeSummary: 'a new skill, a certificate, anything you missed',
   tellMePlaceholder: 'Anything about you — a skill you just learned, a certificate you earned, a language you speak, or something from an old job you never wrote down. Plain words.',
   tellMeButton: 'Add to profile',
