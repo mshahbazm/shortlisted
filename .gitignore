@@ -3,10 +3,9 @@ dist/
 dist-prod/
 *.zip
 .DS_Store
-# Business docs live in the private shortlisted-cloud repo (symlinked locally)
+# SPEC.md is a private doc (symlinked from the shortlisted-cloud repo).
+# CLAUDE.md / AGENTS.md ARE committed here — technical conventions, no business content.
 SPEC.md
-CLAUDE.md
-AGENTS.md
 
 # Env & secrets (none used today; standard guard)
 .env
