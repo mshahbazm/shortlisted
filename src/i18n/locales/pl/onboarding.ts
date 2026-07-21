@@ -9,7 +9,7 @@ export const onboarding: tLocale['onboarding'] = {
 
   welcomeTitle: 'Czas trafić na shortlistę.',
   welcomeLead:
-    'Opowiedz o sobie raz. Potem każda aplikacja wypełni się sama — Ty tylko sprawdzasz i klikasz „wyślij”.',
+    'Utwórz swój profil zawodowy raz. Shortlisted ponownie wykorzystuje Twoje dane i odpowiedzi w aplikacjach o pracę. Przed wysłaniem sprawdzasz wszystko.',
   importCvTitle: 'Mam CV',
   importCvSub: 'Prześlij lub wklej CV — AI zamieni je w Twój profil. ~1 minuta.',
   startBlankTitle: 'Nie mam CV',

@@ -5,7 +5,7 @@ export const onboarding = {
 
   welcomeTitle: "Let's get you shortlisted.",
   welcomeLead:
-    'Tell me about yourself once. Then every job application fills itself — you just review and hit submit.',
+    'Create your career profile once. Shortlisted reuses your details and answers across job applications. You review everything before you submit.',
   importCvTitle: 'I have a CV',
   importCvSub: 'Upload or paste your resume — AI turns it into your profile. ~1 minute.',
   startBlankTitle: "I don't have a CV",
