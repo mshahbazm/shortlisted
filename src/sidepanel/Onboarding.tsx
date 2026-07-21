@@ -349,12 +349,12 @@ function WizardShell({
         {canBack && (
           <button
             type="button"
-            aria-label={backLabel}
             onClick={onBack}
             disabled={disabled}
-            className="mb-5 -ml-1.5 grid size-8 flex-none place-items-center rounded-full text-muted transition-colors hover:bg-hover hover:text-fg disabled:cursor-default disabled:opacity-40"
+            className="group mb-5 -ml-2 inline-flex w-fit items-center gap-1 self-start rounded-full py-1.5 pl-2 pr-3.5 text-[13px] font-medium text-muted transition-colors hover:bg-hover hover:text-fg disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="transition-transform group-hover:-translate-x-0.5"><path d="M15 18l-6-6 6-6" /></svg>
+            {backLabel}
           </button>
         )}
         {children}
