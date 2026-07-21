@@ -42,8 +42,8 @@ export function onChange<K extends Key>(key: K, cb: (value: StorageShape[K]) => 
 // There's no local-first per-user bucketing yet — this device holds one
 // account's data at a time — so signing out must wipe it, or the next
 // person to sign in on this device sees the previous person's CV,
-// applications, and answer bank. Device-level preferences (cloudUrl
-// override, locale, detectEverywhere) are left alone.
+// applications, and answer bank. Device-level preferences (locale,
+// detectEverywhere) are left alone.
 export async function clearAccount(): Promise<void> {
   const defaults = storageDefaults()
   const settings = await get('settings')

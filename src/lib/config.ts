@@ -1,5 +1,3 @@
-import type { Settings } from './types'
-
 // Which server this extension talks to is decided by how it is INSTALLED, not
 // by how it was built.
 //
@@ -41,7 +39,8 @@ export function cloudUrlDefault(): string {
   return isDevInstall() ? CLOUD_URL_DEV : CLOUD_URL_PROD
 }
 
-/** The effective cloud base URL (no trailing slash): override or built-in. */
-export function cloudBaseUrl(settings: Pick<Settings, 'cloudUrl'>): string {
-  return (settings.cloudUrl?.trim() || cloudUrlDefault()).replace(/\/$/, '')
+/** The cloud base URL for this install (no trailing slash). Dev vs prod is the
+ *  install type ONLY — never a user setting (see isDevInstall). */
+export function cloudBaseUrl(): string {
+  return cloudUrlDefault()
 }

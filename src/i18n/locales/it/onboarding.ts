@@ -1,6 +1,27 @@
 import type { tLocale } from '../en'
 
 export const onboarding: tLocale['onboarding'] = {
+  // No-CV guided builder
+  buildTitle: 'Creiamo il tuo CV insieme.',
+  buildLead: 'Dimmi a che punto sei e ti farò le domande giuste.',
+  buildStartingTitle: 'Sto iniziando ora',
+  buildStartingSub: 'Studio, o cerco il primo lavoro.',
+  buildWorkingTitle: 'Ho già lavorato',
+  buildWorkingSub: 'Solo che non ho mai avuto bisogno di un CV.',
+  buildCv: 'Crea il mio CV',
+  probeNext: 'Avanti',
+  probeTitle: 'Un paio di domande veloci.',
+  probeLead: 'Rispondi a quello che puoi: rendono il CV più forte. Salta quelle che non ti riguardano.',
+  talkStartingTitle: 'Raccontami cosa hai fatto.',
+  talkStartingLead:
+    'Un progetto, volontariato, un club, un lavoro part-time: tutto conta. Scrivi tutto qui e io gli do forma.',
+  talkStartingPlaceholder:
+    "es. Progetto di tesi: ho creato un'app per trovare aule studio libere nel campus. Ho scritto il backend e gestito i nostri standup settimanali.",
+  talkWorkingTitle: 'Il tuo lavoro più recente.',
+  talkWorkingLead:
+    'Dove hai lavorato, cosa facevi, di cosa vai fiero: raccontamelo e io ne faccio il tuo CV.',
+  talkWorkingPlaceholder:
+    'es. Ho guidato un team di 6 persone alla Kordo Logistics per 3 anni. Ho rivisto i turni del weekend per non restare mai a corto di personale e formato i nuovi arrivati.',
   back: 'Indietro',
   welcomeLoginLink: 'Hai già un account? Accedi',
   loginTitle: 'Ciao di nuovo.',
@@ -29,7 +50,9 @@ export const onboarding: tLocale['onboarding'] = {
     `Trovat${roles === 1 ? 'o 1 ruolo' : `i ${roles} ruoli`} e ${skills} competenze. Correggi quello che non torna — il resto lo modifichi quando vuoi.`,
   looksRight: 'Tutto giusto',
 
-  answersTitle: 'Tre domande che fanno tutti.',
+  answersTitle: 'Due informazioni rapide.',
+  jobTypeLabel: 'Cosa cerchi?',
+  jobTypePlaceholder: 'Tempo pieno, tirocinio, contratto…',
   answersLead: 'Rispondi una volta qui, mai più in una candidatura.',
   salaryLabel: 'Aspettativa di stipendio',
   salaryPlaceholder: '"4.000 $/mese" o "Da discutere"',

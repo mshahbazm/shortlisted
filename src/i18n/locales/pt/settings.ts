@@ -37,13 +37,6 @@ export const settings: tLocale['settings'] = {
     'O Shortlisted procura formulários de candidatura em todos os sites e aparece quando reconhece um. As páginas são analisadas no seu computador e nada é enviado. Desligue para o limitar aos portais que suportamos diretamente.',
   detectToggle: 'Reconhecer formulários de candidatura em qualquer site',
 
-  serverTitle: 'Servidor na nuvem',
-  serverDevHint:
-    'Esta é uma compilação de desenvolvimento não empacotada, por isso usa o seu servidor local. Altere apenas se o seu servidor estiver noutro sítio.',
-  serverProdHint:
-    'Ligado ao Shortlisted Cloud. Deixe vazio, a não ser que lhe tenham pedido para apontar para outro lado.',
-  serverUrlLabel: 'URL do servidor',
-  serverReset: 'Usar a predefinição',
   creditsLeft: 'Créditos restantes',
   creditsOf: 'de',
   goPro: 'Passar a Pro — 100 créditos por mês',

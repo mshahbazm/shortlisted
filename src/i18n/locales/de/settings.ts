@@ -37,13 +37,6 @@ export const settings: tLocale['settings'] = {
     'Shortlisted achtet auf allen Websites auf Bewerbungsformulare und erscheint, sobald es eines erkennt. Die Prüfung läuft auf Ihrem Rechner, nichts davon wird gesendet. Schalten Sie es aus, um es auf die direkt unterstützten Jobbörsen zu begrenzen.',
   detectToggle: 'Bewerbungsformulare auf jeder Website erkennen',
 
-  serverTitle: 'Cloud-Server',
-  serverDevHint:
-    'Dies ist ein entpackter Entwicklungs-Build, er spricht mit Ihrem lokalen Server. Ändern Sie das nur, wenn Ihr Server woanders läuft.',
-  serverProdHint:
-    'Mit Shortlisted Cloud verbunden. Lassen Sie das Feld leer, sofern nicht anders angewiesen.',
-  serverUrlLabel: 'Server-URL',
-  serverReset: 'Standard verwenden',
   creditsLeft: 'Credits übrig',
   creditsOf: 'von',
   goPro: 'Pro holen — 100 Credits im Monat',

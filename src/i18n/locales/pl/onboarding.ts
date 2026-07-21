@@ -2,6 +2,27 @@ import type { tLocale } from '../en'
 import { plural } from './plural'
 
 export const onboarding: tLocale['onboarding'] = {
+  // No-CV guided builder
+  buildTitle: 'Stwórzmy razem Twoje CV.',
+  buildLead: 'Powiedz mi, na jakim jesteś etapie, a zadam właściwe pytania.',
+  buildStartingTitle: 'Dopiero zaczynam',
+  buildStartingSub: 'Studiuję albo szukam pierwszej pracy.',
+  buildWorkingTitle: 'Już pracuję',
+  buildWorkingSub: 'Po prostu nigdy nie potrzebowałem/-am CV.',
+  buildCv: 'Utwórz moje CV',
+  probeNext: 'Dalej',
+  probeTitle: 'Kilka szybkich pytań.',
+  probeLead: 'Odpowiedz na co możesz – dzięki temu CV będzie mocniejsze. Pomiń te, które nie pasują.',
+  talkStartingTitle: 'Opowiedz, co robiłeś/-aś.',
+  talkStartingLead:
+    'Projekt, wolontariat, koło, praca dorywcza – wszystko się liczy. Wrzuć tu wszystko, a ja nadam temu formę.',
+  talkStartingPlaceholder:
+    'np. Projekt dyplomowy: zbudowałem/-am aplikację do znajdowania wolnych sal do nauki na kampusie. Napisałem/-am backend i prowadziłem/-am nasze cotygodniowe spotkania.',
+  talkWorkingTitle: 'Twoja ostatnia praca.',
+  talkWorkingLead:
+    'Gdzie pracowałeś/-aś, co robiłeś/-aś, z czego jesteś dumny/-a – po prostu opowiedz, a ja zrobię z tego Twoje CV.',
+  talkWorkingPlaceholder:
+    'np. Przez 3 lata kierowałem/-am 6-osobowym zespołem w Kordo Logistics. Poprawiłem/-am grafik weekendowy, żeby nie brakowało nam ludzi, i szkoliłem/-am nowych.',
   back: 'Wstecz',
   welcomeLoginLink: 'Masz już konto? Zaloguj się',
   loginTitle: 'Witaj z powrotem.',
@@ -35,7 +56,9 @@ export const onboarding: tLocale['onboarding'] = {
     )}. Popraw, co się nie zgadza — resztę możesz edytować później.`,
   looksRight: 'Zgadza się',
 
-  answersTitle: 'Trzy pytania z każdej rekrutacji.',
+  answersTitle: 'Kilka szybkich podstaw.',
+  jobTypeLabel: 'Czego szukasz?',
+  jobTypePlaceholder: 'Pełny etat, staż, kontrakt…',
   answersLead: 'Odpowiedz raz tutaj — i nigdy więcej w żadnej aplikacji.',
   salaryLabel: 'Oczekiwania finansowe',
   salaryPlaceholder: '„4000 $/mies.” albo „Do uzgodnienia”',

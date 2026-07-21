@@ -15,6 +15,7 @@ const SYNCED = {
   applications: 'applications',
   queue: 'savedJobs',
   answerBank: 'answers',
+  pendingQuestions: 'pendingQuestions',
   fitScores: 'fitScores',
 } as const
 
@@ -38,9 +39,18 @@ export function startCloudMirror() {
   })
 }
 
-function schedulePush(delayMs = 1500) {
+// Short debounce: batch a burst of keystrokes, but keep local and the server
+// (the source of truth) converged within a fraction of a second, not seconds.
+function schedulePush(delayMs = 400) {
   clearTimeout(pushTimer)
   pushTimer = setTimeout(() => void flush(), delayMs)
+}
+
+/** Push any queued local changes to the server NOW. Called before a pull so the
+ *  server can never overwrite a local edit that hadn't reached it yet. */
+export async function flushPending(): Promise<void> {
+  clearTimeout(pushTimer)
+  await flush()
 }
 
 async function flush() {
@@ -64,6 +74,10 @@ async function flush() {
 export async function pullFromCloud(): Promise<void> {
   const settings = await store.get('settings')
   if (!settings.accountEmail) return
+  // Cloud-authoritative: flush any pending local writes FIRST, so the fetch
+  // below can overwrite local without ever losing an edit that hadn't reached
+  // the server yet. After this, the server is unambiguously the source of truth.
+  await flushPending()
   const remote = await fetchCloudData(settings)
   const local = await store.getAll()
   const up: Record<string, unknown> = {}
@@ -77,6 +91,7 @@ export async function pullFromCloud(): Promise<void> {
     await applyList('applications', remote.applications, local.applications, up)
     await applyList('queue', remote.savedJobs, local.queue, up)
     await applyList('answerBank', remote.answers, local.answerBank, up)
+    await applyList('pendingQuestions', remote.pendingQuestions, local.pendingQuestions, up)
 
     if (Object.keys(remote.fitScores).length) await store.set('fitScores', remote.fitScores)
     else if (Object.keys(local.fitScores).length) up.fitScores = local.fitScores

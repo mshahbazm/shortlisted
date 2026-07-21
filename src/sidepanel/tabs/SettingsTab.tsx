@@ -5,7 +5,7 @@ import { cn } from '../../lib/cn'
 import { StorageShape, storageDefaults } from '../../lib/types'
 import { LOCALES, LOCALE_LABELS, isLocale, useContent } from '../../i18n'
 import { CloudUsage, UsageStatsRow, cloudUsage, cloudUsageStats, sendLoginCode, verifyLoginCode } from '../../ai/run'
-import { cloudBaseUrl, cloudUrlDefault, isDevInstall } from '../../lib/config'
+import { isDevInstall } from '../../lib/config'
 import { sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
 
@@ -85,26 +85,6 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
     )
   }
 
-  if (nav.screen === 'server') {
-    return (
-      <Screen title={t.serverTitle} onBack={nav.back} t={t}>
-        <p className={LEDE}>{isDevInstall() ? t.serverDevHint : t.serverProdHint}</p>
-        <Label>{t.serverUrlLabel}
-          <Input
-            type="text"
-            placeholder={cloudUrlDefault()}
-            value={s.cloudUrl ?? ''}
-            onChange={(e) => set({ cloudUrl: e.target.value })}
-            spellCheck={false}
-          />
-        </Label>
-        {s.cloudUrl?.trim() && (
-          <Button variant="ghost" wide onClick={() => set({ cloudUrl: '' })}>{t.serverReset}</Button>
-        )}
-      </Screen>
-    )
-  }
-
   if (nav.screen === 'cost') {
     return (
       <Screen title="Dev: real cost" onBack={nav.back} t={t}>
@@ -146,9 +126,6 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
             onClick={() => nav.push('detect')}
           />
           <Row title={t.backupTitle} sub={t.backupSummary} onClick={() => nav.push('backup')} />
-          {/* Which server we talk to, always visible. A wrong endpoint used to
-              be invisible until a request failed with a URL nobody had chosen. */}
-          <Row title={t.serverTitle} sub={cloudBaseUrl(s)} onClick={() => nav.push('server')} />
           {/* DEV ONLY — what this account has actually cost us. Deliberately
               untranslated; remove before launch. */}
           {isDevInstall() && (

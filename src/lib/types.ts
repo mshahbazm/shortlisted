@@ -1,3 +1,11 @@
+// ⚠️ SHARED WITH THE CLOUD. This file is the extension's, but the cloud imports it
+// through the `extension` git submodule — so it exists as TWO checkouts on disk
+// (the standalone extension repo, and shortlisted-cloud/extension), and the cloud
+// typechecks against its submodule copy. If you change a type here, update BOTH
+// checkouts so they stay byte-identical, or the cloud compiles against a stale
+// shape. Same rule for every extension file the cloud imports (ai/systemAgent,
+// ai/capabilities/*, lib/profileMerge).
+//
 // ---------- Profile (v2 — schema adopted from the cuee ATS candidate model) ----------
 // Dates are split integers (month 1-12, year), never strings/Date objects.
 // Durations are COMPUTED in code (deterministic), not trusted from an LLM.
@@ -75,6 +83,7 @@ export interface CertificationEntry {
 
 export interface ProfileFacts {
   salaryExpectation?: string
+  jobType?: string // what they're after, e.g. "Full-time" / "Internship"
   noticePeriod?: string
   timezone?: string
   englishLevel?: string
@@ -111,6 +120,15 @@ export interface Profile {
   certifications: CertificationEntry[]
   links: ProfileLinks
   facts: ProfileFacts
+  /**
+   * The raw material this profile was DERIVED from, kept verbatim so we can
+   * re-process it with a better prompt, ground the profile-site agent in the
+   * user's own words, and trace a structured line back to what they actually
+   * said. Keyed by a meaningful name (what + why): `noCvIntro` (the "I don't
+   * have a CV" free-form box), `followups` (answers to the AI's questions),
+   * `pastedCv`, `note`. Rides in the profile jsonb — no table, syncs as-is.
+   */
+  sources?: Record<string, { text: string; at: number }>
 }
 
 export const emptyProfile = (): Profile => ({
@@ -320,9 +338,6 @@ export interface QueueItem {
 // AI always runs on Shortlisted Cloud — there is no provider choice.
 
 export interface Settings {
-  // Empty cloudUrl = the default for this install type (see lib/config.ts)
-  // (dev → localhost, prod → hosted origin); set only as an advanced override.
-  cloudUrl: string
   cloudToken?: string // device token, auto-provisioned on first use
   accountEmail?: string // set once the email OTP verifies; account = data saved server-side
   onboarded?: boolean
@@ -337,18 +352,10 @@ export interface Settings {
   detectEverywhere?: boolean
 }
 
-export const defaultSettings = (): Settings => ({
-  cloudUrl: '', // empty = follow the install type (see lib/config.ts)
-})
-
-// Cloud URLs that were once shipped as *defaults* and may linger in saved
-// settings. On read they migrate to '' (= follow the build-time config), so a
-// server move can never strand users on a dead address again. A URL the user
-// typed that isn't in this list is a real override and is left alone.
-const STALE_CLOUD_URLS = ['http://localhost:8788', 'http://localhost:3001', 'http://localhost:3000']
+export const defaultSettings = (): Settings => ({})
 
 // Settings keys from removed features (BYOK providers, provider toggle, job
-// finder); stripped on read.
+// finder, and the old user-settable cloudUrl); stripped on read.
 const LEGACY_SETTINGS_KEYS = [
   'aiProvider', 'finderUrl',
   'anthropicKey', 'anthropicModel', 'openaiKey', 'openaiModel',
@@ -359,10 +366,12 @@ export function normalizeSettings(raw: unknown): Settings {
   const s = { ...defaultSettings(), ...(raw && typeof raw === 'object' ? (raw as object) : {}) } as Settings &
     Record<string, unknown>
   for (const k of LEGACY_SETTINGS_KEYS) delete s[k]
-  if (s.cloudUrl && STALE_CLOUD_URLS.includes(s.cloudUrl.trim().replace(/\/$/, ''))) {
-    // The old default pointed at a server that no longer exists there — the
-    // device token minted by it is dead too.
-    return { ...s, cloudUrl: '', cloudToken: undefined }
+  // The server is the install default only now. Any stored cloudUrl is an
+  // obsolete override — drop it, and drop the device token with it (that token
+  // may have been minted against a different server).
+  if ('cloudUrl' in s) {
+    if (s.cloudUrl) s.cloudToken = undefined
+    delete s.cloudUrl
   }
   return s
 }

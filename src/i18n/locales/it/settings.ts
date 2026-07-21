@@ -37,13 +37,6 @@ export const settings: tLocale['settings'] = {
     'Shortlisted cerca moduli di candidatura su tutti i siti e compare quando ne riconosce uno. Le pagine vengono analizzate sul tuo computer e non viene inviato nulla. Disattivalo per limitarlo ai portali che supportiamo direttamente.',
   detectToggle: 'Riconoscere i moduli di candidatura su qualsiasi sito',
 
-  serverTitle: 'Server cloud',
-  serverDevHint:
-    'Questa è una build di sviluppo non pacchettizzata, quindi usa il tuo server locale. Cambialo solo se il tuo server è altrove.',
-  serverProdHint:
-    'Connesso a Shortlisted Cloud. Lascia vuoto, a meno che non ti sia stato chiesto di puntare altrove.',
-  serverUrlLabel: 'URL del server',
-  serverReset: 'Usa il valore predefinito',
   creditsLeft: 'Crediti rimasti',
   creditsOf: 'di',
   goPro: 'Passa a Pro — 100 crediti al mese',

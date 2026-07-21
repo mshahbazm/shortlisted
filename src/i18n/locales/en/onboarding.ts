@@ -3,6 +3,28 @@
 export const onboarding = {
   back: 'Back',
 
+  // No-CV guided builder
+  buildTitle: "Let's build your resume together.",
+  buildLead: "Tell me where you're at — I'll ask the right questions.",
+  buildStartingTitle: "I'm just starting out",
+  buildStartingSub: 'Studying, or after my first job.',
+  buildWorkingTitle: "I've been working",
+  buildWorkingSub: 'I just never needed a CV before.',
+  buildCv: 'Build my CV',
+  probeNext: 'Next',
+  probeTitle: 'A few quick questions.',
+  probeLead: "Answer what you can — these help me build a stronger CV. Skip any that don't fit.",
+  talkStartingTitle: "Tell me what you've done.",
+  talkStartingLead:
+    "A project, volunteering, a club, part-time work — anything counts. Dump it all here and I'll format it.",
+  talkStartingPlaceholder:
+    'e.g. Final-year project — I built an app to find free study rooms on campus. I wrote the backend and ran our weekly standups.',
+  talkWorkingTitle: 'Your most recent job.',
+  talkWorkingLead:
+    "Where you worked, what you did, anything you're proud of — just talk, and I'll shape it into your CV.",
+  talkWorkingPlaceholder:
+    'e.g. I led a team of 6 at Kordo Logistics for 3 years. I fixed the weekend shift rota so we stopped running short, and trained new starters.',
+
   welcomeTitle: "Let's get you shortlisted.",
   welcomeLead:
     'Create your career profile once. Shortlisted reuses your details and answers across job applications. You review everything before you submit.',
@@ -30,7 +52,9 @@ export const onboarding = {
     `Found ${roles} role${roles === 1 ? '' : 's'} and ${skills} skills. Fix anything that's off — the rest is editable later.`,
   looksRight: 'Looks right',
 
-  answersTitle: 'Three questions every job asks.',
+  answersTitle: 'A few quick basics.',
+  jobTypeLabel: 'What are you looking for?',
+  jobTypePlaceholder: 'Full-time, internship, contract…',
   answersLead: 'Answer once here, never again on an application.',
   salaryLabel: 'Salary expectation',
   salaryPlaceholder: '"$4,000/month" or "Open to discussion"',

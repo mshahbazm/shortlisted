@@ -1,6 +1,27 @@
 import type { tLocale } from '../en'
 
 export const onboarding: tLocale['onboarding'] = {
+  // No-CV guided builder
+  buildTitle: 'Creemos tu CV juntos.',
+  buildLead: 'Dime en qué punto estás y te haré las preguntas adecuadas.',
+  buildStartingTitle: 'Estoy empezando',
+  buildStartingSub: 'Estudiando, o buscando mi primer empleo.',
+  buildWorkingTitle: 'Ya he trabajado',
+  buildWorkingSub: 'Solo que nunca necesité un CV.',
+  buildCv: 'Crear mi CV',
+  probeNext: 'Siguiente',
+  probeTitle: 'Un par de preguntas rápidas.',
+  probeLead: 'Responde lo que puedas: ayudan a crear un CV más sólido. Salta las que no encajen.',
+  talkStartingTitle: 'Cuéntame qué has hecho.',
+  talkStartingLead:
+    'Un proyecto, voluntariado, un club, un trabajo a tiempo parcial: todo cuenta. Escríbelo todo aquí y yo le doy forma.',
+  talkStartingPlaceholder:
+    'p. ej. Proyecto de fin de carrera: creé una app para encontrar salas de estudio libres en el campus. Escribí el backend y dirigí nuestras reuniones semanales.',
+  talkWorkingTitle: 'Tu trabajo más reciente.',
+  talkWorkingLead:
+    'Dónde trabajaste, qué hacías, de qué te sientes orgulloso: solo cuéntamelo y yo lo convierto en tu CV.',
+  talkWorkingPlaceholder:
+    'p. ej. Dirigí un equipo de 6 personas en Kordo Logistics durante 3 años. Reorganicé los turnos de fin de semana para no quedarnos cortos de personal y formé a los nuevos.',
   back: 'Atrás',
   welcomeLoginLink: '¿Ya tienes una cuenta? Inicia sesión',
   loginTitle: 'Hola de nuevo.',
@@ -29,7 +50,9 @@ export const onboarding: tLocale['onboarding'] = {
     `Encontré ${roles} puesto${roles === 1 ? '' : 's'} y ${skills} habilidades. Corrige lo que no cuadre — el resto se puede editar después.`,
   looksRight: 'Se ve bien',
 
-  answersTitle: 'Tres preguntas que hacen en todos lados.',
+  answersTitle: 'Un par de datos rápidos.',
+  jobTypeLabel: '¿Qué estás buscando?',
+  jobTypePlaceholder: 'Tiempo completo, prácticas, contrato…',
   answersLead: 'Respóndelas una vez aquí y nunca más en una solicitud.',
   salaryLabel: 'Expectativa salarial',
   salaryPlaceholder: '"$4,000/mes" o "Abierto a negociar"',

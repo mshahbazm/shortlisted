@@ -6,6 +6,7 @@ import {
   ApplicationRecord,
   BankAnswer,
   FitScoreRecord,
+  PendingQuestion,
   Profile,
   QueueItem,
   ResumeVariant,
@@ -51,6 +52,23 @@ export async function cloudFillAssist(
 
 export async function runExtractProfile(settings: Settings, cvText: string): Promise<Profile> {
   return cloudCall<Profile>(settings, '/v1/extract-profile', { cvText })
+}
+
+export interface BuildProfileResult {
+  profile: Profile
+  questions: string[]
+}
+
+/** No-CV builder: free-form text -> a starting profile + follow-up questions.
+ *  `persona` steers the questions (fresh grad vs experienced). Pass `answers` on
+ *  the second call to enrich (no new questions come back). */
+export async function runBuildProfile(
+  settings: Settings,
+  intro: string,
+  persona: 'starting' | 'working',
+  answers?: { q: string; a: string }[],
+): Promise<BuildProfileResult> {
+  return cloudCall<BuildProfileResult>(settings, '/v1/build-profile', { intro, persona, answers })
 }
 
 /** TailorCvResult plus any note-stated facts the server folded in. */
@@ -163,6 +181,7 @@ export interface CloudData {
   applications: ApplicationRecord[]
   savedJobs: QueueItem[]
   answers: BankAnswer[]
+  pendingQuestions: PendingQuestion[]
   fitScores: Record<string, FitScoreRecord>
 }
 
@@ -195,7 +214,7 @@ async function cloudCall<T>(
   if (!res.ok) {
     const msg =
       (data as { error?: string } | null)?.error ??
-      `Shortlisted Cloud error ${res.status}. Is the server running at ${cloudBaseUrl(settings)}?`
+      `Shortlisted Cloud error ${res.status}. Is the server running at ${cloudBaseUrl()}?`
     console.error(`[shortlisted] cloud ${method} ${path} → ${res.status}:`, msg)
     throw new Error(msg)
   }
@@ -203,24 +222,20 @@ async function cloudCall<T>(
 }
 
 // fetch() rejects with a bare "Failed to fetch" when nothing answers (server
-// down, or a stale URL saved in Settings). Rethrow with the address so the
-// user can actually see what to fix.
-async function cloudFetch(settings: Settings, path: string, init?: RequestInit): Promise<Response> {
+// down). Rethrow with the address so the user can actually see what to fix.
+async function cloudFetch(_settings: Settings, path: string, init?: RequestInit): Promise<Response> {
   try {
-    return await fetch(cloudBaseUrl(settings) + path, init)
+    return await fetch(cloudBaseUrl() + path, init)
   } catch (e) {
-    console.error(`[shortlisted] cloud unreachable: ${cloudBaseUrl(settings)}${path}`, e)
-    throw new Error(
-      `Could not reach Shortlisted Cloud at ${cloudBaseUrl(settings)}. ` +
-        'Is the server running? Check the Cloud server URL in Settings.',
-    )
+    console.error(`[shortlisted] cloud unreachable: ${cloudBaseUrl()}${path}`, e)
+    throw new Error(`Could not reach Shortlisted Cloud at ${cloudBaseUrl()}. Is the server running?`)
   }
 }
 
 async function ensureDeviceToken(settings: Settings): Promise<string> {
   if (settings.cloudToken) return settings.cloudToken
   const res = await cloudFetch(settings, '/v1/device', { method: 'POST' })
-  if (!res.ok) throw new Error(`Could not reach Shortlisted Cloud at ${cloudBaseUrl(settings)}.`)
+  if (!res.ok) throw new Error(`Could not reach Shortlisted Cloud at ${cloudBaseUrl()}.`)
   const { token } = (await res.json()) as { token: string }
   // Persist for next time (read-modify-write against live storage, not the
   // possibly-stale settings object we were handed).

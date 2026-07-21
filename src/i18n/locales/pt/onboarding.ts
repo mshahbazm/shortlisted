@@ -1,6 +1,27 @@
 import type { tLocale } from '../en'
 
 export const onboarding: tLocale['onboarding'] = {
+  // No-CV guided builder
+  buildTitle: 'Vamos criar o teu CV juntos.',
+  buildLead: 'Diz-me em que ponto estás e faço-te as perguntas certas.',
+  buildStartingTitle: 'Estou a começar',
+  buildStartingSub: 'A estudar, ou à procura do primeiro emprego.',
+  buildWorkingTitle: 'Já trabalhei',
+  buildWorkingSub: 'Só que nunca precisei de um CV.',
+  buildCv: 'Criar o meu CV',
+  probeNext: 'Seguinte',
+  probeTitle: 'Umas perguntas rápidas.',
+  probeLead: 'Responde ao que puderes — ajudam a criar um CV mais forte. Salta as que não encaixam.',
+  talkStartingTitle: 'Conta-me o que já fizeste.',
+  talkStartingLead:
+    'Um projeto, voluntariado, um clube, um trabalho em part-time — tudo conta. Escreve tudo aqui e eu dou-lhe forma.',
+  talkStartingPlaceholder:
+    'ex. Projeto final: criei uma app para encontrar salas de estudo livres no campus. Escrevi o backend e conduzi as nossas reuniões semanais.',
+  talkWorkingTitle: 'O teu emprego mais recente.',
+  talkWorkingLead:
+    'Onde trabalhaste, o que fazias, do que te orgulhas — é só contares e eu transformo no teu CV.',
+  talkWorkingPlaceholder:
+    'ex. Liderei uma equipa de 6 pessoas na Kordo Logistics durante 3 anos. Reformulei a escala de fins de semana para não ficarmos com falta de pessoal e formei os novos.',
   back: 'Voltar',
   welcomeLoginLink: 'Já tens conta? Inicia sessão',
   loginTitle: 'Olá de novo.',
@@ -29,7 +50,9 @@ export const onboarding: tLocale['onboarding'] = {
     `Encontrei ${roles} ${roles === 1 ? 'função' : 'funções'} e ${skills} competências. Corrige o que estiver errado — o resto podes editar depois.`,
   looksRight: 'Está certo',
 
-  answersTitle: 'Três perguntas que todas as vagas fazem.',
+  answersTitle: 'Uns dados rápidos.',
+  jobTypeLabel: 'O que procuras?',
+  jobTypePlaceholder: 'Tempo inteiro, estágio, contrato…',
   answersLead: 'Responde uma vez aqui, nunca mais numa candidatura.',
   salaryLabel: 'Expectativa salarial',
   salaryPlaceholder: '"4.000 €/mês" ou "A discutir"',

@@ -1,3 +1,8 @@
+// ⚠️ SHARED WITH THE CLOUD via the `extension` submodule (two checkouts on disk):
+// edit here, then sync both the extension repo and shortlisted-cloud/extension so
+// they stay identical, or the cloud compiles against a stale copy. Full note in
+// src/lib/types.ts.
+//
 // Ported pattern from scnz-app's systemAgent: one wrapper every AI task goes
 // through. Structured output = JSON Schema appended to the system prompt +
 // repair-parse of the reply. Runtime-agnostic: callers inject an LlmClient,

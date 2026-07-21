@@ -169,19 +169,20 @@ const FEW_SHOT = `Example output for a short sample resume:
 "languages":[{"langCode":"en","name":"English","proficiency":"native_bilingual"}],
 "certifications":[{"name":"AWS Solutions Architect","issuingOrganization":"AWS","year":2022}]}`
 
-const SYSTEM_PROMPT =
-  `You are Shortlisted's profile parser. Turn what a person gives you into strictly structured JSON.\n` +
-  `The input is EITHER a formatted CV/resume OR the person describing their own background in plain words ` +
-  `(a job, studies, a project, volunteering, a club, freelance work). Both are valid — do NOT require resume formatting.\n` +
-  `Set isResume=true whenever the text describes THIS person's real experience, studies, projects or skills in any form. ` +
+// The résumé/paste parser. Free-form (spoken) input has its own prompt on the
+// cloud (build-profile/extract-freeform.ts) that INTERPRETS prose; both share the
+// schema, validation and mapping below so the output shape is identical.
+const RESUME_SYSTEM_PROMPT =
+  `You are Shortlisted's résumé parser. Turn a résumé, CV, or pasted career document into strictly structured JSON.\n` +
+  `The paste may be a full résumé, a LinkedIn export, or a partial fragment — extract EVERY real piece of career data it holds.\n` +
+  `Set isResume=true whenever the text is about this person's background (experience, education, projects, skills). ` +
   `Set it false ONLY when the text is not about a person's background at all (a job posting, an article, random text) — ` +
   `then leave everything else empty.\n` +
   `Rules:\n` +
-  `- TRUTH ONLY: use only what the text actually says. Never invent employers, titles, dates, numbers, metrics or skills, ` +
+  `- TRUTH ONLY: copy only what the text states. Never invent employers, titles, dates, numbers, metrics or skills, ` +
   `and never inflate a plain statement into an achievement. If something isn't stated, leave it out. This is absolute.\n` +
-  `- Casual input: map each thing they describe to an experience entry — a job, internship, volunteering, club role or ` +
-  `project all become experiences. Use a sensible companyName (the employer, organisation, school, or "Personal project") ` +
-  `and title (their role, or the project's name). Omit dates and metrics that weren't given.\n` +
+  `- Completeness: capture EVERYTHING real — every job, project, volunteering role, club, course, certification, ` +
+  `language and skill — into the right section. Never drop something just because it is brief.\n` +
   `- Identity: firstName, lastName, email, phone, location default to an empty string "" when not stated ` +
   `(the person fills these in next) — do NOT write "Unknown".\n` +
   `- Dates: split into integer month (1-12) and year. "Jan 2020" -> startMonth:1, startYear:2020. ` +
@@ -199,11 +200,18 @@ const SYSTEM_PROMPT =
   `- The text may contain [SECTION: …] markers we injected to help segmentation — never copy them into output.\n\n` +
   FEW_SHOT
 
-export async function extractProfile(client: LlmClient, cvText: string): Promise<Profile> {
+// systemPrompt defaults to the résumé parser; the free-form builder passes its
+// own (see build-profile/extract-freeform.ts). Schema, validation and the
+// ExtractedProfile -> Profile mapping are shared, so the output is identical.
+export async function extractProfile(
+  client: LlmClient,
+  cvText: string,
+  systemPrompt: string = RESUME_SYSTEM_PROMPT,
+): Promise<Profile> {
   const pass = await runJsonPass<ExtractedProfile>(
     {
       client,
-      systemPrompt: SYSTEM_PROMPT,
+      systemPrompt,
       input: prepareCvText(cvText),
       schema,
       schemaName: 'ExtractedProfile',

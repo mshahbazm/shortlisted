@@ -63,20 +63,14 @@ describe('cloud endpoint follows the install type', () => {
   })
 })
 
-describe('the Settings override wins', () => {
-  test('an explicit URL beats the built-in default', () => {
+describe('cloudBaseUrl follows the install type, with no user override', () => {
+  test('unpacked build resolves to the local server', () => {
+    asInstall({})
+    expect(cloudBaseUrl()).toBe(CLOUD_URL_DEV)
+  })
+
+  test('Web Store install resolves to production', () => {
     asInstall({ update_url: 'https://clients2.google.com/service/update2/crx' })
-    expect(cloudBaseUrl({ cloudUrl: 'http://192.168.1.50:3000' })).toBe('http://192.168.1.50:3000')
-  })
-
-  test('empty or blank override falls back to the default', () => {
-    asInstall({})
-    expect(cloudBaseUrl({ cloudUrl: '' })).toBe(CLOUD_URL_DEV)
-    expect(cloudBaseUrl({ cloudUrl: '   ' })).toBe(CLOUD_URL_DEV)
-  })
-
-  test('a trailing slash is stripped so paths never double up', () => {
-    asInstall({})
-    expect(cloudBaseUrl({ cloudUrl: 'http://localhost:4000/' })).toBe('http://localhost:4000')
+    expect(cloudBaseUrl()).toBe(CLOUD_URL_PROD)
   })
 })

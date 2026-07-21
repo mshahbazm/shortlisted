@@ -1,6 +1,27 @@
 import type { tLocale } from '../en'
 
 export const onboarding: tLocale['onboarding'] = {
+  // No-CV guided builder
+  buildTitle: 'Erstellen wir deinen Lebenslauf zusammen.',
+  buildLead: 'Sag mir, wo du stehst – ich stelle die richtigen Fragen.',
+  buildStartingTitle: 'Ich stehe noch am Anfang',
+  buildStartingSub: 'Im Studium oder auf der Suche nach dem ersten Job.',
+  buildWorkingTitle: 'Ich arbeite schon',
+  buildWorkingSub: 'Ich habe nur nie einen Lebenslauf gebraucht.',
+  buildCv: 'Meinen Lebenslauf erstellen',
+  probeNext: 'Weiter',
+  probeTitle: 'Noch ein paar kurze Fragen.',
+  probeLead: 'Beantworte, was du kannst – das macht deinen Lebenslauf stärker. Überspring, was nicht passt.',
+  talkStartingTitle: 'Erzähl mir, was du gemacht hast.',
+  talkStartingLead:
+    'Ein Projekt, Ehrenamt, ein Verein, ein Nebenjob – alles zählt. Schreib einfach alles hierhin, ich bringe es in Form.',
+  talkStartingPlaceholder:
+    'z. B. Abschlussprojekt – ich habe eine App gebaut, die freie Lernräume auf dem Campus findet. Ich habe das Backend geschrieben und unsere wöchentlichen Standups geleitet.',
+  talkWorkingTitle: 'Dein letzter Job.',
+  talkWorkingLead:
+    'Wo du gearbeitet hast, was du gemacht hast, worauf du stolz bist – erzähl einfach, ich forme daraus deinen Lebenslauf.',
+  talkWorkingPlaceholder:
+    'z. B. Ich habe 3 Jahre lang ein 6-köpfiges Team bei Kordo Logistics geleitet. Ich habe den Wochenend-Schichtplan überarbeitet, sodass wir nicht mehr unterbesetzt waren, und neue Mitarbeitende eingearbeitet.',
   back: 'Zurück',
   welcomeLoginLink: 'Schon ein Konto? Anmelden',
   loginTitle: 'Willkommen zurück.',
@@ -29,7 +50,9 @@ export const onboarding: tLocale['onboarding'] = {
     `${roles} ${roles === 1 ? 'Stelle' : 'Stellen'} und ${skills} Skills gefunden. Korrigiere, was nicht stimmt — alles lässt sich später noch ändern.`,
   looksRight: 'Passt so',
 
-  answersTitle: 'Drei Fragen, die jeder Job stellt.',
+  answersTitle: 'Noch ein paar Basics.',
+  jobTypeLabel: 'Wonach suchst du?',
+  jobTypePlaceholder: 'Vollzeit, Praktikum, Freelance…',
   answersLead: 'Einmal hier beantworten, nie wieder in einer Bewerbung.',
   salaryLabel: 'Gehaltsvorstellung',
   salaryPlaceholder: '"4.000 €/Monat" oder "Verhandelbar"',

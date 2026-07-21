@@ -1,6 +1,27 @@
 import type { tLocale } from '../en'
 
 export const onboarding: tLocale['onboarding'] = {
+  // No-CV guided builder
+  buildTitle: 'Créons ton CV ensemble.',
+  buildLead: 'Dis-moi où tu en es, je poserai les bonnes questions.',
+  buildStartingTitle: 'Je débute',
+  buildStartingSub: "En études, ou à la recherche d'un premier emploi.",
+  buildWorkingTitle: "J'ai déjà travaillé",
+  buildWorkingSub: "Je n'ai simplement jamais eu besoin d'un CV.",
+  buildCv: 'Créer mon CV',
+  probeNext: 'Suivant',
+  probeTitle: 'Quelques questions rapides.',
+  probeLead: 'Réponds à ce que tu peux : ça renforce ton CV. Passe celles qui ne collent pas.',
+  talkStartingTitle: 'Raconte-moi ce que tu as fait.',
+  talkStartingLead:
+    'Un projet, du bénévolat, un club, un job étudiant : tout compte. Écris tout ici et je le mets en forme.',
+  talkStartingPlaceholder:
+    "ex. Projet de fin d'études : j'ai créé une appli pour trouver des salles de travail libres sur le campus. J'ai écrit le backend et animé nos points hebdomadaires.",
+  talkWorkingTitle: 'Ton poste le plus récent.',
+  talkWorkingLead:
+    "Où tu as travaillé, ce que tu faisais, ce dont tu es fier : raconte, et j'en fais ton CV.",
+  talkWorkingPlaceholder:
+    "ex. J'ai dirigé une équipe de 6 personnes chez Kordo Logistics pendant 3 ans. J'ai revu le planning des week-ends pour ne plus être en sous-effectif, et formé les nouveaux.",
   back: 'Retour',
   welcomeLoginLink: 'Vous avez déjà un compte ? Connectez-vous',
   loginTitle: 'Bon retour.',
@@ -29,7 +50,9 @@ export const onboarding: tLocale['onboarding'] = {
     `${roles} poste${roles > 1 ? 's' : ''} et ${skills} compétences trouvés. Corrigez ce qui cloche — le reste sera modifiable plus tard.`,
   looksRight: 'C’est bon',
 
-  answersTitle: 'Trois questions posées à chaque candidature.',
+  answersTitle: 'Quelques infos rapides.',
+  jobTypeLabel: 'Que recherches-tu ?',
+  jobTypePlaceholder: 'Temps plein, stage, freelance…',
   answersLead: 'Répondez une fois ici, plus jamais sur une candidature.',
   salaryLabel: 'Prétentions salariales',
   salaryPlaceholder: '« 4 000 €/mois » ou « À discuter »',

@@ -1,6 +1,27 @@
 import type { tLocale } from '../en'
 
 export const onboarding: tLocale['onboarding'] = {
+  // No-CV guided builder
+  buildTitle: 'Laten we samen je cv maken.',
+  buildLead: 'Vertel me waar je staat, dan stel ik de juiste vragen.',
+  buildStartingTitle: 'Ik begin net',
+  buildStartingSub: 'Studerend, of op zoek naar mijn eerste baan.',
+  buildWorkingTitle: 'Ik werk al',
+  buildWorkingSub: 'Ik had alleen nooit een cv nodig.',
+  buildCv: 'Mijn cv maken',
+  probeNext: 'Volgende',
+  probeTitle: 'Nog een paar korte vragen.',
+  probeLead: 'Beantwoord wat je kunt – zo wordt je cv sterker. Sla over wat niet past.',
+  talkStartingTitle: 'Vertel me wat je hebt gedaan.',
+  talkStartingLead:
+    'Een project, vrijwilligerswerk, een club, een bijbaan – alles telt. Gooi het hier neer en ik geef het vorm.',
+  talkStartingPlaceholder:
+    'bijv. Afstudeerproject: ik bouwde een app om vrije studieruimtes op de campus te vinden. Ik schreef de backend en leidde onze wekelijkse standups.',
+  talkWorkingTitle: 'Je meest recente baan.',
+  talkWorkingLead:
+    'Waar je werkte, wat je deed, waar je trots op bent – vertel het gewoon en ik maak er je cv van.',
+  talkWorkingPlaceholder:
+    'bijv. Ik leidde 3 jaar lang een team van 6 bij Kordo Logistics. Ik herzag het weekendrooster zodat we niet meer onderbezet waren, en leidde nieuwe mensen op.',
   back: 'Terug',
   welcomeLoginLink: 'Heb je al een account? Log in',
   loginTitle: 'Welkom terug.',
@@ -29,7 +50,9 @@ export const onboarding: tLocale['onboarding'] = {
     `${roles} ${roles === 1 ? 'functie' : 'functies'} en ${skills} vaardigheden gevonden. Verbeter wat niet klopt — de rest kun je later aanpassen.`,
   looksRight: 'Ziet er goed uit',
 
-  answersTitle: 'Drie vragen die elke werkgever stelt.',
+  answersTitle: 'Nog een paar basics.',
+  jobTypeLabel: 'Waar ben je naar op zoek?',
+  jobTypePlaceholder: 'Fulltime, stage, freelance…',
   answersLead: 'Beantwoord ze hier één keer, daarna nooit meer.',
   salaryLabel: 'Salarisverwachting',
   salaryPlaceholder: '"€ 4.000/maand" of "In overleg"',
