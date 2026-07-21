@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '../lib/cn'
-import { BigChoice, Button, Input, Label, Select, Textarea } from './ui'
+import { BigChoice, Button, Icon, Input, Label, Select, Textarea } from './ui'
 import { useStore } from './hooks'
 import { LOCALES, LOCALE_LABELS, isLocale, useContent } from '../i18n'
 import { cloudPdfText, runExtractProfile, sendLoginCode, verifyLoginCode } from '../ai/run'
@@ -172,11 +172,21 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
   return (
     <div className="relative flex min-h-full w-full flex-col">
       <div className="mx-auto flex w-full max-w-[640px] flex-1 min-h-0 flex-col justify-center overflow-y-auto px-[26px] pt-8 pb-10">
-        <div className="mb-[30px] flex items-center gap-1.5">
-          {STEPS.map((s, i) => <i key={s} className={i <= idx ? 'on' : ''} />)}
+        <div className="mb-[30px] flex items-center">
           {trail.length > 0 && (
-            <button className="ml-auto cursor-pointer border-0 bg-transparent p-0 text-[12.5px] text-muted hover:text-fg disabled:cursor-default disabled:opacity-50" onClick={back} disabled={busy || pdfBusy}>{t.back}</button>
+            <button
+              type="button"
+              onClick={back}
+              disabled={busy || pdfBusy}
+              className="group -ml-1.5 inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[13px] font-medium text-muted transition-colors hover:bg-hover hover:text-fg disabled:cursor-default disabled:opacity-50 disabled:hover:bg-transparent"
+            >
+              <Icon name="back" className="size-3.5 transition-transform group-hover:-translate-x-0.5" />
+              {t.back}
+            </button>
           )}
+          <div className="ml-auto flex items-center gap-1.5">
+            {STEPS.map((s, i) => <i key={s} className={i <= idx ? 'on' : ''} />)}
+          </div>
         </div>
 
         {step === 'welcome' && (

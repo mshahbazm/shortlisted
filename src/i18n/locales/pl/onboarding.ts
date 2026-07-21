@@ -2,7 +2,7 @@ import type { tLocale } from '../en'
 import { plural } from './plural'
 
 export const onboarding: tLocale['onboarding'] = {
-  back: '← Wstecz',
+  back: 'Wstecz',
   welcomeLoginLink: 'Masz już konto? Zaloguj się',
   loginTitle: 'Witaj z powrotem.',
   loginLead: 'Podaj swój e-mail — wyślemy Ci 6-cyfrowy kod.',

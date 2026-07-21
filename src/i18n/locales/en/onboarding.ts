@@ -1,7 +1,7 @@
 // The first-run wizard (sidepanel/Onboarding.tsx).
 
 export const onboarding = {
-  back: '← Back',
+  back: 'Back',
 
   welcomeTitle: "Let's get you shortlisted.",
   welcomeLead:

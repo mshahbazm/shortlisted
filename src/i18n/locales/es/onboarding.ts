@@ -1,7 +1,7 @@
 import type { tLocale } from '../en'
 
 export const onboarding: tLocale['onboarding'] = {
-  back: '← Atrás',
+  back: 'Atrás',
   welcomeLoginLink: '¿Ya tienes una cuenta? Inicia sesión',
   loginTitle: 'Hola de nuevo.',
   loginLead: 'Escribe tu correo — te enviaremos un código de 6 dígitos.',

@@ -67,7 +67,7 @@ const schema = {
   type: 'object',
   required: ['isResume', 'firstName', 'lastName', 'email', 'phone', 'location', 'headline', 'summary', 'experiences', 'educations', 'skills'],
   properties: {
-    isResume: { type: 'boolean', description: 'false if this text is NOT a resume/CV — then leave everything else empty' },
+    isResume: { type: 'boolean', description: "false ONLY if the text is not about a person's background at all (job posting, article, random text) — then leave everything else empty" },
     firstName: { type: 'string' },
     lastName: { type: 'string' },
     email: { type: 'string' },
@@ -83,7 +83,7 @@ const schema = {
     },
     highlights: {
       type: 'array', items: { type: 'string' }, maxItems: 3,
-      description: 'EXACTLY 3 recruiter-scannable bullets, each under 12 words: (1) core expertise, (2) seniority signal, (3) top measurable achievement',
+      description: 'up to 3 recruiter-scannable bullets, each under 12 words, drawn only from stated facts: core expertise, seniority signal, top achievement. Fewer is fine — never invent one',
     },
     industries: { type: 'array', items: { type: 'string' }, description: 'verticals inferred from company history: FinTech, Healthcare, SaaS…' },
     skills: {
@@ -170,20 +170,31 @@ const FEW_SHOT = `Example output for a short sample resume:
 "certifications":[{"name":"AWS Solutions Architect","issuingOrganization":"AWS","year":2022}]}`
 
 const SYSTEM_PROMPT =
-  `You are Shortlisted's resume parser. Transform raw CV/resume text into strictly structured JSON.\n` +
-  `First decide: is this actually a resume/CV? If not, set isResume=false and leave everything else empty.\n` +
+  `You are Shortlisted's profile parser. Turn what a person gives you into strictly structured JSON.\n` +
+  `The input is EITHER a formatted CV/resume OR the person describing their own background in plain words ` +
+  `(a job, studies, a project, volunteering, a club, freelance work). Both are valid — do NOT require resume formatting.\n` +
+  `Set isResume=true whenever the text describes THIS person's real experience, studies, projects or skills in any form. ` +
+  `Set it false ONLY when the text is not about a person's background at all (a job posting, an article, random text) — ` +
+  `then leave everything else empty.\n` +
   `Rules:\n` +
-  `- TRUTH ONLY: copy facts as written; never embellish or invent. Missing optional data -> omit or null. ` +
-  `Required strings with no data -> "Unknown".\n` +
+  `- TRUTH ONLY: use only what the text actually says. Never invent employers, titles, dates, numbers, metrics or skills, ` +
+  `and never inflate a plain statement into an achievement. If something isn't stated, leave it out. This is absolute.\n` +
+  `- Casual input: map each thing they describe to an experience entry — a job, internship, volunteering, club role or ` +
+  `project all become experiences. Use a sensible companyName (the employer, organisation, school, or "Personal project") ` +
+  `and title (their role, or the project's name). Omit dates and metrics that weren't given.\n` +
+  `- Identity: firstName, lastName, email, phone, location default to an empty string "" when not stated ` +
+  `(the person fills these in next) — do NOT write "Unknown".\n` +
   `- Dates: split into integer month (1-12) and year. "Jan 2020" -> startMonth:1, startYear:2020. ` +
   `Year-only dates: omit the month. Never output Date objects or date strings.\n` +
   `- Enums exactly as listed: "full_time", NOT "Full-Time". Seniority adjectives map to proficiency ` +
   `(Senior/Lead usage implies advanced/expert).\n` +
   `- skills: the global list with proficiency + category (primary = core to their profession). ` +
   `ALSO list per-experience skills on each role where the text supports it.\n` +
-  `- highlights: EXACTLY 3 bullets, each under 12 words: core expertise / seniority signal / top measurable achievement.\n` +
+  `- highlights: UP TO 3 recruiter-scannable bullets, each under 12 words, drawn ONLY from what they said ` +
+  `(core expertise / seniority signal / top achievement). Fewer is fine; never invent one to reach three, ` +
+  `and never add a metric that wasn't stated.\n` +
   `- Phone: keep the country prefix if written. If there is NO prefix, infer the country ONLY from explicit ` +
-  `address/location text. Do NOT infer from the resume's language, the person's name, or where they studied — ` +
+  `address/location text. Do NOT infer from the text's language, the person's name, or where they studied — ` +
   `these are unreliable. No confident address signal -> keep the number exactly as written.\n` +
   `- The text may contain [SECTION: …] markers we injected to help segmentation — never copy them into output.\n\n` +
   FEW_SHOT
@@ -204,10 +215,10 @@ export async function extractProfile(client: LlmClient, cvText: string): Promise
       return null
     },
   )
-  if (!pass.value) throw new Error('Could not read that CV text. Try pasting the plain text of your resume.')
+  if (!pass.value) throw new Error("Couldn't read that. Add a little more detail and try again.")
   const x = pass.value
   if (!x.isResume) {
-    throw new Error("That text doesn't look like a resume/CV. Paste your actual resume and try again.")
+    throw new Error("I couldn't find your background in that. Add a bit about your jobs, studies or projects and try again.")
   }
 
   const CONTRACT = new Set(['full_time', 'part_time', 'contract', 'freelance', 'internship', 'temporary'])
