@@ -21,17 +21,41 @@ const SYNCED = {
 
 type SyncedKey = keyof typeof SYNCED
 
-let applyingRemote = false
+// Writes we've applied FROM the server and still expect to see echoed back
+// through onChanged. It lets the mirror tell its own pull apart from a genuine
+// local edit deterministically — no fragile time window. Keyed by local storage
+// key; each applied set() adds one expected echo, each matching change event
+// consumes one.
+const expectedEchoes = new Map<string, number>()
 const pending = new Map<string, unknown>()
 let pushTimer: ReturnType<typeof setTimeout> | undefined
 
+/** Write a value pulled from the server, marking it so the change listener does
+ *  not bounce it straight back up as if it were a local edit. */
+async function applyRemote<K extends SyncedKey>(key: K, value: StorageShape[K]): Promise<void> {
+  expectedEchoes.set(key, (expectedEchoes.get(key) ?? 0) + 1)
+  try {
+    await store.set(key, value)
+  } catch (e) {
+    // No echo will arrive — drop the phantom count so it can't swallow the next
+    // real edit on this key.
+    expectedEchoes.set(key, (expectedEchoes.get(key) ?? 1) - 1)
+    throw e
+  }
+}
+
 export function startCloudMirror() {
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== 'local' || applyingRemote) return
+    if (area !== 'local') return
     let queued = false
     for (const [key, change] of Object.entries(changes)) {
       const wireKey = SYNCED[key as SyncedKey]
       if (!wireKey) continue
+      const echo = expectedEchoes.get(key) ?? 0
+      if (echo > 0) {
+        expectedEchoes.set(key, echo - 1) // our own pull landing — don't bounce it back
+        continue
+      }
       pending.set(wireKey, change.newValue)
       queued = true
     }
@@ -82,26 +106,17 @@ export async function pullFromCloud(): Promise<void> {
   const local = await store.getAll()
   const up: Record<string, unknown> = {}
 
-  applyingRemote = true
-  try {
-    if (remote.profile) await store.set('profile', remote.profile)
-    else if (hasProfileContent(local.profile)) up.profile = local.profile
+  if (remote.profile) await applyRemote('profile', remote.profile)
+  else if (hasProfileContent(local.profile)) up.profile = local.profile
 
-    await applyList('resumes', remote.resumes, local.resumes, up)
-    await applyList('applications', remote.applications, local.applications, up)
-    await applyList('queue', remote.savedJobs, local.queue, up)
-    await applyList('answerBank', remote.answers, local.answerBank, up)
-    await applyList('pendingQuestions', remote.pendingQuestions, local.pendingQuestions, up)
+  await applyList('resumes', remote.resumes, local.resumes, up)
+  await applyList('applications', remote.applications, local.applications, up)
+  await applyList('queue', remote.savedJobs, local.queue, up)
+  await applyList('answerBank', remote.answers, local.answerBank, up)
+  await applyList('pendingQuestions', remote.pendingQuestions, local.pendingQuestions, up)
 
-    if (Object.keys(remote.fitScores).length) await store.set('fitScores', remote.fitScores)
-    else if (Object.keys(local.fitScores).length) up.fitScores = local.fitScores
-  } finally {
-    // onChanged fires after the writes settle; keep the guard up briefly so
-    // our own applies don't bounce straight back to the server.
-    setTimeout(() => {
-      applyingRemote = false
-    }, 500)
-  }
+  if (Object.keys(remote.fitScores).length) await applyRemote('fitScores', remote.fitScores)
+  else if (Object.keys(local.fitScores).length) up.fitScores = local.fitScores
 
   if (Object.keys(up).length) await pushCloudData(settings, up)
 }
@@ -112,7 +127,7 @@ async function applyList<K extends SyncedKey>(
   local: StorageShape[K],
   up: Record<string, unknown>,
 ) {
-  if (Array.isArray(remote) && remote.length) await store.set(localKey, remote)
+  if (Array.isArray(remote) && remote.length) await applyRemote(localKey, remote)
   else if (Array.isArray(local) && local.length) up[SYNCED[localKey]] = local
 }
 

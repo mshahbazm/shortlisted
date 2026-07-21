@@ -168,7 +168,14 @@ export async function sendLoginCode(settings: Settings, email: string): Promise<
 
 export async function verifyLoginCode(settings: Settings, email: string, otp: string): Promise<CloudUsage> {
   const res = await cloudCall<CloudUsage>(settings, '/v1/auth/verify', { email, otp })
-  await store.update('settings', (s) => ({ ...s, accountEmail: res.email ?? email }))
+  const newEmail = res.email ?? email
+  // No per-user bucketing: a device caches one account at a time. If a DIFFERENT
+  // account signs in here (or a prior sign-out failed to wipe), clear the stale
+  // content before this account's data is pulled, so one user never sees
+  // another's — even if clearAccount() never ran. The pull refills it.
+  const prev = await store.get('settings')
+  if (prev.accountEmail && prev.accountEmail !== newEmail) await store.clearAccountData()
+  await store.update('settings', (s) => ({ ...s, accountEmail: newEmail }))
   return res
 }
 
@@ -201,15 +208,21 @@ async function cloudCall<T>(
   body?: unknown,
   method: 'GET' | 'POST' | 'PUT' = body === undefined ? 'GET' : 'POST',
 ): Promise<T> {
-  const token = await ensureDeviceToken(settings)
-  const res = await cloudFetch(settings, path, {
-    method,
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`,
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  })
+  const send = (token: string) =>
+    cloudFetch(path, {
+      method,
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
+
+  let res = await send(await ensureDeviceToken(settings))
+  // The server owns the token; we only cache it. If it no longer recognises the
+  // cached one (the device row is gone — e.g. a dev DB reset), the cache is
+  // stale: mint a fresh token from the server and retry ONCE. A 401 here is
+  // always "unknown device"; the account gate returns 403, which we let surface
+  // as the normal "sign in" prompt rather than retrying.
+  if (res.status === 401) res = await send(await provisionDeviceToken())
+
   const data = await res.json().catch(() => null)
   if (!res.ok) {
     const msg =
@@ -223,7 +236,7 @@ async function cloudCall<T>(
 
 // fetch() rejects with a bare "Failed to fetch" when nothing answers (server
 // down). Rethrow with the address so the user can actually see what to fix.
-async function cloudFetch(_settings: Settings, path: string, init?: RequestInit): Promise<Response> {
+async function cloudFetch(path: string, init?: RequestInit): Promise<Response> {
   try {
     return await fetch(cloudBaseUrl() + path, init)
   } catch (e) {
@@ -232,13 +245,22 @@ async function cloudFetch(_settings: Settings, path: string, init?: RequestInit)
   }
 }
 
+/** The cached device token, or a freshly provisioned one. */
 async function ensureDeviceToken(settings: Settings): Promise<string> {
-  if (settings.cloudToken) return settings.cloudToken
-  const res = await cloudFetch(settings, '/v1/device', { method: 'POST' })
+  return settings.cloudToken ?? provisionDeviceToken()
+}
+
+/**
+ * Mint a device token from the server and cache it. The server is the source of
+ * truth for the token; local storage only mirrors it — so this is also how a
+ * cached token the server has forgotten gets refreshed (see cloudCall's retry).
+ */
+async function provisionDeviceToken(): Promise<string> {
+  const res = await cloudFetch('/v1/device', { method: 'POST' })
   if (!res.ok) throw new Error(`Could not reach Shortlisted Cloud at ${cloudBaseUrl()}.`)
   const { token } = (await res.json()) as { token: string }
-  // Persist for next time (read-modify-write against live storage, not the
-  // possibly-stale settings object we were handed).
+  // Read-modify-write against live storage, not the possibly-stale settings
+  // object we were handed.
   await store.update('settings', (s) => ({ ...s, cloudToken: token }))
   return token
 }

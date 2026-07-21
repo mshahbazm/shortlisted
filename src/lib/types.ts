@@ -354,10 +354,14 @@ export interface Settings {
 
 export const defaultSettings = (): Settings => ({})
 
-// Settings keys from removed features (BYOK providers, provider toggle, job
-// finder, and the old user-settable cloudUrl); stripped on read.
+// Settings keys from removed features — BYOK providers, provider toggle, job
+// finder, and the old user-settable cloudUrl (the endpoint is the install type
+// now, see config.ts). Stripped on read. The device token is deliberately NOT
+// invalidated here: the server is the authority on whether a token is still
+// valid, and a rejected one is re-provisioned on the next call (see run.ts), so
+// there is never a reason to throw it away locally.
 const LEGACY_SETTINGS_KEYS = [
-  'aiProvider', 'finderUrl',
+  'aiProvider', 'finderUrl', 'cloudUrl',
   'anthropicKey', 'anthropicModel', 'openaiKey', 'openaiModel',
   'ollamaEndpoint', 'ollamaModel', 'customEndpoint', 'customModel', 'customKey',
 ]
@@ -366,13 +370,6 @@ export function normalizeSettings(raw: unknown): Settings {
   const s = { ...defaultSettings(), ...(raw && typeof raw === 'object' ? (raw as object) : {}) } as Settings &
     Record<string, unknown>
   for (const k of LEGACY_SETTINGS_KEYS) delete s[k]
-  // The server is the install default only now. Any stored cloudUrl is an
-  // obsolete override — drop it, and drop the device token with it (that token
-  // may have been minted against a different server).
-  if ('cloudUrl' in s) {
-    if (s.cloudUrl) s.cloudToken = undefined
-    delete s.cloudUrl
-  }
   return s
 }
 

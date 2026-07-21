@@ -15,12 +15,15 @@ const LABEL = 'flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted'
 export function SettingsTab({ onClose }: { onClose: () => void }) {
   const t = useContent('settings')
   const nav = useStack()
-  const [settings, saveSettings] = useStore('settings')
+  const [settings] = useStore('settings')
   const importRef = useRef<HTMLInputElement>(null)
   const [msg, setMsg] = useState('')
 
   const s = settings
-  const set = (patch: Partial<typeof s>) => saveSettings({ ...s, ...patch })
+  // Merge against LIVE storage (read-modify-write), never a blind full object
+  // from React state — a stale copy here would otherwise clobber a field written
+  // elsewhere, e.g. the device token the worker just provisioned.
+  const set = (patch: Partial<typeof s>) => void store.update('settings', (cur) => ({ ...cur, ...patch }))
 
   const importAll = async (file: File) => {
     setMsg('')
