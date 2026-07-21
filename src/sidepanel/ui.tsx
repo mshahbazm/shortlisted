@@ -461,7 +461,7 @@ export function BigChoice({
  *  the way a hand-applied class can. */
 export const FIELD =
   'w-full rounded-field border border-line bg-bg px-3 py-2.5 text-[13.5px] text-fg ' +
-  'placeholder:text-faint focus:border-accent focus:ring-[3px] focus:ring-accent-soft focus:outline-none'
+  'placeholder:text-faint focus:border-accent/60 focus:ring-2 focus:ring-accent-soft focus:outline-none'
 
 /** A single-line field. */
 export function Input({ className, ...rest }: React.InputHTMLAttributes<HTMLInputElement>) {
@@ -790,7 +790,7 @@ export function Select<T extends string>({
         className={cn(
           'flex w-full cursor-pointer items-center justify-between gap-2 rounded-field border border-line',
           'bg-bg px-3 py-2.5 text-left text-[13.5px] text-fg',
-          'focus-visible:border-accent focus-visible:ring-[3px] focus-visible:ring-accent-soft focus-visible:outline-none',
+          'focus-visible:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent-soft focus-visible:outline-none',
           className,
         )}
       >

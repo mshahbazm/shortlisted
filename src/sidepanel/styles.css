@@ -92,9 +92,13 @@ body {
   box-shadow: var(--shadow-app);
 }
 
-/* A visible focus ring. The stylesheet this replaced removed outlines
-   entirely, which left keyboard users with nothing to follow. */
-:focus-visible {
+/* A visible focus ring for keyboard nav — buttons, rows, tiles. The stylesheet
+   this replaced removed outlines entirely, leaving keyboard users nothing to
+   follow. Form controls are excluded on purpose: they carry their own softer
+   focus look, and a text field matches :focus-visible even on a mouse click,
+   so without the exception every field got this bright outline stacked on top
+   of its own ring. */
+:focus-visible:not(input, textarea, select, [role='combobox']) {
   border-radius: 4px;
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
