@@ -6,6 +6,7 @@ dist-prod/
 # Business docs live in the private shortlisted-cloud repo (symlinked locally)
 SPEC.md
 CLAUDE.md
+AGENTS.md
 
 # Env & secrets (none used today; standard guard)
 .env
