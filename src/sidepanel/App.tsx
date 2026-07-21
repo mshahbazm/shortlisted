@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from './hooks'
 import { useContent } from '../i18n'
 import { Onboarding } from './Onboarding'
@@ -43,12 +43,30 @@ export function App() {
   // subscribed so signing out re-engages the gate.
   const [ready, setReady] = useState(false)
   const [signedIn, setSignedIn] = useState(false)
+  const wasSignedIn = useRef(false)
 
   useEffect(() => {
     // Both flags matter: sign-in happens mid-wizard now (review/answers can
     // follow it), so only accountEmail + onboarded together open the app.
-    const open = (s: { accountEmail?: string; onboarded?: boolean } | undefined) =>
-      setSignedIn(Boolean(s?.accountEmail && s?.onboarded))
+    const open = (s: { accountEmail?: string; onboarded?: boolean } | undefined) => {
+      const next = Boolean(s?.accountEmail && s?.onboarded)
+      // Landing after sign-in: the moment we cross signed-out → signed-in
+      // (the wizard finishing, for a new or a returning user), force Home with
+      // no overlay. Only on the transition, so an ordinary settings change
+      // while signed in doesn't yank the user off whatever tab they're on.
+      if (next && !wasSignedIn.current) {
+        setTab('home')
+        setSettingsOpen(false)
+      }
+      wasSignedIn.current = next
+      setSignedIn(next)
+      // Otherwise signing out while Settings is open leaves it open for
+      // whoever signs in next — they'd land on Settings instead of Home.
+      if (!next) {
+        setSettingsOpen(false)
+        setTab('home')
+      }
+    }
     void store.get('settings').then((s) => {
       open(s)
       setReady(true)
