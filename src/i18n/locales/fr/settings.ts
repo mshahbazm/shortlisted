@@ -48,6 +48,5 @@ export const settings: tLocale['settings'] = {
   creditsOf: 'sur',
   goPro: 'Passer à Pro — 100 crédits par mois',
   proFoot: '9 $ par mois. Un CV adapté ou une évaluation coûte 1 crédit. Remplir des formulaires est toujours gratuit.',
-  signedInLabel: 'Connecté',
   whereILook: 'Où je cherche des formulaires',
 }

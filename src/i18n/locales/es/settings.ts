@@ -48,6 +48,5 @@ export const settings: tLocale['settings'] = {
   creditsOf: 'de',
   goPro: 'Hazte Pro — 100 créditos al mes',
   proFoot: '9 $ al mes. Un CV adaptado o una puntuación cuesta 1 crédito. Rellenar formularios siempre es gratis.',
-  signedInLabel: 'Sesión iniciada',
   whereILook: 'Dónde busco formularios',
 }

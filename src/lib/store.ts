@@ -38,3 +38,24 @@ export function onChange<K extends Key>(key: K, cb: (value: StorageShape[K]) => 
   chrome.storage.onChanged.addListener(listener)
   return () => chrome.storage.onChanged.removeListener(listener)
 }
+
+// There's no local-first per-user bucketing yet — this device holds one
+// account's data at a time — so signing out must wipe it, or the next
+// person to sign in on this device sees the previous person's CV,
+// applications, and answer bank. Device-level preferences (cloudUrl
+// override, locale, detectEverywhere) are left alone.
+export async function clearAccount(): Promise<void> {
+  const defaults = storageDefaults()
+  const settings = await get('settings')
+  await chrome.storage.local.set({
+    profile: defaults.profile,
+    answerBank: defaults.answerBank,
+    pendingQuestions: defaults.pendingQuestions,
+    resumes: defaults.resumes,
+    applications: defaults.applications,
+    queue: defaults.queue,
+    fitScores: defaults.fitScores,
+    pendingNav: defaults.pendingNav,
+    settings: { ...settings, accountEmail: undefined, cloudToken: undefined, onboarded: undefined },
+  })
+}

@@ -48,6 +48,5 @@ export const settings = {
   creditsOf: 'of',
   goPro: 'Go Pro — 100 credits a month',
   proFoot: '$9 a month. One tailored CV or fit score uses 1 credit. Filling forms is always free.',
-  signedInLabel: 'Signed in',
   whereILook: 'Where I look for forms',
 }

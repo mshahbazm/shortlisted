@@ -7,6 +7,7 @@ import { LOCALES, LOCALE_LABELS, isLocale, useContent } from '../../i18n'
 import { CloudUsage, UsageStatsRow, cloudUsage, cloudUsageStats, sendLoginCode, verifyLoginCode } from '../../ai/run'
 import { cloudBaseUrl, cloudUrlDefault, isDevInstall } from '../../lib/config'
 import { sendMsg } from '../../lib/messaging'
+import * as store from '../../lib/store'
 
 const LEDE = 'm-0 text-[12.5px] leading-normal text-muted'
 const LABEL = 'flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted'
@@ -159,7 +160,7 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
           <Button
             variant="danger"
             wide
-            onClick={() => saveSettings({ ...settings, accountEmail: undefined, cloudToken: undefined })}
+            onClick={() => void store.clearAccount()}
           >
             {t.signOutDevice}
           </Button>
@@ -273,6 +274,15 @@ function AccountPanel() {
     }
   }
 
+  // Enter should submit the visible step, same as clicking the button:
+  // the email field sends the code, the code field signs in.
+  const submitAccount = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (busy) return
+    if (codeSent) void verify()
+    else void sendCode()
+  }
+
   const verify = async () => {
     setMsg('')
     setBusy(true)
@@ -297,14 +307,16 @@ function AccountPanel() {
   return (
     <Card pad="md" className="gap-3">
       {!signedIn && (
-        <>
+        // A real form so Enter submits the visible step, not just a button click.
+        // `contents` keeps the fields as direct flex children of the Card.
+        <form onSubmit={submitAccount} className="contents">
           <p className={LEDE}>{t.accountIntro}</p>
           <Label>{t.email}
             <Input type="email" placeholder={t.emailPlaceholder} value={email}
               onChange={(e) => setEmail(e.target.value)}
             /></Label>
           {!codeSent ? (
-            <Button wide disabled={busy || !email.trim()} onClick={sendCode}>
+            <Button type="submit" wide disabled={busy || !email.trim()}>
               {busy ? t.sending : t.sendCode}
             </Button>
           ) : (
@@ -313,23 +325,20 @@ function AccountPanel() {
                 <Input type="text" inputMode="numeric" placeholder={t.codePlaceholder} value={otp}
                   onChange={(e) => setOtp(e.target.value)} autoFocus
                 /></Label>
-              <Button wide disabled={busy || !otp.trim()} onClick={verify}>
+              <Button type="submit" wide disabled={busy || !otp.trim()}>
                 {busy ? t.checking : t.signIn}
               </Button>
-              <Button variant="link" disabled={busy} onClick={sendCode}>{t.resendCode}</Button>
+              <Button type="button" variant="link" disabled={busy} onClick={sendCode}>{t.resendCode}</Button>
             </>
           )}
-        </>
+        </form>
       )}
 
       {signedIn && (
         <>
-          <div className="flex items-start gap-2.5">
-            <div>
-              <div className="text-[11px] text-faint">{t.signedInLabel}</div>
-              <div className="text-[13.5px] font-semibold [overflow-wrap:anywhere]">{settings.accountEmail}</div>
-            </div>
-            <span className="rounded-full bg-hover px-2 py-[3px] text-[10.5px] font-[650] whitespace-nowrap text-muted">{usage?.plan === 'pro' ? t.planPro : t.planFree}</span>
+          <div className="flex items-center justify-between gap-2.5">
+            <div className="min-w-0 flex-1 text-[13.5px] font-semibold [overflow-wrap:anywhere]">{settings.accountEmail}</div>
+            <span className="shrink-0 rounded-full bg-hover px-2 py-[3px] text-[10.5px] font-[650] whitespace-nowrap text-muted">{usage?.plan === 'pro' ? t.planPro : t.planFree}</span>
           </div>
 
           {/* Credits as a bar, not a sentence — it's the thing you check. */}

@@ -48,6 +48,5 @@ export const settings: tLocale['settings'] = {
   creditsOf: 'van',
   goPro: 'Ga Pro — 100 credits per maand',
   proFoot: '$9 per maand. Eén cv op maat of één score kost 1 credit. Formulieren invullen is altijd gratis.',
-  signedInLabel: 'Ingelogd',
   whereILook: 'Waar ik naar formulieren zoek',
 }

@@ -48,6 +48,5 @@ export const settings: tLocale['settings'] = {
   creditsOf: 'di',
   goPro: 'Passa a Pro — 100 crediti al mese',
   proFoot: '9 $ al mese. Un CV su misura o un punteggio costa 1 credito. Compilare moduli è sempre gratis.',
-  signedInLabel: 'Accesso effettuato',
   whereILook: 'Dove cerco i moduli',
 }

@@ -48,6 +48,5 @@ export const settings: tLocale['settings'] = {
   creditsOf: 'von',
   goPro: 'Pro holen — 100 Credits im Monat',
   proFoot: '9 $ im Monat. Ein zugeschnittener Lebenslauf oder eine Bewertung kostet 1 Credit. Formulare ausfüllen ist immer kostenlos.',
-  signedInLabel: 'Angemeldet',
   whereILook: 'Wo ich nach Formularen suche',
 }

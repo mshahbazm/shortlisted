@@ -48,6 +48,5 @@ export const settings: tLocale['settings'] = {
   creditsOf: 'z',
   goPro: 'Przejdź na Pro — 100 kredytów miesięcznie',
   proFoot: '9 $ miesięcznie. Dopasowane CV albo ocena to 1 kredyt. Wypełnianie formularzy zawsze za darmo.',
-  signedInLabel: 'Zalogowano',
   whereILook: 'Gdzie szukam formularzy',
 }
