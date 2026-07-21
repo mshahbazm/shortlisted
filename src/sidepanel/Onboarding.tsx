@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useRef, useState } from 'react'
-import { BigChoice, Button, Input, Label, Select, Textarea } from './ui'
+import { BackButton, BigChoice, Button, Input, Label, Select, Textarea } from './ui'
 import { useStore } from './hooks'
 import { LOCALES, LOCALE_LABELS, isLocale, useContent } from '../i18n'
 import { cloudPdfText, runBuildProfile, runExtractProfile, sendLoginCode, verifyLoginCode } from '../ai/run'
@@ -347,15 +347,13 @@ function WizardShell({
     <div className="relative flex min-h-full w-full flex-col">
       <div className="mx-auto flex w-full max-w-[640px] flex-1 min-h-0 flex-col justify-center overflow-y-auto px-[26px] pt-8 pb-10">
         {canBack && (
-          <button
-            type="button"
+          <BackButton
+            variant="pill"
+            label={backLabel}
             onClick={onBack}
             disabled={disabled}
-            className="group mb-5 -ml-2 inline-flex w-fit items-center gap-1 self-start rounded-full py-1.5 pl-2 pr-3.5 text-[13px] font-medium text-muted transition-colors hover:bg-hover hover:text-fg disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="transition-transform group-hover:-translate-x-0.5"><path d="M15 18l-6-6 6-6" /></svg>
-            {backLabel}
-          </button>
+            className="mb-5 self-start"
+          />
         )}
         {children}
       </div>

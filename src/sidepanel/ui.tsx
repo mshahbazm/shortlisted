@@ -199,6 +199,51 @@ export function IconButton({
   )
 }
 
+/** The one back control for the whole panel. Always an arrow + a visible label,
+ *  so every wizard and pushed screen reads the same. Two variants for our two
+ *  layouts: `bar` sits in a screen header, `pill` stands alone in a wizard.
+ *  Change the look here once and it changes everywhere. */
+export function BackButton({
+  label,
+  variant = 'bar',
+  className,
+  ...rest
+}: {
+  label: string
+  variant?: 'bar' | 'pill'
+} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      type="button"
+      {...rest}
+      className={cn(
+        'group inline-flex w-fit shrink-0 cursor-pointer items-center gap-1 border-0 bg-transparent',
+        'text-muted transition-colors hover:text-fg disabled:cursor-default disabled:opacity-40',
+        variant === 'pill'
+          ? '-ml-2 rounded-full py-1.5 pl-2 pr-3.5 text-[13px] font-medium hover:bg-hover disabled:hover:bg-transparent'
+          : '-ml-1 rounded-md px-1 py-0.5 text-sm font-semibold hover:bg-hover',
+        className,
+      )}
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+        className="transition-transform group-hover:-translate-x-0.5"
+      >
+        <path d="M15 18l-6-6 6-6" />
+      </svg>
+      {label}
+    </button>
+  )
+}
+
 /** The x beside a repeatable row. Muted until hovered, then clearly a delete. */
 export function RemoveButton({
   label,
@@ -273,8 +318,8 @@ export function ScreenHead({
 }) {
   return (
     <div className={cn(BAR, 'px-3.5 py-[11px] text-sm font-semibold')}>
-      <IconButton icon="back" onClick={onBack} aria-label={backLabel} />
-      <span className="min-w-0 truncate">{title}</span>
+      <BackButton variant="bar" label={backLabel} onClick={onBack} />
+      <span className="min-w-0 truncate text-muted">{title}</span>
       {right && (
         <span className="ml-auto shrink-0 text-[11.5px] font-semibold text-muted tabular-nums">{right}</span>
       )}
