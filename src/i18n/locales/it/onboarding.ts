@@ -47,7 +47,7 @@ export const onboarding: tLocale['onboarding'] = {
   sending: 'Invio…',
   inboxTitle: 'Controlla la posta.',
   inboxLead: (email: string) =>
-    `Abbiamo inviato un codice a 6 cifre a ${email}. Digitalo qui e hai finito — poi apri un annuncio qualsiasi e premi "Compila questa candidatura".`,
+    `Abbiamo inviato un codice a 6 cifre a ${email}. Inseriscilo qui sotto per finire.`,
   codeLabel: 'Codice',
   codePlaceholder: '123456',
   verifyStart: 'Verifica e inizia',

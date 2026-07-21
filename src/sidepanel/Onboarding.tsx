@@ -211,6 +211,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
               <Input
                 type="email" placeholder={t.emailPlaceholder} value={acctEmail}
                 onChange={(e) => setAcctEmail(e.target.value)} autoFocus
+                onKeyDown={(e) => { if (e.key === 'Enter' && !busy && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(acctEmail.trim())) sendCode() }}
               /></Label>
             {err && <p className="my-2 text-[13px] text-bad">{err}</p>}
             <div className="mt-[22px] flex items-center gap-2.5">
@@ -230,6 +231,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
               <Input
                 inputMode="numeric" autoComplete="one-time-code" placeholder={t.codePlaceholder}
                 value={otp} onChange={(e) => setOtp(e.target.value)} autoFocus
+                onKeyDown={(e) => { if (e.key === 'Enter' && !busy && otp.trim().length >= 4) verifyCode() }}
               /></Label>
             {err && <p className="my-2 text-[13px] text-bad">{err}</p>}
             <div className="mt-[22px] flex items-center gap-2.5">
@@ -357,6 +359,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
               <Input
                 type="email" placeholder={t.emailPlaceholder} value={acctEmail}
                 onChange={(e) => setAcctEmail(e.target.value)} autoFocus
+                onKeyDown={(e) => { if (e.key === 'Enter' && !busy && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(acctEmail.trim())) sendCode() }}
               /></Label>
             {err && <p className="my-2 text-[13px] text-bad">{err}</p>}
             <div className="mt-[22px] flex items-center gap-2.5">
@@ -376,6 +379,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
               <Input
                 inputMode="numeric" autoComplete="one-time-code" placeholder={t.codePlaceholder}
                 value={otp} onChange={(e) => setOtp(e.target.value)} autoFocus
+                onKeyDown={(e) => { if (e.key === 'Enter' && !busy && otp.trim().length >= 4) verifyCode() }}
               /></Label>
             {err && <p className="my-2 text-[13px] text-bad">{err}</p>}
             <div className="mt-[22px] flex items-center gap-2.5">

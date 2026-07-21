@@ -48,7 +48,7 @@ export const onboarding = {
   sending: 'Sending…',
   inboxTitle: 'Check your inbox.',
   inboxLead: (email: string) =>
-    `We sent a 6-digit code to ${email}. Type it here and you're done — then open any job posting and hit "Fill this application".`,
+    `We sent a 6-digit code to ${email}. Enter it below to finish.`,
   codeLabel: 'Code',
   codePlaceholder: '123456',
   verifyStart: 'Verify & start',
