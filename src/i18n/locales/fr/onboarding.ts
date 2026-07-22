@@ -3,7 +3,7 @@ import type { tLocale } from '../en'
 export const onboarding: tLocale['onboarding'] = {
   // No-CV guided builder
   buildTitle: 'Créons ton profil ensemble.',
-  buildLead: 'Dis-moi où tu en es, je poserai les bonnes questions.',
+  buildLead: "Choisis où tu en es — les questions s'adaptent.",
   buildStartingTitle: 'Je débute',
   buildStartingSub: "En études, ou à la recherche d'un premier emploi.",
   buildWorkingTitle: "J'ai déjà travaillé",
@@ -12,16 +12,18 @@ export const onboarding: tLocale['onboarding'] = {
   probeNext: 'Suivant',
   probeTitle: 'Quelques questions rapides.',
   probeLead: 'Réponds à ce que tu peux : ça renforce ton CV. Passe celles qui ne collent pas.',
-  talkStartingTitle: 'Raconte-moi ce que tu as fait.',
+  talkStartingTitle: "Qu'as-tu fait ?",
   talkStartingLead:
-    'Un projet, du bénévolat, un club, un job étudiant : tout compte. Écris tout ici et je le mets en forme.',
+    'Un projet, du bénévolat, un club, un job étudiant : tout compte. Écris tout ici — ça devient ton CV.',
   talkStartingPlaceholder:
     "ex. Projet de fin d'études : j'ai créé une appli pour trouver des salles de travail libres sur le campus. J'ai écrit le backend et animé nos points hebdomadaires.",
   talkWorkingTitle: 'Ton poste le plus récent.',
   talkWorkingLead:
-    "Où tu as travaillé, ce que tu faisais, ce dont tu es fier : raconte, et j'en fais ton CV.",
+    'Où tu as travaillé, ce que tu faisais, ce dont tu es fier : écris librement — ça devient ton CV.',
   talkWorkingPlaceholder:
     "ex. J'ai dirigé une équipe de 6 personnes chez Kordo Logistics pendant 3 ans. J'ai revu le planning des week-ends pour ne plus être en sous-effectif, et formé les nouveaux.",
+  talkCountNeed: (n: number, min: number) => `${n} / ${min} caractères — encore un peu`,
+  talkCountReady: 'Plus tu partages, meilleur sera ton CV — projets, réussites, tout.',
   back: 'Retour',
   skip: 'Passer',
   welcomeLoginLink: 'Vous avez déjà un compte ? Connectez-vous',

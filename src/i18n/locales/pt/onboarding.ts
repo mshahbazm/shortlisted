@@ -3,7 +3,7 @@ import type { tLocale } from '../en'
 export const onboarding: tLocale['onboarding'] = {
   // No-CV guided builder
   buildTitle: 'Vamos criar o teu perfil juntos.',
-  buildLead: 'Diz-me em que ponto estás e faço-te as perguntas certas.',
+  buildLead: 'Escolhe em que ponto estás e as perguntas ajustam-se.',
   buildStartingTitle: 'Estou a começar',
   buildStartingSub: 'A estudar, ou à procura do primeiro emprego.',
   buildWorkingTitle: 'Já trabalhei',
@@ -12,16 +12,18 @@ export const onboarding: tLocale['onboarding'] = {
   probeNext: 'Seguinte',
   probeTitle: 'Umas perguntas rápidas.',
   probeLead: 'Responde ao que puderes — ajudam a criar um CV mais forte. Salta as que não encaixam.',
-  talkStartingTitle: 'Conta-me o que já fizeste.',
+  talkStartingTitle: 'O que já fizeste?',
   talkStartingLead:
-    'Um projeto, voluntariado, um clube, um trabalho em part-time — tudo conta. Escreve tudo aqui e eu dou-lhe forma.',
+    'Um projeto, voluntariado, um clube, um trabalho em part-time — tudo conta. Escreve tudo aqui e transforma-se no teu CV.',
   talkStartingPlaceholder:
     'ex. Projeto final: criei uma app para encontrar salas de estudo livres no campus. Escrevi o backend e conduzi as nossas reuniões semanais.',
   talkWorkingTitle: 'O teu emprego mais recente.',
   talkWorkingLead:
-    'Onde trabalhaste, o que fazias, do que te orgulhas — é só contares e eu transformo no teu CV.',
+    'Onde trabalhaste, o que fazias, do que te orgulhas — escreve à vontade e transforma-se no teu CV.',
   talkWorkingPlaceholder:
     'ex. Liderei uma equipa de 6 pessoas na Kordo Logistics durante 3 anos. Reformulei a escala de fins de semana para não ficarmos com falta de pessoal e formei os novos.',
+  talkCountNeed: (n: number, min: number) => `${n} / ${min} caracteres — mais um pouco`,
+  talkCountReady: 'Quanto mais partilhares, melhor o teu CV — projetos, conquistas, tudo.',
   back: 'Voltar',
   skip: 'Pular',
   welcomeLoginLink: 'Já tens conta? Inicia sessão',
@@ -46,7 +48,7 @@ export const onboarding: tLocale['onboarding'] = {
   buildingLead: 'Quase pronto — só uns segundos.',
   pastePlaceholder: '…ou cola aqui o texto do teu currículo.',
   buildProfile: 'Criar o meu perfil',
-  reviewTitle: 'Acertei?',
+  reviewTitle: 'Está certo?',
   reviewLead: (roles: number, skills: number) =>
     `Encontrei ${roles} ${roles === 1 ? 'função' : 'funções'} e ${skills} competências. Corrige o que estiver errado — o resto podes editar depois.`,
   looksRight: 'Está certo',

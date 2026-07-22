@@ -3,7 +3,7 @@ import type { tLocale } from '../en'
 export const onboarding: tLocale['onboarding'] = {
   // No-CV guided builder
   buildTitle: 'Creiamo il tuo profilo insieme.',
-  buildLead: 'Dimmi a che punto sei e ti farò le domande giuste.',
+  buildLead: 'Scegli a che punto sei e le domande si adattano.',
   buildStartingTitle: 'Sto iniziando ora',
   buildStartingSub: 'Studio, o cerco il primo lavoro.',
   buildWorkingTitle: 'Ho già lavorato',
@@ -12,16 +12,18 @@ export const onboarding: tLocale['onboarding'] = {
   probeNext: 'Avanti',
   probeTitle: 'Un paio di domande veloci.',
   probeLead: 'Rispondi a quello che puoi: rendono il CV più forte. Salta quelle che non ti riguardano.',
-  talkStartingTitle: 'Raccontami cosa hai fatto.',
+  talkStartingTitle: 'Cosa hai fatto?',
   talkStartingLead:
-    'Un progetto, volontariato, un club, un lavoro part-time: tutto conta. Scrivi tutto qui e io gli do forma.',
+    'Un progetto, volontariato, un club, un lavoro part-time: tutto conta. Scrivi tutto qui e diventa il tuo CV.',
   talkStartingPlaceholder:
     "es. Progetto di tesi: ho creato un'app per trovare aule studio libere nel campus. Ho scritto il backend e gestito i nostri standup settimanali.",
   talkWorkingTitle: 'Il tuo lavoro più recente.',
   talkWorkingLead:
-    'Dove hai lavorato, cosa facevi, di cosa vai fiero: raccontamelo e io ne faccio il tuo CV.',
+    'Dove hai lavorato, cosa facevi, di cosa vai fiero: scrivi liberamente e diventa il tuo CV.',
   talkWorkingPlaceholder:
     'es. Ho guidato un team di 6 persone alla Kordo Logistics per 3 anni. Ho rivisto i turni del weekend per non restare mai a corto di personale e formato i nuovi arrivati.',
+  talkCountNeed: (n: number, min: number) => `${n} / ${min} caratteri — ancora un po'`,
+  talkCountReady: 'Più condividi, migliore sarà il tuo CV — progetti, successi, tutto.',
   back: 'Indietro',
   skip: 'Salta',
   welcomeLoginLink: 'Hai già un account? Accedi',
@@ -46,7 +48,7 @@ export const onboarding: tLocale['onboarding'] = {
   buildingLead: 'Quasi fatto — pochi secondi.',
   pastePlaceholder: '…oppure incolla qui il testo del tuo CV.',
   buildProfile: 'Crea il mio profilo',
-  reviewTitle: 'Ho capito bene?',
+  reviewTitle: 'È tutto giusto?',
   reviewLead: (roles: number, skills: number) =>
     `Trovat${roles === 1 ? 'o 1 ruolo' : `i ${roles} ruoli`} e ${skills} competenze. Correggi quello che non torna — il resto lo modifichi quando vuoi.`,
   looksRight: 'Tutto giusto',

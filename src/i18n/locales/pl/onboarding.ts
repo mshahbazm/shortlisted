@@ -4,7 +4,7 @@ import { plural } from './plural'
 export const onboarding: tLocale['onboarding'] = {
   // No-CV guided builder
   buildTitle: 'Stwórzmy razem Twój profil.',
-  buildLead: 'Powiedz mi, na jakim jesteś etapie, a zadam właściwe pytania.',
+  buildLead: 'Wybierz, na jakim jesteś etapie, a pytania się dopasują.',
   buildStartingTitle: 'Dopiero zaczynam',
   buildStartingSub: 'Studiuję albo szukam pierwszej pracy.',
   buildWorkingTitle: 'Już pracuję',
@@ -13,16 +13,18 @@ export const onboarding: tLocale['onboarding'] = {
   probeNext: 'Dalej',
   probeTitle: 'Kilka szybkich pytań.',
   probeLead: 'Odpowiedz na co możesz – dzięki temu CV będzie mocniejsze. Pomiń te, które nie pasują.',
-  talkStartingTitle: 'Opowiedz, co robiłeś/-aś.',
+  talkStartingTitle: 'Co robiłeś/-aś?',
   talkStartingLead:
-    'Projekt, wolontariat, koło, praca dorywcza – wszystko się liczy. Wrzuć tu wszystko, a ja nadam temu formę.',
+    'Projekt, wolontariat, koło, praca dorywcza – wszystko się liczy. Wrzuć tu wszystko, a powstanie z tego CV.',
   talkStartingPlaceholder:
     'np. Projekt dyplomowy: zbudowałem/-am aplikację do znajdowania wolnych sal do nauki na kampusie. Napisałem/-am backend i prowadziłem/-am nasze cotygodniowe spotkania.',
   talkWorkingTitle: 'Twoja ostatnia praca.',
   talkWorkingLead:
-    'Gdzie pracowałeś/-aś, co robiłeś/-aś, z czego jesteś dumny/-a – po prostu opowiedz, a ja zrobię z tego Twoje CV.',
+    'Gdzie pracowałeś/-aś, co robiłeś/-aś, z czego jesteś dumny/-a – po prostu pisz swobodnie, a powstanie z tego CV.',
   talkWorkingPlaceholder:
     'np. Przez 3 lata kierowałem/-am 6-osobowym zespołem w Kordo Logistics. Poprawiłem/-am grafik weekendowy, żeby nie brakowało nam ludzi, i szkoliłem/-am nowych.',
+  talkCountNeed: (n: number, min: number) => `${n} / ${min} znaków — jeszcze trochę`,
+  talkCountReady: 'Im więcej podasz, tym lepsze CV — projekty, sukcesy, cokolwiek.',
   back: 'Wstecz',
   skip: 'Pomiń',
   welcomeLoginLink: 'Masz już konto? Zaloguj się',

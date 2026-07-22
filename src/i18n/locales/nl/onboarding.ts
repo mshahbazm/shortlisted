@@ -3,7 +3,7 @@ import type { tLocale } from '../en'
 export const onboarding: tLocale['onboarding'] = {
   // No-CV guided builder
   buildTitle: 'Laten we samen je profiel maken.',
-  buildLead: 'Vertel me waar je staat, dan stel ik de juiste vragen.',
+  buildLead: 'Kies waar je staat, dan passen de vragen zich aan.',
   buildStartingTitle: 'Ik begin net',
   buildStartingSub: 'Studerend, of op zoek naar mijn eerste baan.',
   buildWorkingTitle: 'Ik werk al',
@@ -12,16 +12,18 @@ export const onboarding: tLocale['onboarding'] = {
   probeNext: 'Volgende',
   probeTitle: 'Nog een paar korte vragen.',
   probeLead: 'Beantwoord wat je kunt – zo wordt je cv sterker. Sla over wat niet past.',
-  talkStartingTitle: 'Vertel me wat je hebt gedaan.',
+  talkStartingTitle: 'Wat heb je gedaan?',
   talkStartingLead:
-    'Een project, vrijwilligerswerk, een club, een bijbaan – alles telt. Gooi het hier neer en ik geef het vorm.',
+    'Een project, vrijwilligerswerk, een club, een bijbaan – alles telt. Gooi het hier neer – het wordt je cv.',
   talkStartingPlaceholder:
     'bijv. Afstudeerproject: ik bouwde een app om vrije studieruimtes op de campus te vinden. Ik schreef de backend en leidde onze wekelijkse standups.',
   talkWorkingTitle: 'Je meest recente baan.',
   talkWorkingLead:
-    'Waar je werkte, wat je deed, waar je trots op bent – vertel het gewoon en ik maak er je cv van.',
+    'Waar je werkte, wat je deed, waar je trots op bent – schrijf gewoon vrijuit, het wordt je cv.',
   talkWorkingPlaceholder:
     'bijv. Ik leidde 3 jaar lang een team van 6 bij Kordo Logistics. Ik herzag het weekendrooster zodat we niet meer onderbezet waren, en leidde nieuwe mensen op.',
+  talkCountNeed: (n: number, min: number) => `${n} / ${min} tekens — nog even`,
+  talkCountReady: 'Hoe meer je deelt, hoe beter je cv — projecten, successen, alles.',
   back: 'Terug',
   skip: 'Overslaan',
   welcomeLoginLink: 'Heb je al een account? Log in',

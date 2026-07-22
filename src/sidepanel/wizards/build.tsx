@@ -15,6 +15,7 @@ import { BigChoice, Button, Textarea } from '../ui'
 import { StepFrame, Actions, ErrLine, WizardShell, useWizard, wizard, type Step } from '../wizard'
 import { intakeNext, loadIntakeSession, runBuildProfile } from '../../ai/run'
 import { markResumeHelpDone, type Persona } from '../../lib/types'
+import { cn } from '../../lib/cn'
 import * as store from '../../lib/store'
 import { WizCtx, answersStep, type OnbContent } from './steps'
 
@@ -26,6 +27,10 @@ interface BuildState {
   answers: string[] // parallel to questions
 }
 const initBuild = (): BuildState => ({ persona: 'working', intro: '', round: 0, questions: [], answers: [] })
+
+// The intro needs a bit of substance before the AI has anything to shape into a
+// CV. Show the count so the requirement isn't a mystery behind a dead button.
+const MIN_INTRO = 50
 
 interface BuildCtx extends WizCtx {
   /** Gather: send the intro (start) or a round's answers (continue); get the
@@ -81,9 +86,21 @@ const talk: Step<BuildState, BuildCtx> = {
           spellCheck={false}
           autoFocus
         />
+        {(() => {
+          const count = s.intro.trim().length
+          const ready = count >= MIN_INTRO
+          // Below the bar: a red count so the requirement isn't a mystery. Once
+          // met: drop the number and nudge for more — the richer the dump, the
+          // better the CV.
+          return (
+            <div className={cn('mt-1 text-right text-[11.5px]', ready ? 'text-good' : 'text-bad tabular-nums')}>
+              {ready ? ctx.t.talkCountReady : ctx.t.talkCountNeed(count, MIN_INTRO)}
+            </div>
+          )
+        })()}
         <ErrLine msg={api.error} />
         <Actions>
-          <Button disabled={s.intro.trim().length < 50} onClick={start}>
+          <Button disabled={s.intro.trim().length < MIN_INTRO} onClick={start}>
             {ctx.t.buildCv}
           </Button>
         </Actions>

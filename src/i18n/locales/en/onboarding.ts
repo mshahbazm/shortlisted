@@ -6,7 +6,7 @@ export const onboarding = {
 
   // No-CV guided builder
   buildTitle: "Let's build your profile together.",
-  buildLead: "Tell me where you're at — I'll ask the right questions.",
+  buildLead: "Pick where you're at — the questions adapt to fit.",
   buildStartingTitle: "I'm just starting out",
   buildStartingSub: 'Studying, or after my first job.',
   buildWorkingTitle: "I've been working",
@@ -14,17 +14,19 @@ export const onboarding = {
   buildCv: 'Build my CV',
   probeNext: 'Next',
   probeTitle: 'A few quick questions.',
-  probeLead: "Answer what you can — these help me build a stronger CV. Skip any that don't fit.",
-  talkStartingTitle: "Tell me what you've done.",
+  probeLead: "Answer what you can — they make for a stronger CV. Skip any that don't fit.",
+  talkStartingTitle: "What have you done?",
   talkStartingLead:
-    "A project, volunteering, a club, part-time work — anything counts. Dump it all here and I'll format it.",
+    'A project, volunteering, a club, part-time work — anything counts. Dump it all in and it gets shaped into your CV.',
   talkStartingPlaceholder:
     'e.g. Final-year project — I built an app to find free study rooms on campus. I wrote the backend and ran our weekly standups.',
   talkWorkingTitle: 'Your most recent job.',
   talkWorkingLead:
-    "Where you worked, what you did, anything you're proud of — just talk, and I'll shape it into your CV.",
+    "Where you worked, what you did, anything you're proud of — write freely and it gets shaped into your CV.",
   talkWorkingPlaceholder:
     'e.g. I led a team of 6 at Kordo Logistics for 3 years. I fixed the weekend shift rota so we stopped running short, and trained new starters.',
+  talkCountNeed: (n: number, min: number) => `${n} / ${min} characters — a little more`,
+  talkCountReady: 'The more you share, the better your CV — projects, wins, anything.',
 
   welcomeTitle: "Let's get you shortlisted.",
   welcomeLead:
@@ -48,7 +50,7 @@ export const onboarding = {
   pastePlaceholder: '…or paste your resume text here.',
   buildProfile: 'Build my profile',
 
-  reviewTitle: 'Did I get this right?',
+  reviewTitle: 'Does this look right?',
   reviewLead: (roles: number, skills: number) =>
     `Found ${roles} role${roles === 1 ? '' : 's'} and ${skills} skills. Fix anything that's off — the rest is editable later.`,
   looksRight: 'Looks right',

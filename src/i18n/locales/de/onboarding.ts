@@ -3,7 +3,7 @@ import type { tLocale } from '../en'
 export const onboarding: tLocale['onboarding'] = {
   // No-CV guided builder
   buildTitle: 'Erstellen wir dein Profil zusammen.',
-  buildLead: 'Sag mir, wo du stehst – ich stelle die richtigen Fragen.',
+  buildLead: 'Wähl, wo du stehst – die Fragen passen sich an.',
   buildStartingTitle: 'Ich stehe noch am Anfang',
   buildStartingSub: 'Im Studium oder auf der Suche nach dem ersten Job.',
   buildWorkingTitle: 'Ich arbeite schon',
@@ -12,16 +12,18 @@ export const onboarding: tLocale['onboarding'] = {
   probeNext: 'Weiter',
   probeTitle: 'Noch ein paar kurze Fragen.',
   probeLead: 'Beantworte, was du kannst – das macht deinen Lebenslauf stärker. Überspring, was nicht passt.',
-  talkStartingTitle: 'Erzähl mir, was du gemacht hast.',
+  talkStartingTitle: 'Was hast du gemacht?',
   talkStartingLead:
-    'Ein Projekt, Ehrenamt, ein Verein, ein Nebenjob – alles zählt. Schreib einfach alles hierhin, ich bringe es in Form.',
+    'Ein Projekt, Ehrenamt, ein Verein, ein Nebenjob – alles zählt. Schreib einfach alles hierhin – daraus wird dein Lebenslauf.',
   talkStartingPlaceholder:
     'z. B. Abschlussprojekt – ich habe eine App gebaut, die freie Lernräume auf dem Campus findet. Ich habe das Backend geschrieben und unsere wöchentlichen Standups geleitet.',
   talkWorkingTitle: 'Dein letzter Job.',
   talkWorkingLead:
-    'Wo du gearbeitet hast, was du gemacht hast, worauf du stolz bist – erzähl einfach, ich forme daraus deinen Lebenslauf.',
+    'Wo du gearbeitet hast, was du gemacht hast, worauf du stolz bist – schreib einfach frei, daraus wird dein Lebenslauf.',
   talkWorkingPlaceholder:
     'z. B. Ich habe 3 Jahre lang ein 6-köpfiges Team bei Kordo Logistics geleitet. Ich habe den Wochenend-Schichtplan überarbeitet, sodass wir nicht mehr unterbesetzt waren, und neue Mitarbeitende eingearbeitet.',
+  talkCountNeed: (n: number, min: number) => `${n} / ${min} Zeichen — noch etwas`,
+  talkCountReady: 'Je mehr du teilst, desto besser dein Lebenslauf — Projekte, Erfolge, alles.',
   back: 'Zurück',
   skip: 'Überspringen',
   welcomeLoginLink: 'Schon ein Konto? Anmelden',
