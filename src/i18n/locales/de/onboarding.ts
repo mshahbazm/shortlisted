@@ -2,7 +2,7 @@ import type { tLocale } from '../en'
 
 export const onboarding: tLocale['onboarding'] = {
   // No-CV guided builder
-  buildTitle: 'Erstellen wir deinen Lebenslauf zusammen.',
+  buildTitle: 'Erstellen wir dein Profil zusammen.',
   buildLead: 'Sag mir, wo du stehst – ich stelle die richtigen Fragen.',
   buildStartingTitle: 'Ich stehe noch am Anfang',
   buildStartingSub: 'Im Studium oder auf der Suche nach dem ersten Job.',

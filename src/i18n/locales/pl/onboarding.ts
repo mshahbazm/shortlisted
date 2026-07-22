@@ -3,7 +3,7 @@ import { plural } from './plural'
 
 export const onboarding: tLocale['onboarding'] = {
   // No-CV guided builder
-  buildTitle: 'Stwórzmy razem Twoje CV.',
+  buildTitle: 'Stwórzmy razem Twój profil.',
   buildLead: 'Powiedz mi, na jakim jesteś etapie, a zadam właściwe pytania.',
   buildStartingTitle: 'Dopiero zaczynam',
   buildStartingSub: 'Studiuję albo szukam pierwszej pracy.',

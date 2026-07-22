@@ -4,7 +4,7 @@ export const onboarding = {
   back: 'Back',
 
   // No-CV guided builder
-  buildTitle: "Let's build your resume together.",
+  buildTitle: "Let's build your profile together.",
   buildLead: "Tell me where you're at — I'll ask the right questions.",
   buildStartingTitle: "I'm just starting out",
   buildStartingSub: 'Studying, or after my first job.',

@@ -1,4 +1,4 @@
-// Wizard B — "Let's build your resume together". Shown when the user is logged
+// Wizard B — "Let's build your profile together". Shown when the user is logged
 // in but has no profile yet (the App router decides that). Branches on the
 // persona choice, then the backend's follow-up questions become one dynamic step
 // each (the self-looping `probe`). Proves branch + dynamic + async + back.
