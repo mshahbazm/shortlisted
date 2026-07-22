@@ -386,7 +386,7 @@ export interface QueueItem {
 // AI always runs on Shortlisted Cloud — there is no provider choice.
 
 export interface Settings {
-  cloudToken?: string // device token, auto-provisioned on first use
+  cloudToken?: string // Better Auth session token (bearer credential), set on verify
   accountEmail?: string // set once the email OTP verifies; account = data saved server-side
   /**
    * The account the local CACHE currently belongs to. Set on sign-in; unlike

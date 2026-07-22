@@ -70,8 +70,13 @@ export function App() {
   }
 
   if (!settingsLoaded) return null
+  // Signed out ALWAYS goes to Entry — even mid-Build. This is the self-heal for
+  // an expired session: any account call 401s → cloudCall clears the session →
+  // `loggedIn` flips false → here we leave the Build wizard for sign-in, instead
+  // of looping on a wizard whose calls keep 401ing.
+  if (!loggedIn) return <EntryWizard onDone={closeWizard} />
   if (activeWizard === 'build') return <BuildWizard onDone={closeWizard} />
-  if (activeWizard === 'entry' || !loggedIn) return <EntryWizard onDone={closeWizard} />
+  if (activeWizard === 'entry') return <EntryWizard onDone={closeWizard} />
 
   // Settings takes the whole panel rather than sitting behind a tab: it's a
   // place you visit deliberately and leave, not somewhere you switch between.

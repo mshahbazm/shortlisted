@@ -4,7 +4,18 @@ import { Bar, Body, Button, Card, Checkbox, FIELD, Input, Label, Row, Rows, Scre
 import { cn } from '../../lib/cn'
 import { StorageShape, storageDefaults } from '../../lib/types'
 import { LOCALES, LOCALE_LABELS, isLocale, useContent } from '../../i18n'
-import { CloudUsage, UsageStatsRow, cloudUsage, cloudUsageStats, sendLoginCode, verifyLoginCode } from '../../ai/run'
+import {
+  CloudUsage,
+  CreditLedgerRow,
+  UsageStatsRow,
+  cloudBillingPortal,
+  cloudCheckout,
+  cloudCreditHistory,
+  cloudUsage,
+  cloudUsageStats,
+  sendLoginCode,
+  verifyLoginCode,
+} from '../../ai/run'
 import { isDevInstall } from '../../lib/config'
 import { sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
@@ -22,7 +33,7 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
   const s = settings
   // Merge against LIVE storage (read-modify-write), never a blind full object
   // from React state — a stale copy here would otherwise clobber a field written
-  // elsewhere, e.g. the device token the worker just provisioned.
+  // elsewhere, e.g. the session token stored the moment the user verifies.
   const set = (patch: Partial<typeof s>) => void store.update('settings', (cur) => ({ ...cur, ...patch }))
 
   const importAll = async (file: File) => {
@@ -96,6 +107,14 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
     )
   }
 
+  if (nav.screen === 'history') {
+    return (
+      <Screen title={t.historyTitle} onBack={nav.back} t={t}>
+        <CreditHistory />
+      </Screen>
+    )
+  }
+
   if (nav.screen === 'backup') {
     return (
       <Screen title={t.backupTitle} onBack={nav.back} t={t}>
@@ -128,6 +147,9 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
             sub={s.detectEverywhere === false ? t.detectOff : t.detectOn}
             onClick={() => nav.push('detect')}
           />
+          {s.accountEmail && (
+            <Row title={t.historyTitle} sub={t.historySummary} onClick={() => nav.push('history')} />
+          )}
           <Row title={t.backupTitle} sub={t.backupSummary} onClick={() => nav.push('backup')} />
           {/* DEV ONLY — what this account has actually cost us. Deliberately
               untranslated; remove before launch. */}
@@ -214,6 +236,50 @@ function DevCosts() {
   )
 }
 
+// The user-facing credit trail: every grant, spend, and monthly expiry, newest
+// first — straight from the server's credit_ledger.
+function CreditHistory() {
+  const [settings] = useStore('settings')
+  const t = useContent('settings')
+  const [rows, setRows] = useState<CreditLedgerRow[]>([])
+  const [err, setErr] = useState('')
+
+  useEffect(() => {
+    if (!settings.accountEmail) return
+    cloudCreditHistory(settings)
+      .then((r) => { setRows(r); setErr('') })
+      .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.accountEmail])
+
+  return (
+    <>
+      <p className={LEDE}>{t.historyHint}</p>
+      {err && <p className="my-1 text-[13px] text-bad">{err}</p>}
+      {rows.length === 0 && !err && <p className="text-[13px] text-faint">{t.historyEmpty}</p>}
+      <Rows>
+        {rows.map((r, i) => (
+          <Row
+            key={i}
+            title={r.description}
+            sub={new Date(r.createdAt).toLocaleDateString()}
+            right={
+              <span
+                className={cn(
+                  'rounded-[5px] px-[7px] py-[2.5px] text-[11px] font-semibold whitespace-nowrap',
+                  r.amount >= 0 ? 'bg-good-bg text-good' : 'bg-hover text-muted',
+                )}
+              >
+                {r.amount >= 0 ? '+' : ''}{r.amount}
+              </span>
+            }
+          />
+        ))}
+      </Rows>
+    </>
+  )
+}
+
 function AccountPanel() {
   const t = useContent('settings')
   const [settings, saveSettings] = useStore('settings')
@@ -222,9 +288,25 @@ function AccountPanel() {
   const [otp, setOtp] = useState('')
   const [codeSent, setCodeSent] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [billBusy, setBillBusy] = useState(false)
   const [msg, setMsg] = useState('')
 
   const signedIn = Boolean(settings.accountEmail)
+
+  // Checkout / portal both hand back a Stripe URL we open in a new tab. Errors
+  // (e.g. "Billing is not configured.") surface in the panel.
+  const openBilling = async (get: () => Promise<{ url: string }>) => {
+    setMsg('')
+    setBillBusy(true)
+    try {
+      const { url } = await get()
+      void chrome.tabs.create({ url })
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBillBusy(false)
+    }
+  }
 
   const refresh = async () => {
     setMsg('')
@@ -332,11 +414,22 @@ function AccountPanel() {
             </div>
           )}
 
-          {usage?.plan !== 'pro' && (
-            <>
-              <Button wide>{t.goPro}</Button>
-              <div className="-mt-1.5 text-center text-[11.5px] leading-[1.45] text-faint">{t.proFoot}</div>
-            </>
+          {usage && usage.plan !== 'pro' && (
+            <div className="flex flex-col gap-2">
+              <div className="text-[12.5px] font-semibold">{t.goPro}</div>
+              <Button wide disabled={billBusy} onClick={() => openBilling(() => cloudCheckout(settings, 'monthly'))}>
+                {t.proMonthly}
+              </Button>
+              <Button variant="ghost" wide disabled={billBusy} onClick={() => openBilling(() => cloudCheckout(settings, 'annual'))}>
+                {t.proAnnual}
+              </Button>
+              <div className="-mt-0.5 text-center text-[11.5px] leading-[1.45] text-faint">{t.proFoot}</div>
+            </div>
+          )}
+          {usage?.plan === 'pro' && (
+            <Button variant="ghost" wide disabled={billBusy} onClick={() => openBilling(() => cloudBillingPortal(settings))}>
+              {t.manageSub}
+            </Button>
           )}
           {!usage && <Button variant="ghost" wide onClick={refresh}>{t.checkCredits}</Button>}
         </>

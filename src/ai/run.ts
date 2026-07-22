@@ -151,6 +151,33 @@ export async function cloudUsage(settings: Settings): Promise<CloudUsage> {
   return cloudCall<CloudUsage>(settings, '/v1/me', undefined, 'GET')
 }
 
+// ---- billing (Stripe) ----
+
+/** Start a Pro subscription: returns a Stripe Checkout URL to open in a tab. */
+export async function cloudCheckout(settings: Settings, interval: 'monthly' | 'annual'): Promise<{ url: string }> {
+  return cloudCall<{ url: string }>(settings, '/v1/billing/checkout', { interval })
+}
+
+/** Manage an existing subscription: returns the Stripe customer-portal URL. */
+export async function cloudBillingPortal(settings: Settings): Promise<{ url: string }> {
+  return cloudCall<{ url: string }>(settings, '/v1/billing/portal', {})
+}
+
+/** One row of the user-facing credit history (grants, spends, monthly expiry). */
+export interface CreditLedgerRow {
+  type: 'grant' | 'spend' | 'expire' | 'adjust' | 'refund'
+  amount: number
+  balanceAfter: number
+  capability: string | null
+  description: string
+  createdAt: string
+}
+
+export async function cloudCreditHistory(settings: Settings): Promise<CreditLedgerRow[]> {
+  const { history } = await cloudCall<{ history: CreditLedgerRow[] }>(settings, '/v1/credits/history', undefined, 'GET')
+  return history
+}
+
 /**
  * One clean sentence out of a raw bank answer ("two weeks" → "I can start two
  * weeks after accepting an offer."). Free micro-call; same facts, nothing added.
@@ -182,7 +209,9 @@ export async function sendLoginCode(settings: Settings, email: string): Promise<
 }
 
 export async function verifyLoginCode(settings: Settings, email: string, otp: string): Promise<CloudUsage> {
-  const res = await cloudCall<CloudUsage>(settings, '/v1/auth/verify', { email, otp })
+  // Verify returns the Better Auth SESSION token — the credential every later
+  // call sends as its bearer.
+  const res = await cloudCall<CloudUsage & { token: string }>(settings, '/v1/auth/verify', { email, otp })
   const newEmail = res.email ?? email
   // No per-user bucketing: a device caches one account at a time. Wipe the
   // previous account's cached content whenever a DIFFERENT account signs in.
@@ -191,7 +220,7 @@ export async function verifyLoginCode(settings: Settings, email: string, otp: st
   // wipe and the pull adopts the leftover into the new account (the leak).
   const prev = await store.get('settings')
   if (prev.dataOwner && prev.dataOwner !== newEmail) await store.clearAccountData()
-  await store.update('settings', (s) => ({ ...s, accountEmail: newEmail, dataOwner: newEmail }))
+  await store.update('settings', (s) => ({ ...s, cloudToken: res.token, accountEmail: newEmail, dataOwner: newEmail }))
   return res
 }
 
@@ -224,20 +253,26 @@ async function cloudCall<T>(
   body?: unknown,
   method: 'GET' | 'POST' | 'PUT' = body === undefined ? 'GET' : 'POST',
 ): Promise<T> {
-  const send = (token: string) =>
-    cloudFetch(path, {
-      method,
-      headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    })
+  // The credential is a Better Auth SESSION token, set on verify. Read it live
+  // (not from the possibly-stale `settings` handed in). Pre-auth calls
+  // (send-code, verify) have none yet — they hit public endpoints.
+  const token = settings.cloudToken ?? (await store.get('settings')).cloudToken
+  const res = await cloudFetch(path, {
+    method,
+    headers: {
+      'content-type': 'application/json',
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
 
-  let res = await send(await ensureDeviceToken(settings))
-  // The server owns the token; we only cache it. If it no longer recognises the
-  // cached one (the device row is gone — e.g. a dev DB reset), the cache is
-  // stale: mint a fresh token from the server and retry ONCE. A 401 here is
-  // always "unknown device"; the account gate returns 403, which we let surface
-  // as the normal "sign in" prompt rather than retrying.
-  if (res.status === 401) res = await send(await provisionDeviceToken())
+  // 401 = the session token is invalid or expired (e.g. signed out elsewhere, a
+  // dev DB reset, or lapsed). There is no anonymous fallback: drop the stale
+  // local session so the UI routes cleanly to sign-in instead of looping.
+  if (res.status === 401) {
+    await store.clearAccount()
+    throw new Error('Your session has expired — please sign in again.')
+  }
 
   const data = await res.json().catch(() => null)
   if (!res.ok) {
@@ -259,24 +294,4 @@ async function cloudFetch(path: string, init?: RequestInit): Promise<Response> {
     console.error(`[shortlisted] cloud unreachable: ${cloudBaseUrl()}${path}`, e)
     throw new Error(`Could not reach Shortlisted Cloud at ${cloudBaseUrl()}. Is the server running?`)
   }
-}
-
-/** The cached device token, or a freshly provisioned one. */
-async function ensureDeviceToken(settings: Settings): Promise<string> {
-  return settings.cloudToken ?? provisionDeviceToken()
-}
-
-/**
- * Mint a device token from the server and cache it. The server is the source of
- * truth for the token; local storage only mirrors it — so this is also how a
- * cached token the server has forgotten gets refreshed (see cloudCall's retry).
- */
-async function provisionDeviceToken(): Promise<string> {
-  const res = await cloudFetch('/v1/device', { method: 'POST' })
-  if (!res.ok) throw new Error(`Could not reach Shortlisted Cloud at ${cloudBaseUrl()}.`)
-  const { token } = (await res.json()) as { token: string }
-  // Read-modify-write against live storage, not the possibly-stale settings
-  // object we were handed.
-  await store.update('settings', (s) => ({ ...s, cloudToken: token }))
-  return token
 }
