@@ -44,7 +44,9 @@ Several agents work this repo — you'll see changes you didn't make. Track what
   raw `fetch` anywhere else. The extension holds **no provider keys or models**
   and **no capability logic** — all AI runs on the cloud. This repo keeps only
   the result types the UI renders (`ai/contract.ts`) and the wire data model
-  (`lib/types.ts`); the cloud has its own copies, kept in sync by hand.
+  (`lib/types.ts`); the cloud has its own copies.
+- **Sync rule:** a wire type here (`lib/types.ts`, `ai/contract.ts`) must be
+  updated in BOTH repos — cloud repo at `/Users/Shared/www/shahbaz/shortlisted-cloud`.
 - **Data model → `lib/types.ts`.** Stored data is versioned and migrated on
   read — extend the normalizer, never write a destructive migration.
 - **Cloud sync → `background/cloudMirror.ts`.** Outbox + `knownIds` persist in
