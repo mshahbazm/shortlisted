@@ -13,7 +13,7 @@ import { StepFrame, Actions, ErrLine, Spinner, WizardShell, useWizard, wizard, t
 import { cloudPdfText, runExtractProfile, sendLoginCode, verifyLoginCode } from '../../ai/run'
 import { assessTextQuality, extractPdfTextFromFile } from '../../lib/pdfText'
 import { sendMsg } from '../../lib/messaging'
-import { Profile, Settings, bytesToBase64, uid } from '../../lib/types'
+import { Profile, Settings, bytesToBase64, markResumeHelpDone, uid } from '../../lib/types'
 import * as store from '../../lib/store'
 import { WizCtx, answersStep } from './steps'
 
@@ -29,6 +29,9 @@ const initEntry = (): EntryState => ({ door: 'noCv', cvText: '', email: '', otp:
 
 interface EntryCtx extends WizCtx {
   profile: Profile
+  /** Signed in but built no resume in this flow (login / no-CV) — just close;
+   *  the App router lands them on Home, where the "build" CTA still shows. */
+  exit: () => void
   setIdentity: (k: keyof Profile['identity'], v: string) => void
   sendCode: (email: string) => Promise<void>
   verify: (email: string, otp: string) => Promise<void>
@@ -247,7 +250,7 @@ const review: Step<EntryState, EntryCtx> = {
 const end: Step<EntryState, EntryCtx> = {
   view: ({ ctx }) => {
     useEffect(() => {
-      ctx.finish()
+      ctx.exit()
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
     return <StepFrame busy title={ctx.t.checking} />
@@ -275,10 +278,13 @@ export function EntryWizard({ onDone }: { onDone: () => void }) {
     t,
     profile,
     finish: () => {
-      // The account exists now — tag the wizard's kept CV so its facts fold in.
+      // Reached here only via the has-CV path (paste → extract → review →
+      // answers): a resume was built. Tag the kept CV and set the durable flag.
       if (resumeId.current) void sendMsg({ type: 'intakeResume', resumeId: resumeId.current })
+      void store.update('profile', markResumeHelpDone)
       onDone()
     },
+    exit: () => onDone(),
     setIdentity: (k, v) => saveProfile({ ...profile, identity: { ...profile.identity, [k]: v } }),
     sendCode: (e) => sendLoginCode(settings, e),
     verify: async (e, otp) => {
@@ -287,7 +293,8 @@ export function EntryWizard({ onDone }: { onDone: () => void }) {
     },
     extract: async (cvText) => {
       const extracted = await runExtractProfile(settings, cvText)
-      saveProfile({ ...extracted, facts: profile.facts })
+      // Spread the existing profile first so the extract keeps `onboarding`.
+      saveProfile({ ...profile, ...extracted, facts: profile.facts })
     },
     onPdf: async (file) => ({ cvText: await readCvPdf(file, settings, resumeId) }),
   }

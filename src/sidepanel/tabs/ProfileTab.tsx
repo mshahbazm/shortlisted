@@ -300,12 +300,12 @@ export function ProfileTab({
         <ImportBox
           cloudPdf={async (file) => {
             const { profile: extracted } = await cloudParseResumePdf(settings, await file.arrayBuffer())
-            save({ ...extracted, facts: p.facts })
+            save({ ...p, ...extracted, facts: p.facts }) // keep onboarding etc.
             nav.back()
           }}
           onImport={async (text) => {
             const extracted = await runExtractProfile(settings, text)
-            save({ ...extracted, facts: p.facts })
+            save({ ...p, ...extracted, facts: p.facts }) // keep onboarding etc.
             nav.back()
           }}
         />

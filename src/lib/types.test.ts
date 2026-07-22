@@ -9,7 +9,7 @@
 // Run: bun test
 
 import { expect, test, describe } from 'bun:test'
-import { emptyProfile, hasProfileContent, normalizeProfile, normalizeSettings } from './types'
+import { emptyProfile, hasProfileContent, markResumeHelpDone, normalizeProfile, normalizeSettings, resumeHelpDone } from './types'
 
 describe('normalizeSettings', () => {
   test('keeps auth fields — a migration must never sign the user out', () => {
@@ -78,5 +78,27 @@ describe('hasProfileContent', () => {
     expect(hasProfileContent({ ...emptyProfile(), identity: { ...emptyProfile().identity, firstName: 'Sam' } })).toBe(true)
     expect(hasProfileContent({ ...emptyProfile(), headline: 'Engineer' })).toBe(true)
     expect(hasProfileContent({ ...emptyProfile(), skills: [{ name: 'TypeScript' }] })).toBe(true)
+  })
+})
+
+describe('resume-help flag (the Home CTA gate)', () => {
+  test('a fresh profile has NOT done the builder — content alone does not count', () => {
+    expect(resumeHelpDone(emptyProfile())).toBe(false)
+    // Having a name/headline is NOT "done" — only going through the wizard is.
+    expect(resumeHelpDone({ ...emptyProfile(), headline: 'Engineer' })).toBe(false)
+  })
+
+  test('markResumeHelpDone sets the flag and preserves the rest', () => {
+    const p = { ...emptyProfile(), headline: 'Engineer', sources: { noCvIntro: { text: 'hi', at: 1 } } }
+    const done = markResumeHelpDone(p)
+    expect(resumeHelpDone(done)).toBe(true)
+    expect(done.headline).toBe('Engineer')
+    expect(done.sources).toEqual({ noCvIntro: { text: 'hi', at: 1 } })
+  })
+
+  test('is idempotent and survives normalizeProfile (syncs in the profile jsonb)', () => {
+    const done = markResumeHelpDone(emptyProfile())
+    expect(resumeHelpDone(markResumeHelpDone(done))).toBe(true)
+    expect(resumeHelpDone(normalizeProfile(done))).toBe(true)
   })
 })

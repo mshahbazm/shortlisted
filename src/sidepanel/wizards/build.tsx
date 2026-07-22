@@ -8,6 +8,8 @@ import { useStore } from '../hooks'
 import { BigChoice, Button, Textarea } from '../ui'
 import { StepFrame, Actions, ErrLine, WizardShell, useWizard, wizard, type Step } from '../wizard'
 import { runBuildProfile } from '../../ai/run'
+import { markResumeHelpDone } from '../../lib/types'
+import * as store from '../../lib/store'
 import { WizCtx, answersStep } from './steps'
 
 interface BuildState {
@@ -136,10 +138,16 @@ export function BuildWizard({ onDone }: { onDone: () => void }) {
 
   const ctx: BuildCtx = {
     t,
-    finish: onDone,
+    finish: () => {
+      // Went through the builder — set the durable flag so the Home CTA stops.
+      void store.update('profile', markResumeHelpDone)
+      onDone()
+    },
     build: async (intro, persona, answers) => {
       const { profile: built, questions } = await runBuildProfile(settings, intro, persona, answers)
-      saveProfile({ ...built, facts: profile.facts })
+      // Spread the existing profile first so the AI rebuild keeps `onboarding`
+      // (and anything else it doesn't return); overlay the built content + facts.
+      saveProfile({ ...profile, ...built, facts: profile.facts })
       return { questions }
     },
   }

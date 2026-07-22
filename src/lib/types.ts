@@ -129,6 +129,18 @@ export interface Profile {
    * `pastedCv`, `note`. Rides in the profile jsonb — no table, syncs as-is.
    */
   sources?: Record<string, { text: string; at: number }>
+  /**
+   * Onboarding / guided-help progress. Rides in the profile jsonb so it syncs
+   * (server is the source of truth). Each guided flow nests its own state under
+   * a named key; `resume` is the guided resume builder. `done` means the account
+   * has been through that flow — the Home "build your profile" CTA nudges until
+   * it is set. This is a durable FLAG, not a content heuristic: going through the
+   * wizard is what counts, not whether a stray field got filled. Room to grow
+   * (e.g. a `step`/`answers` for resume-where-you-left-off).
+   */
+  onboarding?: {
+    resume?: { done?: boolean }
+  }
 }
 
 export const emptyProfile = (): Profile => ({
@@ -190,11 +202,22 @@ export function totalExperienceYears(profile: Profile): number | null {
 
 export const skillNames = (p: Profile) => p.skills.map((s) => s.name)
 
-/** Whether a profile holds any real content. This is the signal the app routes
- *  on — a set-up returning user (→ Home) vs. someone who still needs the builder
- *  — and what the cloud mirror uses to decide push-up vs. pull-down. */
+/** Whether a profile holds any real content. Used by the cloud mirror to decide
+ *  push-up vs. pull-down. NOT the signal for the Home CTA — see resumeHelpDone. */
 export function hasProfileContent(p: Profile): boolean {
   return Boolean(p.identity.firstName || p.headline || p.work.length || p.skills.length)
+}
+
+/** Has this account been through the guided resume builder? A durable flag (see
+ *  Profile.onboarding), set when the builder or the has-CV import completes — the
+ *  Home "build your profile" CTA shows until it is true. */
+export function resumeHelpDone(p: Profile): boolean {
+  return Boolean(p.onboarding?.resume?.done)
+}
+
+/** Record that the guided resume builder finished — preserves everything else. */
+export function markResumeHelpDone(p: Profile): Profile {
+  return { ...p, onboarding: { ...p.onboarding, resume: { ...p.onboarding?.resume, done: true } } }
 }
 
 // ---------- v1 -> v2 migration (applied on load; see store.ts) ----------
