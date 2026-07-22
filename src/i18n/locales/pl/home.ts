@@ -2,6 +2,9 @@ import type { tLocale } from '../en'
 import { plural } from './plural'
 
 export const home: tLocale['home'] = {
+  buildProfileTitle: 'Utwórz profil',
+  buildProfileSub: 'Dodaj swoje doświadczenie, aby Shortlisted mógł wypełniać aplikacje i dopasowywać Twoje CV.',
+  buildProfileCta: 'Utwórz profil',
   onThisPage: 'Na tej stronie',
   formOnThisTab: 'Formularz aplikacyjny w tej karcie',
   jobOnThisPage: 'Oferta na tej stronie',

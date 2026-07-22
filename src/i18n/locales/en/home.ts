@@ -6,6 +6,9 @@
 // application was filled, we do NOT know whether anyone replied.
 
 export const home = {
+  buildProfileTitle: 'Build your profile',
+  buildProfileSub: 'Add your experience so Shortlisted can fill applications and tailor your CV.',
+  buildProfileCta: 'Build my profile',
   // --- context slot: four states, one at a time ---
   onThisPage: 'On this page',
   formOnThisTab: 'Application form on this tab',

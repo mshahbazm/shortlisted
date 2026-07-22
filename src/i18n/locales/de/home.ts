@@ -1,6 +1,9 @@
 import type { tLocale } from '../en'
 
 export const home: tLocale['home'] = {
+  buildProfileTitle: 'Profil erstellen',
+  buildProfileSub: 'Füge deine Erfahrung hinzu, damit Shortlisted Bewerbungen ausfüllen und deinen Lebenslauf anpassen kann.',
+  buildProfileCta: 'Profil erstellen',
   onThisPage: 'Auf dieser Seite',
   formOnThisTab: 'Bewerbungsformular in diesem Tab',
   jobOnThisPage: 'Job auf dieser Seite',

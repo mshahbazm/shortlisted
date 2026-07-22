@@ -12,7 +12,7 @@ import { cn } from '../../lib/cn'
 import { Body, Button, Card, Chip, Composer, Cost, FIELD, Feature, Icon, IconButton, Pill, Row, ScreenHead, Textarea, TopBar, useStack } from '../ui'
 import { PageContext, sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
-import { ApplicationRecord, base64ToBytes, uid } from '../../lib/types'
+import { ApplicationRecord, base64ToBytes, hasProfileContent, uid } from '../../lib/types'
 import { cloudProfileNote, cloudUsage, runScoreFit, ScoreFitResult } from '../../ai/run'
 import { mergeIntakeFacts } from '../../lib/profileMerge'
 import { showToast } from '../toast'
@@ -141,11 +141,13 @@ export function HomeTab({
   onGoJobs,
   onGoCvs,
   onOpenSettings,
+  onBuildProfile,
 }: {
   onGoProfile: () => void
   onGoJobs: () => void
   onGoCvs: () => void
   onOpenSettings: () => void
+  onBuildProfile: () => void
 }) {
   const t = useContent('home')
   const nav = useStack()
@@ -258,6 +260,18 @@ export function HomeTab({
         }
       />
       <Body screen={nav.screen}>
+        {/* No profile yet — the one thing that unlocks everything else. A whole
+            CTA up top, like the "fill this page" one, that opens the builder. */}
+        {!hasProfileContent(profile) && (
+          <button
+            onClick={onBuildProfile}
+            className="flex w-full flex-col gap-[3px] rounded-xl border border-line bg-gradient-to-b from-[#faf9ff] to-bg p-3.5 text-left transition hover:shadow-lift-hover"
+          >
+            <span className="text-base leading-[1.25] font-[650] tracking-[-0.01em]">{t.buildProfileTitle}</span>
+            <span className="mb-[11px] text-[12.5px] leading-normal text-muted">{t.buildProfileSub}</span>
+            <span className="inline-flex w-full items-center justify-center rounded-[10px] bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg">{t.buildProfileCta}</span>
+          </button>
+        )}
         <ContextSlot page={page} t={t} onFill={fillCurrent} onFit={() => nav.push('fit')} onSave={saveCurrentJob} />
         {notice && <p className="my-1 text-[13px] text-muted">{notice}</p>}
 

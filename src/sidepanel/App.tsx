@@ -12,8 +12,6 @@ import { TabIcon } from './ui'
 import { cn } from '../lib/cn'
 import { Toasts } from './toast'
 import * as store from '../lib/store'
-import { hasProfileContent } from '../lib/types'
-import { sendMsg } from '../lib/messaging'
 
 // Four destinations. Settings is rare enough to live behind the gear, and the
 // answer bank is profile data, so it lives inside Profile rather than taking a
@@ -42,69 +40,30 @@ export function App() {
   }, [])
 
   // ---------- routing ----------
-  // Which screen the panel shows is decided by DATA, not a flag: are you signed
-  // in, and does your account have a profile? Both are server-synced, so a plain
-  // reload always lands on the right screen. Three destinations:
-  //   - not signed in            -> the Entry wizard (import CV / start / log in)
-  //   - signed in, has a profile -> the app (Home)
-  //   - signed in, no profile    -> the Build wizard ("let's build your resume")
+  // One rule: signed out -> the Entry wizard; signed in -> the app (Home). The
+  // Build wizard is NOT a route — it's launched on demand from Home's "build
+  // your profile" CTA (onBuildProfile below), which only shows when the profile
+  // is empty. Simple, and the user drives it.
   const [settings, , settingsLoaded] = useStore('settings')
-  const [profile, , profileLoaded] = useStore('profile')
-  const loaded = settingsLoaded && profileLoaded
   const loggedIn = Boolean(settings.accountEmail)
-  const hasProfile = hasProfileContent(profile)
 
-  // Cold cache: signed in but this device hasn't pulled the profile yet. Kick a
-  // pull and wait (bounded) rather than mistaking an empty local cache for a new
-  // user. A warm cache (hasProfile) short-circuits this — no wait, no flash.
-  const [pulled, setPulled] = useState(false)
-  useEffect(() => {
-    if (!loggedIn) {
-      setPulled(false)
-      return
-    }
-    let alive = true
-    void sendMsg({ type: 'cloudPull' }).finally(() => alive && setPulled(true))
-    const timer = setTimeout(() => alive && setPulled(true), 4000)
-    return () => {
-      alive = false
-      clearTimeout(timer)
-    }
-  }, [loggedIn])
-
-  const desired: 'checking' | 'entry' | 'build' | 'home' = !loaded
-    ? 'checking'
-    : !loggedIn
-      ? 'entry'
-      : hasProfile
-        ? 'home'
-        : !pulled
-          ? 'checking'
-          : 'build'
-
-  // Latch: `desired` STARTS a wizard, the wizard ENDS itself (onDone). Once one
-  // is showing it stays until then — so saving the profile mid-build (or
-  // extracting mid-review) can't yank the user to Home. Sign-out drops back to
-  // Entry.
+  // A wizard, once shown, stays until it calls onDone — so Entry survives the
+  // moment auth flips `loggedIn` mid-flow (the has-CV door continues into
+  // review/answers), and Build stays put while it saves the profile.
   const [activeWizard, setActiveWizard] = useState<null | 'entry' | 'build'>(null)
   useEffect(() => {
-    if (activeWizard === null && (desired === 'entry' || desired === 'build')) setActiveWizard(desired)
-    else if (activeWizard === 'build' && desired === 'entry') setActiveWizard('entry')
-  }, [activeWizard, desired])
+    if (activeWizard === null && !loggedIn) setActiveWizard('entry')
+  }, [activeWizard, loggedIn])
 
-  const leaveWizard = () => {
+  const closeWizard = () => {
     setActiveWizard(null)
     setTab('home')
     setSettingsOpen(false)
   }
 
-  if (!loaded) return null
-  // Fall back to `desired` on the render before the latch effect fires, so a
-  // wizard shows immediately with no flash of the app underneath.
-  const wizardScreen = activeWizard ?? (desired === 'entry' || desired === 'build' ? desired : null)
-  if (wizardScreen === 'entry') return <EntryWizard onDone={leaveWizard} />
-  if (wizardScreen === 'build') return <BuildWizard onDone={leaveWizard} />
-  if (desired === 'checking') return <Splash />
+  if (!settingsLoaded) return null
+  if (activeWizard === 'build') return <BuildWizard onDone={closeWizard} />
+  if (activeWizard === 'entry' || !loggedIn) return <EntryWizard onDone={closeWizard} />
 
   // Settings takes the whole panel rather than sitting behind a tab: it's a
   // place you visit deliberately and leave, not somewhere you switch between.
@@ -135,6 +94,7 @@ export function App() {
             onGoJobs={() => go('jobs')}
             onGoCvs={() => go('cvs')}
             onOpenSettings={() => setSettingsOpen(true)}
+            onBuildProfile={() => setActiveWizard('build')}
           />
         )}
         {tab === 'jobs' && <JobsTab />}
@@ -165,14 +125,5 @@ export function App() {
       </nav>
       <Toasts />
     </>
-  )
-}
-
-/** The brief "settling the profile question" state — a warm cache never sees it. */
-function Splash() {
-  return (
-    <div className="flex min-h-full items-center justify-center">
-      <span className="inline-block size-5 animate-spin rounded-full border-2 border-line border-t-fg" />
-    </div>
   )
 }
