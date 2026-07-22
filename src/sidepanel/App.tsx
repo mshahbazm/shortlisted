@@ -52,8 +52,13 @@ export function App() {
   // review/answers), and Build stays put while it saves the profile.
   const [activeWizard, setActiveWizard] = useState<null | 'entry' | 'build'>(null)
   useEffect(() => {
-    if (activeWizard === null && !loggedIn) setActiveWizard('entry')
-  }, [activeWizard, loggedIn])
+    // Guard on settingsLoaded: before storage loads, `settings` is the default
+    // (no accountEmail), so `loggedIn` is briefly false. Effects still run even
+    // while the render is gated to null — without this guard the latch would pin
+    // 'entry' during that loading frame and strand a signed-in user on the
+    // welcome screen after reload.
+    if (settingsLoaded && activeWizard === null && !loggedIn) setActiveWizard('entry')
+  }, [settingsLoaded, activeWizard, loggedIn])
 
   const closeWizard = () => {
     setActiveWizard(null)
