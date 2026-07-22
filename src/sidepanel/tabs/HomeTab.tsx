@@ -265,14 +265,11 @@ export function HomeTab({
             page" one, that opens the builder. Gated by a durable flag (they
             went through the wizard), not by whether a stray field is filled. */}
         {!resumeHelpDone(profile) && (
-          <button
-            onClick={onBuildProfile}
-            className="flex w-full flex-col gap-[3px] rounded-xl border border-line bg-gradient-to-b from-[#faf9ff] to-bg p-3.5 text-left transition hover:shadow-lift-hover"
-          >
+          <div className="flex w-full flex-col gap-[3px] rounded-xl border border-line bg-gradient-to-b from-[#faf9ff] to-bg p-3.5">
             <span className="text-base leading-[1.25] font-[650] tracking-[-0.01em]">{t.buildProfileTitle}</span>
-            <span className="mb-[11px] text-[12.5px] leading-normal text-muted">{t.buildProfileSub}</span>
-            <span className="inline-flex w-full items-center justify-center rounded-[10px] bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg">{t.buildProfileCta}</span>
-          </button>
+            <span className="mb-3 text-[12.5px] leading-normal text-muted">{t.buildProfileSub}</span>
+            <Button size="lg" onClick={onBuildProfile}>{t.buildProfileCta}</Button>
+          </div>
         )}
         <ContextSlot page={page} t={t} onFill={fillCurrent} onFit={() => nav.push('fit')} onSave={saveCurrentJob} />
         {notice && <p className="my-1 text-[13px] text-muted">{notice}</p>}
@@ -320,7 +317,9 @@ export function HomeTab({
           <Icon name="chev" />
         </button>
 
-        <TellMeComposer t={t} />
+        {/* Nothing to add to yet before the profile exists — the build CTA above
+            is the only relevant action, so the "Update Profile" composer hides. */}
+        {resumeHelpDone(profile) && <TellMeComposer t={t} />}
 
         {apps.length > 0 && (
           /* `apart` — a different subject from the composer above it, so it gets

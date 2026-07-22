@@ -12,6 +12,7 @@ import { TabIcon } from './ui'
 import { cn } from '../lib/cn'
 import { Toasts } from './toast'
 import * as store from '../lib/store'
+import { resumeHelpDone } from '../lib/types'
 
 // Four destinations. Settings is rare enough to live behind the gear, and the
 // answer bank is profile data, so it lives inside Profile rather than taking a
@@ -45,7 +46,9 @@ export function App() {
   // your profile" CTA (onBuildProfile below), which only shows when the profile
   // is empty. Simple, and the user drives it.
   const [settings, , settingsLoaded] = useStore('settings')
+  const [profile] = useStore('profile')
   const loggedIn = Boolean(settings.accountEmail)
+  const needsBuild = !resumeHelpDone(profile)
 
   // A wizard, once shown, stays until it calls onDone — so Entry survives the
   // moment auth flips `loggedIn` mid-flow (the has-CV door continues into
@@ -119,6 +122,12 @@ export function App() {
             )}
             aria-current={name === tab ? 'page' : undefined}
             onClick={() => {
+              // Nothing to see on the profile page until it exists — the tap
+              // opens the builder instead.
+              if (name === 'profile' && needsBuild) {
+                setActiveWizard('build')
+                return
+              }
               setTab(name)
               setFocusTellMe(false)
             }}
