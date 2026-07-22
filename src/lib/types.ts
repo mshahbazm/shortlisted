@@ -1,10 +1,9 @@
-// ⚠️ SHARED WITH THE CLOUD. This file is the extension's, but the cloud imports it
-// through the `extension` git submodule — so it exists as TWO checkouts on disk
-// (the standalone extension repo, and shortlisted-cloud/extension), and the cloud
-// typechecks against its submodule copy. If you change a type here, update BOTH
-// checkouts so they stay byte-identical, or the cloud compiles against a stale
-// shape. Same rule for every extension file the cloud imports (ai/systemAgent,
-// ai/capabilities/*, lib/profileMerge).
+// ⚠️ WIRE CONTRACT WITH THE CLOUD. These are the shapes sent to and received
+// from the /v1 API. The cloud keeps its own copy (shortlisted-cloud/src/lib/
+// types.ts) — there is no shared package or submodule. If you change a shape
+// here, mirror it in the cloud's copy, and rely on the cloud's /v1 payload
+// validation to surface any drift as a clear error rather than a silent
+// misparse. (Same for the result types in ai/contract.ts.)
 //
 // ---------- Profile (v2 — schema adopted from the cuee ATS candidate model) ----------
 // Dates are split integers (month 1-12, year), never strings/Date objects.

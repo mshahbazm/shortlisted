@@ -7,7 +7,7 @@
 import { expect, test, describe } from 'bun:test'
 import { mergeEnrichment, needsCompletion } from './profileMerge'
 import type { Profile } from './types'
-import type { ProfileEnrichment } from '../ai/capabilities/enrich-profile'
+import type { ProfileEnrichment } from '../ai/contract'
 
 const profile = (work: Profile['work'] = []): Profile =>
   ({

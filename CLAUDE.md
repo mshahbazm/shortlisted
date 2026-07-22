@@ -41,9 +41,10 @@ Several agents work this repo — you'll see changes you didn't make. Track what
   with `sendMsg`; receive only in the background/content entry points. No ad-hoc
   message shapes.
 - **AI / network → `ai/run.ts`** (`cloud*` fns hitting the cloud `/v1` API). No
-  raw `fetch` anywhere else. The extension holds **no provider keys or models** —
-  all AI runs server-side; capability logic lives in `ai/capabilities/<name>`
-  and is shared with the server.
+  raw `fetch` anywhere else. The extension holds **no provider keys or models**
+  and **no capability logic** — all AI runs on the cloud. This repo keeps only
+  the result types the UI renders (`ai/contract.ts`) and the wire data model
+  (`lib/types.ts`); the cloud has its own copies, kept in sync by hand.
 - **Data model → `lib/types.ts`.** Stored data is versioned and migrated on
   read — extend the normalizer, never write a destructive migration.
 - **Cloud sync → `background/cloudMirror.ts`.** Outbox + `knownIds` persist in

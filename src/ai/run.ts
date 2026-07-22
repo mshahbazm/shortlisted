@@ -17,10 +17,16 @@ import {
 } from '../lib/types'
 import { cloudBaseUrl } from '../lib/config'
 import * as store from '../lib/store'
-import type { TailorCvResult } from './capabilities/tailor-cv'
-import type { QuickScoreResult, ScoreFitResult } from './capabilities/score-fit'
-import type { AssistField, AssistResultItem, CorrectionItem, VerifyField } from './capabilities/fill-assist'
-import type { ProfileEnrichment } from './capabilities/enrich-profile'
+import type {
+  AssistField,
+  AssistResultItem,
+  CorrectionItem,
+  ProfileEnrichment,
+  QuickScoreResult,
+  ScoreFitResult,
+  TailorCvResult,
+  VerifyField,
+} from './contract'
 
 export type { QuickScoreResult, ScoreFitResult }
 export type { AssistField, AssistResultItem, CorrectionItem, VerifyField }

@@ -2,7 +2,7 @@
 // Nothing is ever overwritten: skills/languages/certifications are added when
 // missing, link slots fill only if empty. Pure — callers persist the result.
 
-import { ProfileEnrichment } from '../ai/capabilities/enrich-profile'
+import { ProfileEnrichment } from '../ai/contract'
 import { Profile, WorkEntry, uid } from './types'
 
 // Best-effort ISO codes for languages a candidate plausibly names.

@@ -14,7 +14,7 @@ import { TEMPLATES } from '../pdf/templates'
 import { comboboxValue, watchCombobox } from './combobox'
 import { FormField, labelFor, optionsOf } from './fields'
 import { Overlay } from './overlay'
-import type { AssistField, AssistResultItem, CorrectionItem, VerifyField } from '../ai/capabilities/fill-assist'
+import type { AssistField, AssistResultItem, CorrectionItem, VerifyField } from '../ai/contract'
 
 declare global {
   interface Window {

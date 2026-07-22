@@ -1,5 +1,5 @@
 import { AnswerType, ApplicationRecord, BankAnswer, PendingQuestion, Profile, ResumeVariant, Settings } from './types'
-import type { AssistField, VerifyField } from '../ai/capabilities/fill-assist'
+import type { AssistField, VerifyField } from '../ai/contract'
 
 // Content script <-> background messages.
 
