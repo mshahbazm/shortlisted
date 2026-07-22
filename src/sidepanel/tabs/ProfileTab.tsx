@@ -28,7 +28,7 @@ import {
 import { cloudParseResumePdf, cloudProfileNote, runExtractProfile } from '../../ai/run'
 import * as store from '../../lib/store'
 import { Gap, GapKey, profileStrength } from '../../lib/profileStrength'
-import { mergeIntakeFacts, needsCompletion } from '../../lib/profileMerge'
+import { mergeEnrichment, needsCompletion } from '../../lib/profileMerge'
 import { showToast } from '../toast'
 
 type T = ReturnType<typeof useContent<'profile'>>
@@ -645,7 +645,7 @@ function TellMe({ t, settings }: { t: T; settings: Parameters<typeof cloudProfil
               let unplaced = 0
               let incomplete: string[] = []
               await store.update('profile', (cur) => {
-                const r = mergeIntakeFacts(cur, facts)
+                const r = mergeEnrichment(cur, facts)
                 applied = r.applied
                 unplaced = r.unplacedHighlights
                 incomplete = r.incompleteWork

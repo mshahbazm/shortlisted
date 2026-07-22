@@ -4,9 +4,9 @@
 import { Msg, PageContext } from '../lib/messaging'
 import * as store from '../lib/store'
 import { BankAnswer, PendingQuestion, ResumeVariant, jobUrlKey, roleCompanyLabel, uid } from '../lib/types'
-import { applyIntakeFacts } from '../lib/profileMerge'
+import { applyEnrichment } from '../lib/profileMerge'
 import { normalizeQuestion, similarity } from '../lib/questions'
-import { cloudFillAssist, cloudResumeIntake, polishAnswer, runQuickScore, runTailorCv } from '../ai/run'
+import { cloudFillAssist, cloudEnrichFromCv, polishAnswer, runQuickScore, runTailorCv } from '../ai/run'
 import { renderResumePdf } from '../pdf/resumePdf'
 import { pullFromCloud, startCloudMirror } from './cloudMirror'
 // CRXJS: gives us the emitted content-script path for scripting.executeScript.
@@ -129,7 +129,7 @@ async function handle(msg: Msg): Promise<unknown> {
         // Facts the candidate stated in their note become permanent profile
         // facts (additive) — the server already tailored WITH them.
         if (result.newFacts) {
-          await store.update('profile', (p) => applyIntakeFacts(p, result.newFacts!))
+          await store.update('profile', (p) => applyEnrichment(p, result.newFacts!))
         }
         const base64 = renderResumePdf(profile, result.resume, msg.templateId)
         const safe = result.resume.label.replace(/[^\w\- ]/g, '').replace(/\s+/g, '-').slice(0, 40)
@@ -353,13 +353,13 @@ async function intakeResume(resumeId: string): Promise<void> {
   const r = resumes.find((x) => x.id === resumeId)
   if (!r) return
   try {
-    const facts = await cloudResumeIntake(settings, r.dataBase64)
+    const facts = await cloudEnrichFromCv(settings, r.dataBase64)
     if (facts.tags.length) {
       await store.update('resumes', (list) =>
         list.map((x) => (x.id === resumeId && x.tags.length === 0 ? { ...x, tags: facts.tags } : x)),
       )
     }
-    await store.update('profile', (p) => applyIntakeFacts(p, facts))
+    await store.update('profile', (p) => applyEnrichment(p, facts))
   } catch (e) {
     console.warn('[shortlisted] resume intake failed:', e)
   }

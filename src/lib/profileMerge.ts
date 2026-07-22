@@ -1,8 +1,8 @@
-// Additive-only profile merging for intake facts (CV uploads, tailor notes).
+// Additive-only profile merging for enrichment facts (CV uploads, tailor notes).
 // Nothing is ever overwritten: skills/languages/certifications are added when
 // missing, link slots fill only if empty. Pure — callers persist the result.
 
-import { IntakeNewFacts } from '../ai/capabilities/resume-intake'
+import { ProfileEnrichment } from '../ai/capabilities/enrich-profile'
 import { Profile, WorkEntry, uid } from './types'
 
 // Best-effort ISO codes for languages a candidate plausibly names.
@@ -13,7 +13,7 @@ const LANG_CODES: Record<string, string> = {
 }
 const PROFICIENCIES = ['elementary', 'limited_working', 'professional_working', 'full_professional', 'native_bilingual']
 
-export interface IntakeMergeResult {
+export interface EnrichmentMergeResult {
   profile: Profile
   /** Facts that actually landed. Never the count the model proposed. */
   applied: number
@@ -29,7 +29,7 @@ export interface IntakeMergeResult {
   incompleteWork: string[]
 }
 
-export function mergeIntakeFacts(p: Profile, facts: IntakeNewFacts): IntakeMergeResult {
+export function mergeEnrichment(p: Profile, facts: ProfileEnrichment): EnrichmentMergeResult {
   const has = (list: { name: string }[], name: string) =>
     list.some((x) => x.name.toLowerCase() === name.toLowerCase())
 
@@ -152,7 +152,7 @@ export function needsCompletion(w: WorkEntry): boolean {
 }
 
 /** Merge and keep only the profile — for callers that don't report back. */
-export function applyIntakeFacts(p: Profile, facts: IntakeNewFacts): Profile {
-  return mergeIntakeFacts(p, facts).profile
+export function applyEnrichment(p: Profile, facts: ProfileEnrichment): Profile {
+  return mergeEnrichment(p, facts).profile
 }
 

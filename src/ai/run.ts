@@ -6,7 +6,9 @@ import {
   ApplicationRecord,
   BankAnswer,
   FitScoreRecord,
+  IntakeSession,
   PendingQuestion,
+  Persona,
   Profile,
   QueueItem,
   ResumeVariant,
@@ -18,7 +20,7 @@ import * as store from '../lib/store'
 import type { TailorCvResult } from './capabilities/tailor-cv'
 import type { QuickScoreResult, ScoreFitResult } from './capabilities/score-fit'
 import type { AssistField, AssistResultItem, CorrectionItem, VerifyField } from './capabilities/fill-assist'
-import type { IntakeNewFacts } from './capabilities/resume-intake'
+import type { ProfileEnrichment } from './capabilities/enrich-profile'
 
 export type { QuickScoreResult, ScoreFitResult }
 export type { AssistField, AssistResultItem, CorrectionItem, VerifyField }
@@ -27,13 +29,13 @@ export type { AssistField, AssistResultItem, CorrectionItem, VerifyField }
  * Uploaded-CV intake: role/field tags for the CV plus profile facts it
  * contains that the account is missing (additive only). Free micro-call.
  */
-export async function cloudResumeIntake(settings: Settings, pdfBase64: string): Promise<IntakeNewFacts> {
-  return cloudCall<IntakeNewFacts>(settings, '/v1/resume-intake', { pdfBase64 })
+export async function cloudEnrichFromCv(settings: Settings, pdfBase64: string): Promise<ProfileEnrichment> {
+  return cloudCall<ProfileEnrichment>(settings, '/v1/enrich-profile', { pdfBase64 })
 }
 
 /** Free-form profile note ("I worked with Webflow at X") → additive facts. */
-export async function cloudProfileNote(settings: Settings, text: string): Promise<IntakeNewFacts> {
-  return cloudCall<IntakeNewFacts>(settings, '/v1/resume-intake', { text })
+export async function cloudProfileNote(settings: Settings, text: string): Promise<ProfileEnrichment> {
+  return cloudCall<ProfileEnrichment>(settings, '/v1/enrich-profile', { text })
 }
 
 /**
@@ -54,25 +56,38 @@ export async function runExtractProfile(settings: Settings, cvText: string): Pro
   return cloudCall<Profile>(settings, '/v1/extract-profile', { cvText })
 }
 
-export interface BuildProfileResult {
-  profile: Profile
+export interface IntakeNext {
+  enough: boolean
   questions: string[]
+  round: number
 }
 
-/** No-CV builder: free-form text -> a starting profile + follow-up questions.
- *  `persona` steers the questions (fresh grad vs experienced). Pass `answers` on
- *  the second call to enrich (no new questions come back). */
-export async function runBuildProfile(
+/** No-CV builder — GATHER: send the intro (start, no `answers`) or a round's
+ *  answers (continue). The server judges the material so far and returns the next
+ *  questions, or `enough: true` when it's time to build. No credit spent. */
+export async function intakeNext(
   settings: Settings,
-  intro: string,
-  persona: 'starting' | 'working',
-  answers?: { q: string; a: string }[],
-): Promise<BuildProfileResult> {
-  return cloudCall<BuildProfileResult>(settings, '/v1/build-profile', { intro, persona, answers })
+  body: { persona: Persona; intro: string; answers?: string[] },
+): Promise<IntakeNext> {
+  return cloudCall<IntakeNext>(settings, '/v1/build-profile/next', body)
+}
+
+/** No-CV builder — RESUME: the in-progress session (or null) so the builder can
+ *  pick up exactly where the user left off. */
+export async function loadIntakeSession(settings: Settings): Promise<IntakeSession | null> {
+  const { session } = await cloudCall<{ session: IntakeSession | null }>(settings, '/v1/build-profile/intake', undefined, 'GET')
+  return session
+}
+
+/** No-CV builder — FINALIZE: extract the structured profile from the whole
+ *  gathered intake. Pass `answers` to record a final round first (used on skip).
+ *  One credit per completed build. */
+export async function runBuildProfile(settings: Settings, answers?: string[]): Promise<{ profile: Profile }> {
+  return cloudCall<{ profile: Profile }>(settings, '/v1/build-profile', { answers })
 }
 
 /** TailorCvResult plus any note-stated facts the server folded in. */
-export type CloudTailorResult = TailorCvResult & { newFacts?: IntakeNewFacts }
+export type CloudTailorResult = TailorCvResult & { newFacts?: ProfileEnrichment }
 
 export async function runTailorCv(
   settings: Settings,

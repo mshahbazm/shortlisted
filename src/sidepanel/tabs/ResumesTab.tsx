@@ -6,7 +6,7 @@ import { BigChoice, Body, Button, Checkbox, Chip, Cost, FIELD, Icon, Label, Pill
 import { Profile, ResumeVariant, base64ToBytes, bytesToBase64, roleCompanyLabel, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
-import { applyIntakeFacts } from '../../lib/profileMerge'
+import { applyEnrichment } from '../../lib/profileMerge'
 import { renderPdfPages, renderPdfThumbnail } from '../../lib/pdfText'
 import { masterVariant, renderResumePdf } from '../../pdf/resumePdf'
 import { ALL_TAGS, ResumeTemplate, TEMPLATES, TemplateTag } from '../../pdf/templates'
@@ -130,7 +130,7 @@ export function ResumesTab() {
       // Facts stated in the note become permanent profile facts (additive).
       if (result.newFacts) {
         const facts = result.newFacts
-        await store.update('profile', (p) => applyIntakeFacts(p, facts))
+        await store.update('profile', (p) => applyEnrichment(p, facts))
       }
       const base64 = renderResumePdf(profile, result.resume, templateId)
       const safe = result.resume.label.replace(/[^\w\- ]/g, '').replace(/\s+/g, '-').slice(0, 40)

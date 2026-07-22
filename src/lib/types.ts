@@ -220,6 +220,24 @@ export function markResumeHelpDone(p: Profile): Profile {
   return { ...p, onboarding: { ...p.onboarding, resume: { ...p.onboarding?.resume, done: true } } }
 }
 
+// ── No-CV guided builder ("intake") ─────────────────────────────────────────
+// The persona split and the in-progress guided-Q&A session the resume builder
+// gathers BEFORE any profile is extracted. The raw material lives in its own
+// server-side `intake` table (never on the Profile), so the profile stays clean
+// and the flow is exactly resumable across close / restart / relogin. Distinct
+// from the has-CV `enrich-profile` capability, which pulls facts from an existing CV.
+export type Persona = 'starting' | 'working'
+export interface IntakeRound {
+  questions: string[]
+  answers: string[] // parallel to questions; '' where unanswered
+}
+export interface IntakeSession {
+  persona: Persona
+  intro: string
+  rounds: IntakeRound[]
+  status: 'gathering' | 'done'
+}
+
 // ---------- v1 -> v2 migration (applied on load; see store.ts) ----------
 
 export function normalizeProfile(raw: unknown): Profile {

@@ -23,6 +23,7 @@ export const onboarding: tLocale['onboarding'] = {
   talkWorkingPlaceholder:
     'ex. Liderei uma equipa de 6 pessoas na Kordo Logistics durante 3 anos. Reformulei a escala de fins de semana para não ficarmos com falta de pessoal e formei os novos.',
   back: 'Voltar',
+  skip: 'Pular',
   welcomeLoginLink: 'Já tens conta? Inicia sessão',
   loginTitle: 'Olá de novo.',
   loginLead: 'Escreve o teu email — enviamos-te um código de 6 dígitos.',

@@ -2,6 +2,7 @@
 
 export const onboarding = {
   back: 'Back',
+  skip: 'Skip',
 
   // No-CV guided builder
   buildTitle: "Let's build your profile together.",

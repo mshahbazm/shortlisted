@@ -14,7 +14,7 @@ import { PageContext, sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
 import { ApplicationRecord, base64ToBytes, resumeHelpDone, uid } from '../../lib/types'
 import { cloudProfileNote, cloudUsage, runScoreFit, ScoreFitResult } from '../../ai/run'
-import { mergeIntakeFacts } from '../../lib/profileMerge'
+import { mergeEnrichment } from '../../lib/profileMerge'
 import { showToast } from '../toast'
 import { fitBand } from '../../lib/fitBands'
 
@@ -514,7 +514,7 @@ function TellMeComposer({ t }: { t: ReturnType<typeof useContent<'home'>> }) {
               let applied = 0
               let unplaced = 0
               await store.update('profile', (cur) => {
-                const r = mergeIntakeFacts(cur, facts)
+                const r = mergeEnrichment(cur, facts)
                 applied = r.applied
                 unplaced = r.unplacedHighlights
                 return r.profile

@@ -7,7 +7,7 @@
 import { Profile } from '../../../lib/types'
 import { LlmClient, runJsonPass } from '../../systemAgent'
 
-export interface IntakeNewFacts {
+export interface ProfileEnrichment {
   /** 2-4 short English role/field labels: "frontend", "marketing", "data engineering"… */
   tags: string[]
   newSkills: string[]
@@ -35,11 +35,11 @@ export interface IntakeNewFacts {
   }[]
 }
 
-export interface ResumeIntakeResult extends IntakeNewFacts {
+export interface EnrichProfileResult extends ProfileEnrichment {
   usage: { inputTokens: number; outputTokens: number }
 }
 
-const intakeSchema = {
+const enrichSchema = {
   type: 'object',
   required: ['tags', 'newSkills', 'newLinks', 'newLanguages', 'newCertifications', 'newWorkHighlights'],
   properties: {
@@ -105,7 +105,7 @@ const intakeSchema = {
   },
 } as const
 
-const INTAKE_PROMPT =
+const ENRICH_PROMPT =
   `You process candidate-provided text — an uploaded CV, or a short note the candidate wrote ` +
   `about their experience. You label it so it can be matched to the right job applications ` +
   `later, and you spot facts it contains that the candidate's stored profile is missing.\n\n` +
@@ -131,11 +131,11 @@ const INTAKE_PROMPT =
   `HARD RULE: every returned fact must be literally present in the provided text. Never infer, ` +
   `never invent. When in doubt, leave it out — empty arrays are a fine answer.`
 
-export async function resumeIntake(
+export async function enrichProfile(
   client: LlmClient,
   cvText: string,
   profile: Profile | null,
-): Promise<ResumeIntakeResult> {
+): Promise<EnrichProfileResult> {
   const known = {
     knownSkills: profile?.skills.map((s) => s.name) ?? [],
     missingLinkSlots: (['website', 'github', 'linkedin', 'portfolio'] as const).filter(
@@ -148,13 +148,13 @@ export async function resumeIntake(
   const workIds = new Set(known.knownWork.map((w) => w.id))
   const input = JSON.stringify({ cv: cvText.slice(0, 16000), ...known })
 
-  const { value, usage } = await runJsonPass<IntakeNewFacts>(
+  const { value, usage } = await runJsonPass<ProfileEnrichment>(
     {
       client,
-      systemPrompt: INTAKE_PROMPT,
+      systemPrompt: ENRICH_PROMPT,
       input,
-      schema: intakeSchema,
-      schemaName: 'resumeIntake',
+      schema: enrichSchema,
+      schemaName: 'enrichProfile',
       tier: 'mini',
       maxTokens: 1200,
     },

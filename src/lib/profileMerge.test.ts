@@ -5,9 +5,9 @@
 // Run: bun test
 
 import { expect, test, describe } from 'bun:test'
-import { mergeIntakeFacts, needsCompletion } from './profileMerge'
+import { mergeEnrichment, needsCompletion } from './profileMerge'
 import type { Profile } from './types'
-import type { IntakeNewFacts } from '../ai/capabilities/resume-intake'
+import type { ProfileEnrichment } from '../ai/capabilities/enrich-profile'
 
 const profile = (work: Profile['work'] = []): Profile =>
   ({
@@ -20,7 +20,7 @@ const profile = (work: Profile['work'] = []): Profile =>
     certifications: [],
   }) as unknown as Profile
 
-const facts = (over: Partial<IntakeNewFacts> = {}): IntakeNewFacts => ({
+const facts = (over: Partial<ProfileEnrichment> = {}): ProfileEnrichment => ({
   tags: [],
   newSkills: [],
   newLinks: {},
@@ -37,7 +37,7 @@ const job = (id: string, company: string) =>
 describe('merge reports what it actually stored', () => {
   // The reported case: told about work at a company that is not on file.
   test('highlight for an unknown job is counted as unplaced, not applied', () => {
-    const r = mergeIntakeFacts(
+    const r = mergeEnrichment(
       profile([job('w1', 'Acme')]),
       facts({ newWorkHighlights: [{ workId: 'pavago', bullet: 'Built sites in Webflow' }] }),
     )
@@ -47,7 +47,7 @@ describe('merge reports what it actually stored', () => {
   })
 
   test('highlight for a known job is applied', () => {
-    const r = mergeIntakeFacts(
+    const r = mergeEnrichment(
       profile([job('w1', 'Pavago')]),
       facts({ newWorkHighlights: [{ workId: 'w1', bullet: 'Built sites in Webflow' }] }),
     )
@@ -57,7 +57,7 @@ describe('merge reports what it actually stored', () => {
   })
 
   test('a mix reports only the part that landed', () => {
-    const r = mergeIntakeFacts(
+    const r = mergeEnrichment(
       profile([job('w1', 'Acme')]),
       facts({
         newSkills: ['Webflow'],
@@ -71,7 +71,7 @@ describe('merge reports what it actually stored', () => {
   test('duplicates are not counted as applied', () => {
     const existing = job('w1', 'Acme')
     existing.highlights = ['Built sites in Webflow']
-    const r = mergeIntakeFacts(
+    const r = mergeEnrichment(
       profile([existing]),
       facts({ newSkills: [], newWorkHighlights: [{ workId: 'w1', bullet: 'built sites in webflow' }] }),
     )
@@ -81,7 +81,7 @@ describe('merge reports what it actually stored', () => {
 
   // The reported case, end to end: "I worked with Pavago, on Webflow too."
   test('a job that is not on file is created, with what was said about it', () => {
-    const r = mergeIntakeFacts(
+    const r = mergeEnrichment(
       profile([job('w1', 'Acme')]),
       facts({
         newWork: [{ company: 'Pavago', highlights: ['Built and maintained sites in Webflow'] }],
@@ -99,7 +99,7 @@ describe('merge reports what it actually stored', () => {
   })
 
   test('a job stated with title and dates is not flagged', () => {
-    const r = mergeIntakeFacts(
+    const r = mergeEnrichment(
       profile(),
       facts({ newWork: [{ company: 'Pavago', title: 'Web Developer', startYear: 2022, isCurrent: true }] }),
     )
@@ -108,7 +108,7 @@ describe('merge reports what it actually stored', () => {
   })
 
   test('naming a company already on file adds highlights, never a duplicate', () => {
-    const r = mergeIntakeFacts(
+    const r = mergeEnrichment(
       profile([job('w1', 'Pavago')]),
       facts({ newWork: [{ company: 'pavago', highlights: ['Built sites in Webflow'] }] }),
     )
@@ -118,13 +118,13 @@ describe('merge reports what it actually stored', () => {
   })
 
   test('an empty company name is ignored', () => {
-    const r = mergeIntakeFacts(profile(), facts({ newWork: [{ company: '   ' }] }))
+    const r = mergeEnrichment(profile(), facts({ newWork: [{ company: '   ' }] }))
     expect(r.profile.work).toHaveLength(0)
     expect(r.applied).toBe(0)
   })
 
   test('skills, languages, certifications and empty link slots all count', () => {
-    const r = mergeIntakeFacts(
+    const r = mergeEnrichment(
       profile(),
       facts({
         newSkills: ['Webflow'],
@@ -140,7 +140,7 @@ describe('merge reports what it actually stored', () => {
   test('a filled link slot is never overwritten, nor counted', () => {
     const p = profile()
     p.links = { portfolio: 'https://mine.example' }
-    const r = mergeIntakeFacts(p, facts({ newLinks: { portfolio: 'https://theirs.example' } }))
+    const r = mergeEnrichment(p, facts({ newLinks: { portfolio: 'https://theirs.example' } }))
     expect(r.applied).toBe(0)
     expect(r.profile.links.portfolio).toBe('https://mine.example')
   })
