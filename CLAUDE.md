@@ -46,6 +46,10 @@ Several agents work this repo — you'll see changes you didn't make. Track what
   and is shared with the server.
 - **Data model → `lib/types.ts`.** Stored data is versioned and migrated on
   read — extend the normalizer, never write a destructive migration.
+- **Cloud sync → `background/cloudMirror.ts`.** Outbox + `knownIds` persist in
+  `storage.sync` and retry via `chrome.alarms`, so an evicted worker loses
+  nothing; deletes are sent explicitly (diffed vs `knownIds`) — the server never
+  delete-by-absence, so a second device can't wipe rows it hasn't seen.
 
 ## Content engine (`src/content/`)
 Small pieces over one shared engine — keep them small:

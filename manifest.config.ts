@@ -40,7 +40,7 @@ export default defineManifest(({ mode }) => ({
   ],
   // No 'notifications' — nothing uses chrome.notifications, and every
   // permission listed here costs a line in the install dialog.
-  permissions: ['storage', 'unlimitedStorage', 'sidePanel', 'scripting', 'tabs'],
+  permissions: ['storage', 'unlimitedStorage', 'sidePanel', 'scripting', 'tabs', 'alarms'],
   // Covers every page above plus the API origins we call. Needed as a
   // permission, not just a content-script match, so the service worker can
   // inject into a tab that was already open when the extension loaded.

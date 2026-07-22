@@ -1,12 +1,22 @@
 // Mirrors the extension's data to the user's account on Shortlisted Cloud.
-// chrome.storage stays the working copy (content scripts need instant reads
-// and the panel must work offline), but once an account is linked the server
-// is the source of truth: every local change is pushed (debounced), and
-// pullFromCloud() overwrites local with the server's data on startup/sign-in.
+// chrome.storage stays the working copy (content scripts need instant reads and
+// the panel must work offline), but once an account is linked the server is the
+// source of truth: every local change is pushed (debounced), and pullFromCloud()
+// overwrites local with the server's data on startup/sign-in.
+//
+// Durability: the push queue and its bookkeeping live in `storage.sync`
+// (SyncState), not just memory, so an evicted MV3 worker resumes exactly where
+// it left off; a failed push is retried through chrome.alarms, which survives
+// eviction where a setTimeout would not.
+//
+// Deletes are EXPLICIT: the client diffs each collection against the ids the
+// server last confirmed (`knownIds`) and sends the removed ids. The server never
+// delete-by-absence, so a second device pushing a list that predates a row this
+// device just added can't wipe it — the cornerstone of safe multi-device sync.
 
 import { fetchCloudData, pushCloudData } from '../ai/run'
 import * as store from '../lib/store'
-import { StorageShape, emptyProfile, hasProfileContent } from '../lib/types'
+import { StorageShape, SyncState, emptyProfile, hasProfileContent } from '../lib/types'
 
 /** local storage key → /v1/data wire key */
 const SYNCED = {
@@ -21,17 +31,49 @@ const SYNCED = {
 
 type SyncedKey = keyof typeof SYNCED
 
-// Writes we've applied FROM the server and still expect to see echoed back
-// through onChanged. It lets the mirror tell its own pull apart from a genuine
-// local edit deterministically — no fragile time window. Keyed by local storage
-// key; each applied set() adds one expected echo, each matching change event
-// consumes one.
+// Wire keys synced as id'd rows — the ones that use explicit-delete diffing.
+// (profile/pendingQuestions are single documents; fitScores is upsert-only,
+// keyed and regenerable, so none of them need delete tracking.)
+const ID_COLLECTIONS = ['resumes', 'applications', 'savedJobs', 'answers'] as const
+const RETRY_ALARM = 'shortlisted-sync-retry'
+// Skip an incidental worker-wake pull if we pulled within this window; a genuine
+// sign-in / explicit refresh passes { force: true } and ignores it.
+const PULL_MIN_INTERVAL = 60_000
+
+// ── in-memory mirror of the persisted SyncState (rehydrated on worker start) ──
 const expectedEchoes = new Map<string, number>()
-const pending = new Map<string, unknown>()
-let pushTimer: ReturnType<typeof setTimeout> | undefined
-// The account this worker last synced. On an account change we drop every queued
-// write and echo counter so nothing from the previous account crosses over.
+let pending = new Map<string, unknown>() // wire key → full collection value owed to the server
+let knownIds: Record<string, string[]> = {}
+let lastPullAt = 0
 let mirrorOwner: string | undefined
+let pushTimer: ReturnType<typeof setTimeout> | undefined
+let ready: Promise<void> | undefined
+
+const collectionIds = (v: unknown): string[] =>
+  Array.isArray(v) ? v.map((r) => (r as { id?: string }).id).filter((id): id is string => Boolean(id)) : []
+
+/** Persist the live queue + bookkeeping so a worker eviction loses nothing. */
+async function persist(): Promise<void> {
+  const state: SyncState = { owner: mirrorOwner, outbox: Object.fromEntries(pending), knownIds, lastPullAt }
+  await store.set('sync', state)
+}
+
+async function hydrate(): Promise<void> {
+  const s = await store.get('sync')
+  mirrorOwner = s.owner
+  knownIds = s.knownIds ?? {}
+  lastPullAt = s.lastPullAt ?? 0
+  // Merge, don't replace: a change the listener queued while this awaited is
+  // newer than the persisted copy, so it must win and survive hydration.
+  const restored = new Map(Object.entries(s.outbox ?? {}))
+  for (const [k, v] of pending) restored.set(k, v)
+  pending = restored
+  if (pending.size) schedulePush(0) // drain writes left over from a prior worker life
+}
+
+function ensureReady(): Promise<void> {
+  return ready ?? Promise.resolve()
+}
 
 /** Write a value pulled from the server, marking it so the change listener does
  *  not bounce it straight back up as if it were a local edit. */
@@ -62,8 +104,15 @@ export function startCloudMirror() {
       pending.set(wireKey, change.newValue)
       queued = true
     }
-    if (queued) schedulePush()
+    if (queued) {
+      void persist() // durable before the debounce, so an eviction mid-wait loses nothing
+      schedulePush()
+    }
   })
+  chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === RETRY_ALARM) void flush()
+  })
+  ready = hydrate()
 }
 
 // Short debounce: batch a burst of keystrokes, but keep local and the server
@@ -81,16 +130,39 @@ export async function flushPending(): Promise<void> {
 }
 
 async function flush() {
+  await ensureReady()
   const settings = await store.get('settings')
   if (!settings.accountEmail || pending.size === 0) return
-  const patch = Object.fromEntries(pending)
+  // Not adopted yet / account is switching — defer; the imminent pull adopts the
+  // owner and calls flushPending, so nothing is pushed to the wrong account.
+  if (mirrorOwner !== settings.accountEmail) return
+
+  const patch: Record<string, unknown> = {}
+  const deletes: Record<string, string[]> = {}
+  for (const [wireKey, value] of pending) {
+    patch[wireKey] = value
+    if ((ID_COLLECTIONS as readonly string[]).includes(wireKey)) {
+      const gone = (knownIds[wireKey] ?? []).filter((id) => !collectionIds(value).includes(id))
+      if (gone.length) deletes[wireKey] = gone
+    }
+  }
+  if (Object.keys(deletes).length) patch.deletes = deletes
+
+  const sent = new Map(pending)
   pending.clear()
+  await persist()
   try {
     await pushCloudData(settings, patch)
+    // Server now holds exactly what we sent — knownIds tracks that truth.
+    for (const [wireKey, value] of sent) {
+      if ((ID_COLLECTIONS as readonly string[]).includes(wireKey)) knownIds[wireKey] = collectionIds(value)
+    }
+    await persist()
   } catch (e) {
     console.error('[shortlisted] cloud save failed, will retry:', e)
-    for (const [k, v] of Object.entries(patch)) if (!pending.has(k)) pending.set(k, v)
-    schedulePush(30_000)
+    for (const [k, v] of sent) if (!pending.has(k)) pending.set(k, v)
+    await persist()
+    chrome.alarms.create(RETRY_ALARM, { delayInMinutes: 1 }) // survives worker eviction
   }
 }
 
@@ -102,18 +174,26 @@ async function flush() {
  * locally. This account's own genuine edits reach the server via `pending` /
  * `flushPending` (called first), never via this pull.
  */
-export async function pullFromCloud(): Promise<void> {
+export async function pullFromCloud(opts?: { force?: boolean }): Promise<void> {
+  await ensureReady()
   const settings = await store.get('settings')
   if (!settings.accountEmail) return
+
   // Account changed since this worker last synced (or first wake)? Drop any
-  // queued writes and echo counters from the previous account so nothing crosses
-  // over into the new one.
-  if (settings.accountEmail !== mirrorOwner) {
+  // queued writes and bookkeeping from the previous account so nothing crosses
+  // over into the new one — and always pull fresh, throttle be damned.
+  const switched = settings.accountEmail !== mirrorOwner
+  if (switched) {
     pending.clear()
     expectedEchoes.clear()
+    knownIds = {}
     clearTimeout(pushTimer)
     mirrorOwner = settings.accountEmail
+    await persist()
+  } else if (!opts?.force && Date.now() - lastPullAt < PULL_MIN_INTERVAL) {
+    return // incidental worker-wake and we pulled moments ago — skip the churn
   }
+
   // Flush THIS account's pending writes first, so the authoritative fetch below
   // can't lose an edit that hadn't reached the server yet.
   await flushPending()
@@ -131,6 +211,14 @@ export async function pullFromCloud(): Promise<void> {
 
   if (Object.keys(remote.fitScores).length) await applyRemote('fitScores', remote.fitScores)
   else if (Object.keys(local.fitScores).length) await applyRemote('fitScores', {})
+
+  // Server truth is now local truth — reset delete-diffing baselines to match.
+  knownIds.resumes = collectionIds(remote.resumes)
+  knownIds.applications = collectionIds(remote.applications)
+  knownIds.savedJobs = collectionIds(remote.savedJobs)
+  knownIds.answers = collectionIds(remote.answers)
+  lastPullAt = Date.now()
+  await persist()
 }
 
 /** Mirror one array key from the server: server has rows → apply them; server is
@@ -139,4 +227,3 @@ async function reconcile<K extends SyncedKey>(localKey: K, remote: StorageShape[
   if (Array.isArray(remote) && remote.length) await applyRemote(localKey, remote)
   else if (Array.isArray(local) && local.length) await applyRemote(localKey, [] as unknown as StorageShape[K])
 }
-

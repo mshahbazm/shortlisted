@@ -430,6 +430,21 @@ export function jobUrlKey(url: string): string {
 
 // ---------- Storage shape ----------
 
+/**
+ * The cloud mirror's own bookkeeping, persisted so an evicted MV3 worker resumes
+ * exactly where it left off. `outbox` = collection values still owed to the
+ * server (wire key → value); `knownIds` = the row ids the server last confirmed
+ * per collection, so a delete can be sent explicitly instead of inferred from a
+ * missing row. Reset on sign-out / account switch alongside account content.
+ */
+export interface SyncState {
+  /** accountEmail this state belongs to; guards against crossing accounts. */
+  owner?: string
+  outbox: Record<string, unknown>
+  knownIds: Record<string, string[]>
+  lastPullAt: number
+}
+
 export interface StorageShape {
   profile: Profile
   answerBank: BankAnswer[]
@@ -439,6 +454,8 @@ export interface StorageShape {
   queue: QueueItem[]
   fitScores: Record<string, FitScoreRecord>
   settings: Settings
+  /** Cloud-mirror outbox + sync bookkeeping (see SyncState). */
+  sync: SyncState
   /** Transient UI navigation hint ('tellme' → Profile tab, note box open). */
   pendingNav: string
 }
@@ -452,6 +469,7 @@ export const storageDefaults = (): StorageShape => ({
   queue: [],
   fitScores: {},
   settings: defaultSettings(),
+  sync: { outbox: {}, knownIds: {}, lastPullAt: 0 },
   pendingNav: '',
 })
 

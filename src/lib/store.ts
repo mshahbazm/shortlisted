@@ -70,6 +70,7 @@ function contentDefaults() {
     applications: d.applications,
     queue: d.queue,
     fitScores: d.fitScores,
+    sync: d.sync, // outbox/knownIds belong to the account being cleared
     pendingNav: d.pendingNav,
   }
 }

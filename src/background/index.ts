@@ -301,7 +301,7 @@ async function handle(msg: Msg): Promise<unknown> {
 
     case 'cloudPull': {
       try {
-        await pullFromCloud()
+        await pullFromCloud({ force: true }) // user-triggered refresh — bypass the wake throttle
         return { ok: true }
       } catch (e) {
         return { error: e instanceof Error ? e.message : String(e) }
