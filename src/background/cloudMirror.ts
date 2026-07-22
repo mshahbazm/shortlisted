@@ -6,7 +6,7 @@
 
 import { fetchCloudData, pushCloudData } from '../ai/run'
 import * as store from '../lib/store'
-import { StorageShape, hasProfileContent } from '../lib/types'
+import { StorageShape, emptyProfile, hasProfileContent } from '../lib/types'
 
 /** local storage key → /v1/data wire key */
 const SYNCED = {
@@ -29,6 +29,9 @@ type SyncedKey = keyof typeof SYNCED
 const expectedEchoes = new Map<string, number>()
 const pending = new Map<string, unknown>()
 let pushTimer: ReturnType<typeof setTimeout> | undefined
+// The account this worker last synced. On an account change we drop every queued
+// write and echo counter so nothing from the previous account crosses over.
+let mirrorOwner: string | undefined
 
 /** Write a value pulled from the server, marking it so the change listener does
  *  not bounce it straight back up as if it were a local edit. */
@@ -92,42 +95,48 @@ async function flush() {
 }
 
 /**
- * Load the account's data from the server. Server wins wherever it has
- * content; local-only content (first run after sign-in) is pushed up instead.
+ * Load the account's data from the server into local storage. The server is the
+ * SOURCE OF TRUTH: local mirrors it exactly. We never push local "up" to fill an
+ * empty remote — doing that adopted one account's leftover local data into
+ * another (the cross-account leak). An empty remote for a key clears that key
+ * locally. This account's own genuine edits reach the server via `pending` /
+ * `flushPending` (called first), never via this pull.
  */
 export async function pullFromCloud(): Promise<void> {
   const settings = await store.get('settings')
   if (!settings.accountEmail) return
-  // Cloud-authoritative: flush any pending local writes FIRST, so the fetch
-  // below can overwrite local without ever losing an edit that hadn't reached
-  // the server yet. After this, the server is unambiguously the source of truth.
+  // Account changed since this worker last synced (or first wake)? Drop any
+  // queued writes and echo counters from the previous account so nothing crosses
+  // over into the new one.
+  if (settings.accountEmail !== mirrorOwner) {
+    pending.clear()
+    expectedEchoes.clear()
+    clearTimeout(pushTimer)
+    mirrorOwner = settings.accountEmail
+  }
+  // Flush THIS account's pending writes first, so the authoritative fetch below
+  // can't lose an edit that hadn't reached the server yet.
   await flushPending()
   const remote = await fetchCloudData(settings)
   const local = await store.getAll()
-  const up: Record<string, unknown> = {}
 
   if (remote.profile) await applyRemote('profile', remote.profile)
-  else if (hasProfileContent(local.profile)) up.profile = local.profile
+  else if (hasProfileContent(local.profile)) await applyRemote('profile', emptyProfile())
 
-  await applyList('resumes', remote.resumes, local.resumes, up)
-  await applyList('applications', remote.applications, local.applications, up)
-  await applyList('queue', remote.savedJobs, local.queue, up)
-  await applyList('answerBank', remote.answers, local.answerBank, up)
-  await applyList('pendingQuestions', remote.pendingQuestions, local.pendingQuestions, up)
+  await reconcile('resumes', remote.resumes, local.resumes)
+  await reconcile('applications', remote.applications, local.applications)
+  await reconcile('queue', remote.savedJobs, local.queue)
+  await reconcile('answerBank', remote.answers, local.answerBank)
+  await reconcile('pendingQuestions', remote.pendingQuestions, local.pendingQuestions)
 
   if (Object.keys(remote.fitScores).length) await applyRemote('fitScores', remote.fitScores)
-  else if (Object.keys(local.fitScores).length) up.fitScores = local.fitScores
-
-  if (Object.keys(up).length) await pushCloudData(settings, up)
+  else if (Object.keys(local.fitScores).length) await applyRemote('fitScores', {})
 }
 
-async function applyList<K extends SyncedKey>(
-  localKey: K,
-  remote: StorageShape[K],
-  local: StorageShape[K],
-  up: Record<string, unknown>,
-) {
+/** Mirror one array key from the server: server has rows → apply them; server is
+ *  empty but local isn't → clear local. Never the other way (no push-up). */
+async function reconcile<K extends SyncedKey>(localKey: K, remote: StorageShape[K], local: StorageShape[K]) {
   if (Array.isArray(remote) && remote.length) await applyRemote(localKey, remote)
-  else if (Array.isArray(local) && local.length) up[SYNCED[localKey]] = local
+  else if (Array.isArray(local) && local.length) await applyRemote(localKey, [] as unknown as StorageShape[K])
 }
 

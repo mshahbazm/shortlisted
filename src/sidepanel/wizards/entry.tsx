@@ -5,7 +5,7 @@
 // has-CV door, which continues through building → review → answers because those
 // steps depend on the in-memory CV text (it doesn't survive the auth boundary).
 
-import { MutableRefObject, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useContent } from '../../i18n'
 import { useStore } from '../hooks'
 import { BigChoice, Button, Input, Label, Textarea } from '../ui'
@@ -22,6 +22,8 @@ const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())
 interface EntryState {
   door: 'haveCv' | 'noCv' | 'login'
   cvText: string
+  cvBase64?: string // the uploaded PDF, kept until sign-in (see readCvPdf)
+  cvFileName?: string
   email: string
   otp: string
 }
@@ -35,37 +37,40 @@ interface EntryCtx extends WizCtx {
   setIdentity: (k: keyof Profile['identity'], v: string) => void
   sendCode: (email: string) => Promise<void>
   verify: (email: string, otp: string) => Promise<void>
-  extract: (cvText: string) => Promise<void>
-  onPdf: (file: File) => Promise<{ cvText: string }>
+  extract: (cvText: string, cvBase64?: string, cvFileName?: string) => Promise<void>
+  onPdf: (file: File) => Promise<{ cvText: string; cvBase64: string; cvFileName: string }>
 }
 
-// Read a CV PDF's text (local layer, cloud OCR fallback) and keep the file as the
-// user's first resume — re-uploading replaces it rather than stacking copies.
-// No AI, no credit; the text is structured only after the account exists.
-async function readCvPdf(file: File, settings: Settings, resumeIdRef: MutableRefObject<string | null>): Promise<string> {
+// Read a CV PDF's text (local layer, cloud OCR fallback). No AI, no credit, no
+// account — and crucially NO storage write: the file's bytes ride in wizard
+// state and only become a saved resume AFTER sign-in (createUploadedResume). A
+// logged-out upload therefore never becomes leftover local data that a different
+// account could adopt.
+async function readCvPdf(file: File, settings: Settings): Promise<{ cvText: string; cvBase64: string; cvFileName: string }> {
   const buf = await file.arrayBuffer()
   const local = await extractPdfTextFromFile(file).catch(() => '')
-  const text = local && assessTextQuality(local) !== 'low' ? local : (await cloudPdfText(settings, buf)).text
-  const base64 = bytesToBase64(buf)
-  await store.update('resumes', (resumes) => {
-    const rest = resumes.filter((r) => r.id !== resumeIdRef.current)
-    const id = uid()
-    resumeIdRef.current = id
-    return [
-      ...rest,
-      {
-        id,
-        label: file.name.replace(/\.pdf$/i, ''),
-        fileName: file.name,
-        tags: [],
-        isDefault: rest.length === 0 || rest.every((r) => !r.isDefault),
-        createdAt: Date.now(),
-        source: 'uploaded' as const,
-        dataBase64: base64,
-      },
-    ]
-  })
-  return text
+  const cvText = local && assessTextQuality(local) !== 'low' ? local : (await cloudPdfText(settings, buf)).text
+  return { cvText, cvBase64: bytesToBase64(buf), cvFileName: file.name }
+}
+
+/** Save the uploaded PDF as this account's first resume — called only AFTER
+ *  sign-in, so it belongs to the account and syncs up normally. Returns the id. */
+async function createUploadedResume(base64: string, fileName: string): Promise<string> {
+  const id = uid()
+  await store.update('resumes', (resumes) => [
+    ...resumes,
+    {
+      id,
+      label: fileName.replace(/\.pdf$/i, ''),
+      fileName,
+      tags: [],
+      isDefault: resumes.every((r) => !r.isDefault),
+      createdAt: Date.now(),
+      source: 'uploaded' as const,
+      dataBase64: base64,
+    },
+  ])
+  return id
 }
 
 const welcome: Step<EntryState, EntryCtx> = {
@@ -197,7 +202,7 @@ const code: Step<EntryState, EntryCtx> = {
 // cleared history, so there's no Back into the (now signed-in) OTP screen.
 const building: Step<EntryState, EntryCtx> = {
   view: ({ api, ctx }) => {
-    const run = () => api.run(() => ctx.extract(api.state.cvText), 'review', { reset: true })
+    const run = () => api.run(() => ctx.extract(api.state.cvText, api.state.cvBase64, api.state.cvFileName), 'review', { reset: true })
     useEffect(() => {
       void run()
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -272,15 +277,13 @@ export function EntryWizard({ onDone }: { onDone: () => void }) {
   const [profile, saveProfile] = useStore('profile')
   const [settings] = useStore('settings')
   const t = useContent('onboarding')
-  const resumeId = useRef<string | null>(null)
 
   const ctx: EntryCtx = {
     t,
     profile,
     finish: () => {
-      // Reached here only via the has-CV path (paste → extract → review →
-      // answers): a resume was built. Tag the kept CV and set the durable flag.
-      if (resumeId.current) void sendMsg({ type: 'intakeResume', resumeId: resumeId.current })
+      // Reached only via the has-CV path; extract() already saved + intaked the
+      // CV. Just set the durable flag and hand back to the App router.
       void store.update('profile', markResumeHelpDone)
       onDone()
     },
@@ -288,15 +291,21 @@ export function EntryWizard({ onDone }: { onDone: () => void }) {
     setIdentity: (k, v) => saveProfile({ ...profile, identity: { ...profile.identity, [k]: v } }),
     sendCode: (e) => sendLoginCode(settings, e),
     verify: async (e, otp) => {
-      await verifyLoginCode(settings, e, otp)
-      await sendMsg({ type: 'cloudPull' }) // load the account's data from the server
+      await verifyLoginCode(settings, e, otp) // wipes another account's cache on mismatch
+      await sendMsg({ type: 'cloudPull' }) // load THIS account's data from the server
     },
-    extract: async (cvText) => {
+    extract: async (cvText, cvBase64, cvFileName) => {
+      // Post-verify: create the resume now so it belongs to THIS account (and
+      // syncs up), resume first so it survives even if the AI pass fails.
+      if (cvBase64 && cvFileName) {
+        const id = await createUploadedResume(cvBase64, cvFileName)
+        void sendMsg({ type: 'intakeResume', resumeId: id })
+      }
       const extracted = await runExtractProfile(settings, cvText)
       // Spread the existing profile first so the extract keeps `onboarding`.
       saveProfile({ ...profile, ...extracted, facts: profile.facts })
     },
-    onPdf: async (file) => ({ cvText: await readCvPdf(file, settings, resumeId) }),
+    onPdf: (file) => readCvPdf(file, settings),
   }
 
   const { view, canBack, busy, back } = useWizard(entryWizard, ctx, initEntry())

@@ -370,6 +370,14 @@ export interface QueueItem {
 export interface Settings {
   cloudToken?: string // device token, auto-provisioned on first use
   accountEmail?: string // set once the email OTP verifies; account = data saved server-side
+  /**
+   * The account the local CACHE currently belongs to. Set on sign-in; unlike
+   * `accountEmail` it SURVIVES sign-out. That is deliberate: it lets a different
+   * account signing in — even after a logout — detect the mismatch and wipe the
+   * previous account's cached content before its data is pulled, so one account
+   * can never see or upload another's data. Device-local; never synced.
+   */
+  dataOwner?: string
   onboarded?: boolean
   /** UI language (i18n/locale.ts code). Unset = follow the browser language. */
   locale?: string

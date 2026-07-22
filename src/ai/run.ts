@@ -169,13 +169,14 @@ export async function sendLoginCode(settings: Settings, email: string): Promise<
 export async function verifyLoginCode(settings: Settings, email: string, otp: string): Promise<CloudUsage> {
   const res = await cloudCall<CloudUsage>(settings, '/v1/auth/verify', { email, otp })
   const newEmail = res.email ?? email
-  // No per-user bucketing: a device caches one account at a time. If a DIFFERENT
-  // account signs in here (or a prior sign-out failed to wipe), clear the stale
-  // content before this account's data is pulled, so one user never sees
-  // another's — even if clearAccount() never ran. The pull refills it.
+  // No per-user bucketing: a device caches one account at a time. Wipe the
+  // previous account's cached content whenever a DIFFERENT account signs in.
+  // Gate on `dataOwner` (which survives sign-out), NOT `accountEmail` (which a
+  // logout clears) — otherwise the logout→login-as-someone-else path skips the
+  // wipe and the pull adopts the leftover into the new account (the leak).
   const prev = await store.get('settings')
-  if (prev.accountEmail && prev.accountEmail !== newEmail) await store.clearAccountData()
-  await store.update('settings', (s) => ({ ...s, accountEmail: newEmail }))
+  if (prev.dataOwner && prev.dataOwner !== newEmail) await store.clearAccountData()
+  await store.update('settings', (s) => ({ ...s, accountEmail: newEmail, dataOwner: newEmail }))
   return res
 }
 
