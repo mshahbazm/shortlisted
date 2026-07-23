@@ -41,6 +41,10 @@ export function reviewStep<S>(next: string): Step<S, WizCtx> {
       const t = ctx.t
       const setIdentity = (k: keyof Profile['identity'], v: string) =>
         saveProfile({ ...profile, identity: { ...profile.identity, [k]: v } })
+      const setLink = (k: keyof Profile['links'], v: string) =>
+        saveProfile({ ...profile, links: { ...profile.links, [k]: v } })
+      // A resume without a name is not useful; everything else stays optional.
+      const nameOk = profile.identity.firstName.trim().length > 0
       return (
         <StepFrame title={t.reviewTitle} lead={t.reviewLead(profile.work.length, profile.skills.length)}>
           <div className="flex flex-col gap-4">
@@ -58,9 +62,18 @@ export function reviewStep<S>(next: string): Step<S, WizCtx> {
               <Label>{t.location}
                 <Input type="text" value={profile.identity.location} onChange={(e) => setIdentity('location', e.target.value)} /></Label>
             </div>
+            <div className="flex flex-col gap-2.5">
+              <span className="text-[11.5px] font-semibold text-muted">{t.linksHeading}</span>
+              <Label>{t.linkedin}
+                <Input type="text" placeholder={t.linkedinPlaceholder} value={profile.links.linkedin ?? ''} onChange={(e) => setLink('linkedin', e.target.value)} /></Label>
+              <Label>{t.github}
+                <Input type="text" placeholder={t.githubPlaceholder} value={profile.links.github ?? ''} onChange={(e) => setLink('github', e.target.value)} /></Label>
+              <Label>{t.portfolio}
+                <Input type="text" placeholder={t.portfolioPlaceholder} value={profile.links.portfolio ?? ''} onChange={(e) => setLink('portfolio', e.target.value)} /></Label>
+            </div>
           </div>
           <Actions>
-            <Button onClick={() => api.next()}>{t.looksRight}</Button>
+            <Button disabled={!nameOk} onClick={() => api.next()}>{t.looksRight}</Button>
           </Actions>
         </StepFrame>
       )

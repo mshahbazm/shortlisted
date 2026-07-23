@@ -12,7 +12,7 @@ import { BigChoice, Button, Input, Label, Textarea } from '../ui'
 import { StepFrame, Actions, ErrLine, Spinner, WizardShell, useWizard, wizard, type Step } from '../wizard'
 import { runExtractProfile, sendLoginCode, verifyLoginCode } from '../../ai/run'
 import { sendMsg } from '../../lib/messaging'
-import { markResumeWanted } from '../../lib/types'
+import { markResumeWanted, type Profile } from '../../lib/types'
 import * as store from '../../lib/store'
 import { WizCtx, answersStep, reviewStep } from './steps'
 import { createUploadedResume, readCvPdf } from './cv'
@@ -24,11 +24,32 @@ interface EntryState {
   cvText: string
   cvBase64?: string // the uploaded PDF, kept until sign-in (see readCvPdf)
   cvFileName?: string
+  name: string // full name typed at signup (split into first/last on save)
   email: string
   otp: string
   isNewAccount?: boolean // set by verify(): a first-ever sign-in for this email
 }
-const initEntry = (): EntryState => ({ door: 'noCv', cvText: '', email: '', otp: '' })
+const initEntry = (): EntryState => ({ door: 'noCv', cvText: '', name: '', email: '', otp: '' })
+
+// Signup captures ONE "your name" field; split it into the profile's first/last
+// on the first space. Fills identity only where it's still blank, so an existing
+// value (e.g. from a parsed CV) always wins — the typed name is just a fallback
+// so we never end up nameless. `authEmail` seeds identity.email when it's empty.
+function seedIdentity(p: Profile, fullName: string, authEmail: string): Profile {
+  const name = fullName.trim()
+  const sp = name.indexOf(' ')
+  const first = sp === -1 ? name : name.slice(0, sp)
+  const last = sp === -1 ? '' : name.slice(sp + 1).trim()
+  return {
+    ...p,
+    identity: {
+      ...p.identity,
+      firstName: p.identity.firstName || first,
+      lastName: p.identity.lastName || last,
+      email: p.identity.email || authEmail.trim(),
+    },
+  }
+}
 
 interface EntryCtx extends WizCtx {
   /** Signed in but built no resume in this flow (login / no-CV) — just close;
@@ -36,7 +57,7 @@ interface EntryCtx extends WizCtx {
   exit: () => void
   sendCode: (email: string) => Promise<void>
   verify: (email: string, otp: string) => Promise<{ isNewAccount: boolean }>
-  extract: (cvText: string, cvBase64?: string, cvFileName?: string) => Promise<void>
+  extract: (cvText: string, cvBase64: string | undefined, cvFileName: string | undefined, name: string, authEmail: string) => Promise<void>
   onPdf: (file: File) => Promise<{ cvText: string; cvBase64: string; cvFileName: string }>
 }
 
@@ -101,25 +122,39 @@ const email: Step<EntryState, EntryCtx> = {
   next: 'code',
   view: ({ api, ctx }) => {
     const s = api.state
-    const ok = emailOk(s.email)
+    // Returning users (login door) give email only; the two signup doors also
+    // capture a name so every new account/profile has one to build a CV from.
+    const isSignup = s.door !== 'login'
+    const nameOk = !isSignup || s.name.trim().length > 0
+    const ready = emailOk(s.email) && nameOk
     const send = () => api.run(() => ctx.sendCode(s.email.trim()), 'code')
     return (
       <StepFrame
         title={s.door === 'login' ? ctx.t.loginTitle : ctx.t.verifyTitle}
         lead={s.door === 'login' ? ctx.t.loginLead : ctx.t.verifyLead}
       >
+        {isSignup && (
+          <Label className="mb-2.5">{ctx.t.yourName}
+            <Input
+              type="text"
+              placeholder={ctx.t.yourNamePlaceholder}
+              value={s.name}
+              autoFocus
+              onChange={(e) => api.set({ name: e.target.value })}
+            /></Label>
+        )}
         <Label className="mb-2.5">{ctx.t.email}
           <Input
             type="email"
             placeholder={ctx.t.emailPlaceholder}
             value={s.email}
-            autoFocus
+            autoFocus={!isSignup}
             onChange={(e) => api.set({ email: e.target.value })}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !api.busy && ok) void send() }}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !api.busy && ready) void send() }}
           /></Label>
         <ErrLine msg={api.error} />
         <Actions>
-          <Button disabled={api.busy || !ok} onClick={() => void send()}>{api.busy ? ctx.t.sending : ctx.t.sendCode}</Button>
+          <Button disabled={api.busy || !ready} onClick={() => void send()}>{api.busy ? ctx.t.sending : ctx.t.sendCode}</Button>
         </Actions>
       </StepFrame>
     )
@@ -169,7 +204,8 @@ const code: Step<EntryState, EntryCtx> = {
 // cleared history, so there's no Back into the (now signed-in) OTP screen.
 const building: Step<EntryState, EntryCtx> = {
   view: ({ api, ctx }) => {
-    const run = () => api.run(() => ctx.extract(api.state.cvText, api.state.cvBase64, api.state.cvFileName), 'review', { reset: true })
+    const run = () =>
+      api.run(() => ctx.extract(api.state.cvText, api.state.cvBase64, api.state.cvFileName, api.state.name, api.state.email), 'review', { reset: true })
     useEffect(() => {
       void run()
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -202,6 +238,9 @@ const end: Step<EntryState, EntryCtx> = {
       // door or an existing login keeps its own state (default: no help).
       const wantsHelp = s.door === 'noCv' || (s.door === 'login' && !!s.isNewAccount)
       void (async () => {
+        // Signup doors typed a name — seed it onto the freshly-pulled profile so
+        // the builder (and CV) always have a name. The login door has no name.
+        if (s.door !== 'login' && s.name.trim()) await store.update('profile', (p) => seedIdentity(p, s.name, s.email))
         if (wantsHelp) await store.update('profile', markResumeWanted)
         ctx.exit()
       })()
@@ -222,7 +261,7 @@ const entryWizard = wizard<EntryState, EntryCtx>('welcome', {
   answers: answersStep<EntryState>(),
 })
 
-export function EntryWizard({ onDone }: { onDone: () => void }) {
+export function EntryWizard({ onDone }: { onDone: (builtProfile?: boolean) => void }) {
   const [profile, saveProfile] = useStore('profile')
   const [settings] = useStore('settings')
   const t = useContent('onboarding')
@@ -232,16 +271,18 @@ export function EntryWizard({ onDone }: { onDone: () => void }) {
     finish: () => {
       // Reached only via the has-CV path; extract() already saved + intaked the
       // CV. No help flag — arriving with a CV is the path that skips the builder.
-      onDone()
+      // A profile was just built, so land on Profile.
+      onDone(true)
     },
-    exit: () => onDone(),
+    // Login / no-CV terminal: nothing was built here — land on Home.
+    exit: () => onDone(false),
     sendCode: (e) => sendLoginCode(settings, e),
     verify: async (e, otp) => {
       const { isNewAccount } = await verifyLoginCode(settings, e, otp) // wipes another account's cache on mismatch
       await sendMsg({ type: 'cloudPull' }) // load THIS account's data from the server
       return { isNewAccount }
     },
-    extract: async (cvText, cvBase64, cvFileName) => {
+    extract: async (cvText, cvBase64, cvFileName, name, authEmail) => {
       // Post-verify: create the resume now so it belongs to THIS account (and
       // syncs up), resume first so it survives even if the AI pass fails.
       if (cvBase64 && cvFileName) {
@@ -249,8 +290,10 @@ export function EntryWizard({ onDone }: { onDone: () => void }) {
         void sendMsg({ type: 'intakeResume', resumeId: id })
       }
       const extracted = await runExtractProfile(settings, cvText)
-      // Spread the existing profile first so the extract keeps `onboarding`.
-      saveProfile({ ...profile, ...extracted, facts: profile.facts })
+      // Spread the existing profile first so the extract keeps `onboarding`; the
+      // CV's identity wins, and the typed name/email backfill only what it left
+      // blank (so a CV that missed the name is never left nameless).
+      saveProfile(seedIdentity({ ...profile, ...extracted, facts: profile.facts }, name, authEmail))
     },
     onPdf: (file) => readCvPdf(file, settings),
   }

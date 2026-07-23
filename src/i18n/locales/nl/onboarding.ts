@@ -54,6 +54,15 @@ export const onboarding: tLocale['onboarding'] = {
   reviewLead: (roles: number, skills: number) =>
     `${roles} ${roles === 1 ? 'functie' : 'functies'} en ${skills} vaardigheden gevonden. Verbeter wat niet klopt — de rest kun je later aanpassen.`,
   looksRight: 'Ziet er goed uit',
+  yourName: 'Je naam',
+  yourNamePlaceholder: 'bijv. Alex Johnson',
+  linksHeading: 'Links',
+  linkedin: 'LinkedIn',
+  github: 'GitHub',
+  portfolio: 'Portfolio',
+  linkedinPlaceholder: 'linkedin.com/in/you',
+  githubPlaceholder: 'github.com/you',
+  portfolioPlaceholder: 'yoursite.com',
 
   answersTitle: 'Nog een paar basics.',
   jobTypeLabel: 'Waar ben je naar op zoek?',

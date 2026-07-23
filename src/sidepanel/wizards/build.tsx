@@ -127,7 +127,7 @@ const talk: Step<BuildState, BuildCtx> = {
           }
           return { theme: r.theme, questions: r.questions, answers: r.questions.map(() => ''), round: r.round }
         },
-        (n) => (n.questions.length ? 'probe' : 'answers'),
+        (n) => (n.questions.length ? 'probe' : 'review'),
       )
     return (
       <StepFrame
@@ -187,9 +187,9 @@ const probe: Step<BuildState, BuildCtx> = {
           }
           return { theme: r.theme, questions: r.questions, answers: r.questions.map(() => ''), round: r.round }
         },
-        (n) => (n.questions.length ? 'probe' : 'answers'),
+        (n) => (n.questions.length ? 'probe' : 'review'),
       )
-    const skip = () => void api.run(async () => ctx.finalize(s.answers), 'answers')
+    const skip = () => void api.run(async () => ctx.finalize(s.answers), 'review')
     return (
       <StepFrame busy={api.busy} busyTitle={ctx.t.buildingTitle} lead={api.busy ? ctx.t.buildingLead : ctx.t.probeLead} title={s.theme.trim() || ctx.t.probeTitle}>
         <div key={s.round} className="flex flex-col gap-3.5">
@@ -238,8 +238,20 @@ function BuildInner({ entry, init, onDone }: { entry: string; init: BuildState; 
       const { profile: built } = await runBuildProfile(settings, answers)
       // Spread the existing profile first so the AI build keeps `onboarding`
       // (and anything else it doesn't return); overlay the built content, and
-      // keep the existing facts (the job-prefs step owns those).
-      saveProfile({ ...profile, ...built, facts: profile.facts })
+      // keep the existing facts (the job-prefs step owns those). Preserve the
+      // signup name/email where the build didn't produce them, so the guaranteed
+      // identity from sign-in isn't wiped by an extraction that missed it.
+      saveProfile({
+        ...profile,
+        ...built,
+        facts: profile.facts,
+        identity: {
+          ...built.identity,
+          firstName: built.identity.firstName || profile.identity.firstName,
+          lastName: built.identity.lastName || profile.identity.lastName,
+          email: built.identity.email || profile.identity.email,
+        },
+      })
     },
     extractFromPdf: async (file) => {
       // Already signed in: save the resume now so it belongs to the account and
