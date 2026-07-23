@@ -42,7 +42,7 @@ export const settings: tLocale['settings'] = {
   goPro: 'Ga Pro — 100 credits per maand',
   proMonthly: 'Pro maandelijks — $15/maand',
   proAnnual: 'Pro jaarlijks — $150/jaar',
-  proFoot: '$1 voor je eerste 7 dagen, daarna $15/maand. 100 credits per maand; formulieren invullen is altijd gratis.',
+  proFoot: '$15/maand of $150/jaar. 100 credits per maand; formulieren invullen is altijd gratis.',
   manageSub: 'Abonnement beheren',
   historyTitle: 'Creditgeschiedenis',
   historySummary: 'toekenningen, uitgaven, maandelijkse resets',

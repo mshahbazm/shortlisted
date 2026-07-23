@@ -42,7 +42,7 @@ export const settings = {
   goPro: 'Go Pro — 100 credits a month',
   proMonthly: 'Pro monthly — $15/mo',
   proAnnual: 'Pro annual — $150/yr',
-  proFoot: '$1 for your first 7 days, then $15/mo. 100 credits a month; filling forms is always free.',
+  proFoot: '$15/mo or $150/yr. 100 credits a month; filling forms is always free.',
   manageSub: 'Manage subscription',
   historyTitle: 'Credit history',
   historySummary: 'grants, spends, monthly resets',

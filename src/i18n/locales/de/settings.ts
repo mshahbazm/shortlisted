@@ -42,7 +42,7 @@ export const settings: tLocale['settings'] = {
   goPro: 'Pro holen — 100 Credits im Monat',
   proMonthly: 'Pro monatlich — 15 $/Monat',
   proAnnual: 'Pro jährlich — 150 $/Jahr',
-  proFoot: '1 $ für die ersten 7 Tage, dann 15 $/Monat. 100 Credits im Monat; Formulare ausfüllen ist immer kostenlos.',
+  proFoot: '15 $/Monat oder 150 $/Jahr. 100 Credits im Monat; Formulare ausfüllen ist immer kostenlos.',
   manageSub: 'Abo verwalten',
   historyTitle: 'Credit-Verlauf',
   historySummary: 'Gutschriften, Verbrauch, monatliche Resets',
