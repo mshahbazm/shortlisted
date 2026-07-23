@@ -64,6 +64,7 @@ export async function runExtractProfile(settings: Settings, cvText: string): Pro
 
 export interface IntakeNext {
   enough: boolean
+  theme: string // short topic heading for this round's questions; '' when enough
   questions: string[]
   round: number
 }

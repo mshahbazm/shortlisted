@@ -238,6 +238,7 @@ export type Persona = 'starting' | 'working'
 export interface IntakeRound {
   questions: string[]
   answers: string[] // parallel to questions; '' where unanswered
+  theme?: string // short topic heading these questions share (optional for older rows)
 }
 export interface IntakeSession {
   persona: Persona

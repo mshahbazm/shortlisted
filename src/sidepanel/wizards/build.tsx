@@ -25,13 +25,14 @@ interface BuildState {
   persona: Persona
   intro: string
   round: number // current round number (1-based); 0 before any questions
+  theme: string // the current round's topic heading (shown as the step title)
   questions: string[] // the current round's questions
   answers: string[] // parallel to questions
   cvText: string // the have-a-resume door: pasted text (Back-safe)
   cvBase64?: string
   cvFileName?: string
 }
-const initBuild = (): BuildState => ({ persona: 'working', intro: '', round: 0, questions: [], answers: [], cvText: '' })
+const initBuild = (): BuildState => ({ persona: 'working', intro: '', round: 0, theme: '', questions: [], answers: [], cvText: '' })
 
 // The intro needs a bit of substance before the AI has anything to shape into a
 // CV. Show the count so the requirement isn't a mystery behind a dead button.
@@ -40,7 +41,7 @@ const MIN_INTRO = 50
 interface BuildCtx extends WizCtx {
   /** Gather: send the intro (start) or a round's answers (continue); get the
    *  next questions or `enough`. */
-  next: (body: { persona: Persona; intro: string; answers?: string[] }) => Promise<{ enough: boolean; questions: string[]; round: number }>
+  next: (body: { persona: Persona; intro: string; answers?: string[] }) => Promise<{ enough: boolean; theme: string; questions: string[]; round: number }>
   /** Finalize: extract the profile from the gathered intake and save it. Pass the
    *  current answers to record them first (used on skip). */
   finalize: (answers?: string[]) => Promise<void>
@@ -122,9 +123,9 @@ const talk: Step<BuildState, BuildCtx> = {
           const r = await ctx.next({ persona: s.persona, intro: s.intro })
           if (r.enough || !r.questions.length) {
             await ctx.finalize()
-            return { questions: [], answers: [], round: r.round }
+            return { theme: '', questions: [], answers: [], round: r.round }
           }
-          return { questions: r.questions, answers: r.questions.map(() => ''), round: r.round }
+          return { theme: r.theme, questions: r.questions, answers: r.questions.map(() => ''), round: r.round }
         },
         (n) => (n.questions.length ? 'probe' : 'answers'),
       )
@@ -182,15 +183,15 @@ const probe: Step<BuildState, BuildCtx> = {
           const r = await ctx.next({ persona: s.persona, intro: s.intro, answers: s.answers })
           if (r.enough || !r.questions.length) {
             await ctx.finalize()
-            return { questions: [], answers: [], round: r.round }
+            return { theme: '', questions: [], answers: [], round: r.round }
           }
-          return { questions: r.questions, answers: r.questions.map(() => ''), round: r.round }
+          return { theme: r.theme, questions: r.questions, answers: r.questions.map(() => ''), round: r.round }
         },
         (n) => (n.questions.length ? 'probe' : 'answers'),
       )
     const skip = () => void api.run(async () => ctx.finalize(s.answers), 'answers')
     return (
-      <StepFrame busy={api.busy} busyTitle={ctx.t.buildingTitle} lead={api.busy ? ctx.t.buildingLead : ctx.t.probeLead} title={ctx.t.probeTitle}>
+      <StepFrame busy={api.busy} busyTitle={ctx.t.buildingTitle} lead={api.busy ? ctx.t.buildingLead : ctx.t.probeLead} title={s.theme.trim() || ctx.t.probeTitle}>
         <div key={s.round} className="flex flex-col gap-3.5">
           {s.questions.map((q, i) => (
             <div key={i}>
@@ -286,6 +287,7 @@ export function BuildWizard({ onDone }: { onDone: () => void }) {
               persona: session.persona,
               intro: session.intro,
               round: session.rounds.length,
+              theme: cur.theme ?? '',
               questions: cur.questions,
               answers: cur.answers.length ? cur.answers.slice() : cur.questions.map(() => ''),
               cvText: '',
