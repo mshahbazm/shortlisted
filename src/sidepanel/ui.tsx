@@ -1023,3 +1023,40 @@ export function Segments<T extends string>({
     </div>
   )
 }
+
+/** Multi-select from a fixed set — tap a pill to add/remove it. The counterpart
+ *  to Select (one) and Segments (one, segmented) for the "pick any of these"
+ *  case. Wraps to as many rows as needed. */
+export function ToggleChips<T extends string>({
+  values,
+  options,
+  onChange,
+}: {
+  values: T[]
+  options: { value: T; label: string }[]
+  onChange: (next: T[]) => void
+}) {
+  const toggle = (v: T) => onChange(values.includes(v) ? values.filter((x) => x !== v) : [...values, v])
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((o) => {
+        const on = values.includes(o.value)
+        return (
+          <button
+            key={o.value}
+            type="button"
+            onClick={() => toggle(o.value)}
+            className={cn(
+              'cursor-pointer rounded-full border px-3 py-1.5 text-[13px] transition-colors',
+              on
+                ? 'border-accent bg-accent-soft font-semibold text-accent'
+                : 'border-line bg-bg text-fg hover:bg-hover',
+            )}
+          >
+            {o.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}

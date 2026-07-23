@@ -18,7 +18,7 @@ import { clearResumeWanted, type Persona } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
 import { cn } from '../../lib/cn'
 import * as store from '../../lib/store'
-import { WizCtx, answersStep, reviewStep, type OnbContent } from './steps'
+import { WizCtx, answersStep, reviewStep } from './steps'
 import { createUploadedResume, readCvPdf } from './cv'
 
 interface BuildState {

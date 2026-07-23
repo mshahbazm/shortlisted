@@ -5,12 +5,14 @@ import { cn } from '../../lib/cn'
 import { StorageShape, storageDefaults } from '../../lib/types'
 import { LOCALES, LOCALE_LABELS, isLocale, useContent } from '../../i18n'
 import {
+  CloudPlans,
   CloudUsage,
   CreditLedgerRow,
   UsageStatsRow,
   cloudBillingPortal,
   cloudCheckout,
   cloudCreditHistory,
+  cloudPlans,
   cloudUsage,
   cloudUsageStats,
   sendLoginCode,
@@ -22,6 +24,18 @@ import * as store from '../../lib/store'
 
 const LEDE = 'm-0 text-[12.5px] leading-normal text-muted'
 const LABEL = 'flex flex-col gap-[5px] text-[11.5px] font-semibold text-muted'
+
+// Prices come straight from the server catalogue (cents); cached for the panel's
+// lifetime so reopening Settings doesn't refetch. Formatting and the annual
+// saving are derived here — changing a price on the server is all it takes.
+let plansCache: CloudPlans | null = null
+
+const CURRENCY_SYMBOL: Record<string, string> = { usd: '$', eur: '€', gbp: '£' }
+const currencySym = (code: string) => CURRENCY_SYMBOL[code.toLowerCase()] ?? `${code.toUpperCase()} `
+const money = (cents: number, sym: string) => {
+  const major = cents / 100
+  return sym + (Number.isInteger(major) ? String(major) : major.toFixed(2))
+}
 
 export function SettingsTab({ onClose }: { onClose: () => void }) {
   const t = useContent('settings')
@@ -284,6 +298,9 @@ function AccountPanel() {
   const t = useContent('settings')
   const [settings, saveSettings] = useStore('settings')
   const [usage, setUsage] = useState<CloudUsage | null>(null)
+  const [plans, setPlans] = useState<CloudPlans | null>(plansCache)
+  // Billing period is only a discount toggle — default to annual (the better deal).
+  const [billInterval, setBillInterval] = useState<'monthly' | 'annual'>('annual')
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
   const [codeSent, setCodeSent] = useState(false)
@@ -319,6 +336,18 @@ function AccountPanel() {
 
   useEffect(() => {
     if (signedIn) void refresh()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signedIn])
+
+  // Load Pro prices once per panel; failure just leaves the cards without figures.
+  useEffect(() => {
+    if (!signedIn || plansCache) return
+    cloudPlans(settings)
+      .then((p) => {
+        plansCache = p
+        setPlans(p)
+      })
+      .catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signedIn])
 
@@ -365,6 +394,34 @@ function AccountPanel() {
 
   const left = usage ? Math.max(0, usage.creditsLimit - usage.creditsUsed) : 0
   const pct = usage && usage.creditsLimit > 0 ? (left / usage.creditsLimit) * 100 : 0
+
+  // Pricing view-model — the annual plan shown as its per-month equivalent so the
+  // saving reads at a glance, plus the yearly total and the % off vs monthly.
+  const sym = plans ? currencySym(plans.currency) : '$'
+  const monthlyPrice = plans && money(plans.monthly.amount, sym)
+  const annualPerMo = plans && money(Math.round(plans.annual.amount / 12), sym)
+  const annualTotal = plans && money(plans.annual.amount, sym)
+  const savePct = plans ? Math.round((1 - plans.annual.amount / 12 / plans.monthly.amount) * 100) : 0
+  const annual = billInterval === 'annual'
+  const selectedPerMo = annual ? annualPerMo : monthlyPrice
+  const selectedNote = annual ? (annualTotal ? t.proAnnualBilled(annualTotal) : '') : t.proMonthlyBilled
+
+  // Free vs Pro — the real decision. Numbers come from the server; ✓/– are copy.
+  const featureRows: { label: string; free: string | boolean; pro: string | boolean }[] = [
+    { label: t.featCredits, free: plans ? String(plans.credits.free) : '–', pro: plans ? String(plans.credits.pro) : '–' },
+    { label: t.featProfile, free: true, pro: true },
+    { label: t.featNoWatermark, free: false, pro: true },
+    { label: t.featAiTwin, free: false, pro: true },
+    { label: t.featLeads, free: false, pro: true },
+  ]
+  const cell = (v: string | boolean, pro: boolean) =>
+    typeof v === 'string' ? (
+      <b className="font-bold text-fg">{v}</b>
+    ) : v ? (
+      <span className={pro ? 'text-accent' : 'text-fg'}>✓</span>
+    ) : (
+      <span className="text-faint">–</span>
+    )
 
   return (
     <Card pad="md" className="gap-3">
@@ -415,13 +472,57 @@ function AccountPanel() {
           )}
 
           {usage && usage.plan !== 'pro' && (
-            <div className="flex flex-col gap-2">
-              <div className="text-[12.5px] font-semibold">{t.goPro}</div>
-              <Button wide disabled={billBusy} onClick={() => openBilling(() => cloudCheckout(settings, 'monthly'))}>
-                {t.proMonthly}
-              </Button>
-              <Button variant="ghost" wide disabled={billBusy} onClick={() => openBilling(() => cloudCheckout(settings, 'annual'))}>
-                {t.proAnnual}
+            <div className="flex flex-col gap-3">
+              <p className="m-0 text-[12px] leading-[1.5] text-muted">{t.proTagline}</p>
+
+              {/* Free vs Pro is the real choice; the period toggle below is the discount. */}
+              <div className="overflow-hidden rounded-xl border border-line">
+                <div className="grid grid-cols-[1fr_44px_50px] items-center bg-hover">
+                  <div className="px-3 py-2 text-[10.5px] font-[650] uppercase tracking-wide text-muted">{t.planCompare}</div>
+                  <div className="py-2 text-center text-[11px] font-semibold text-muted">{t.planFree}</div>
+                  <div className="bg-accent-soft py-2 text-center text-[11px] font-bold text-accent">{t.planPro}</div>
+                </div>
+                <div className="divide-y divide-line">
+                  {featureRows.map((r, i) => (
+                    <div key={i} className="grid grid-cols-[1fr_44px_50px] items-center">
+                      <div className="px-3 py-[9px] text-[12px] leading-tight text-fg">{r.label}</div>
+                      <div className="py-[9px] text-center text-[12px]">{cell(r.free, false)}</div>
+                      <div className="h-full bg-accent-soft py-[9px] text-center text-[12px]">{cell(r.pro, true)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Billing period — a discount toggle, not a separate plan. */}
+              <div className="grid grid-cols-2 gap-1 rounded-lg bg-hover p-1">
+                {(['monthly', 'annual'] as const).map((iv) => (
+                  <button
+                    key={iv}
+                    type="button"
+                    onClick={() => setBillInterval(iv)}
+                    className={cn(
+                      'flex cursor-pointer items-center justify-center gap-1.5 rounded-md py-1.5 text-[12px] font-semibold transition',
+                      billInterval === iv ? 'bg-bg text-fg shadow-sm' : 'text-muted hover:text-fg',
+                    )}
+                  >
+                    {iv === 'monthly' ? t.planMonthlyName : t.planAnnualName}
+                    {iv === 'annual' && savePct > 0 && (
+                      <span className="rounded-full bg-accent px-1.5 py-[1px] text-[9px] font-bold text-white">{t.proSave(savePct)}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="flex min-h-[29px] items-baseline gap-0.5">
+                  {selectedPerMo && <b className="text-[24px] font-bold text-fg">{selectedPerMo}</b>}
+                  <span className="text-[13px] text-muted">{t.proPerMo}</span>
+                </span>
+                <span className="text-[11px] text-muted">{selectedNote}</span>
+              </div>
+
+              <Button wide disabled={billBusy} onClick={() => openBilling(() => cloudCheckout(settings, billInterval))}>
+                {t.upgradeCta}
               </Button>
               <div className="-mt-0.5 text-center text-[11.5px] leading-[1.45] text-faint">{t.proFoot}</div>
             </div>

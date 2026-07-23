@@ -11,7 +11,7 @@ import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { cn } from '../../lib/cn'
 import { KV } from '../components'
-import { Bar, Body, Button, Card, Chip, ChipInput, Composer, Cost, Count, Icon, IconButton, Input, Label, ListEditor, RemoveButton, Row, ScreenHead, Segments, Select, Sheet, Textarea, TopBar, useStack } from '../ui'
+import { Bar, BigChoice, Body, Button, Card, Chip, ChipInput, Composer, Cost, Count, Icon, IconButton, Input, Label, ListEditor, RemoveButton, Row, ScreenHead, Segments, Select, Sheet, Textarea, TopBar, useStack } from '../ui'
 import { QuestionsTab } from './QuestionsTab'
 import {
   EducationEntry,
@@ -25,7 +25,7 @@ import {
   ymString,
   workPeriodLabel,
 } from '../../lib/types'
-import { cloudParseResumePdf, cloudProfileNote, runExtractProfile } from '../../ai/run'
+import { cloudImportResume, cloudProfileNote } from '../../ai/run'
 import * as store from '../../lib/store'
 import { Gap, GapKey, profileStrength } from '../../lib/profileStrength'
 import { mergeEnrichment, needsCompletion } from '../../lib/profileMerge'
@@ -45,6 +45,10 @@ export function ProfileTab({
   const [seg, setSeg] = useState<'profile' | 'bank' | 'pending'>('profile')
   /** Band to scroll back to once we're on the root screen again. */
   const [restore, setRestore] = useState('')
+  /** Re-import flow: chosen door, and the parsed/merged profile awaiting the
+   *  user's confirm on the review screen (nothing is saved until they accept). */
+  const [importMode, setImportMode] = useState<'replace' | 'merge'>('merge')
+  const [importResult, setImportResult] = useState<Profile | null>(null)
   const [profile, saveProfileRaw, loaded] = useStore('profile')
   const [settings] = useStore('settings')
   const [bank] = useStore('answerBank')
@@ -277,11 +281,17 @@ export function ProfileTab({
 
   if (nav.screen === 'facts') {
     const setFacts = (k: keyof typeof p.facts, v: string) => set({ facts: { ...p.facts, [k]: v } })
+    // Numeric facts: empty clears to undefined; non-numeric input is ignored.
+    const setNumFact = (k: keyof typeof p.facts, raw: string) => {
+      const n = raw.trim() === '' ? undefined : Number(raw)
+      set({ facts: { ...p.facts, [k]: n === undefined || Number.isNaN(n) ? undefined : n } })
+    }
     return (
-      <Pushed title={t.standardAnswersTitle} nav={nav} t={t} right={t.answeredOf(factsFilled, 9)}>
+      <Pushed title={t.standardAnswersTitle} nav={nav} t={t} right={t.answeredOf(factsFilled, 10)}>
         <p className="m-0 text-[12.5px] leading-normal text-muted">{t.standardAnswersHint}</p>
-        <KV k={t.salaryExpectation} v={p.facts.salaryExpectation ?? ''} onChange={(v) => setFacts('salaryExpectation', v)} />
-        <KV k={t.noticePeriod} v={p.facts.noticePeriod ?? ''} placeholder={t.noticePlaceholder} onChange={(v) => setFacts('noticePeriod', v)} />
+        <KV k={t.salaryHourly} numeric v={String(p.facts.salaryHourly ?? '')} onChange={(v) => setNumFact('salaryHourly', v)} />
+        <KV k={t.salaryMonthly} numeric v={String(p.facts.salaryMonthly ?? '')} onChange={(v) => setNumFact('salaryMonthly', v)} />
+        <KV k={t.noticeDays} numeric v={String(p.facts.noticeDays ?? '')} placeholder={t.noticeDaysHint} onChange={(v) => setNumFact('noticeDays', v)} />
         <KV k={t.yearsOfExperience} v={p.facts.yearsOfExperience ?? ''} placeholder={t.yearsPlaceholder} onChange={(v) => setFacts('yearsOfExperience', v)} />
         <KV k={t.timezone} v={p.facts.timezone ?? ''} placeholder={t.timezonePlaceholder} onChange={(v) => setFacts('timezone', v)} />
         <KV k={t.visaSponsorship} v={p.facts.needsSponsorship ?? ''} placeholder={t.visaPlaceholder} onChange={(v) => setFacts('needsSponsorship', v)} />
@@ -293,22 +303,82 @@ export function ProfileTab({
     )
   }
 
+  // Re-import, step 1 — the two doors. Replace uses the CV as the whole profile;
+  // Learn-more merges it in without losing anything.
   if (nav.screen === 'reimport') {
     return (
       <Pushed title={t.reimportTitle} nav={nav} t={t}>
-        <p className="m-0 text-[12.5px] leading-normal text-muted">{t.reimportBody}</p>
+        <p className="m-0 text-[12.5px] leading-normal text-muted">{t.reimportChooseBody}</p>
+        <div className="flex flex-col gap-2.5">
+          <BigChoice
+            title={t.reimportMergeTitle}
+            sub={t.reimportMergeSub}
+            right={<Cost>{t.oneCredit}</Cost>}
+            onClick={() => { setImportMode('merge'); nav.push('reimport-upload') }}
+          />
+          <BigChoice
+            title={t.reimportReplaceTitle}
+            sub={t.reimportReplaceSub}
+            right={<Cost>{t.oneCredit}</Cost>}
+            onClick={() => { setImportMode('replace'); nav.push('reimport-upload') }}
+          />
+        </div>
+      </Pushed>
+    )
+  }
+
+  // Step 2 — upload/paste. On success we stash the result and go to review;
+  // nothing is saved yet.
+  if (nav.screen === 'reimport-upload') {
+    return (
+      <Pushed title={importMode === 'merge' ? t.reimportMergeTitle : t.reimportReplaceTitle} nav={nav} t={t}>
         <ImportBox
+          submitLabel={importMode === 'merge' ? t.reimportMergeButton : t.rebuildProfile}
           cloudPdf={async (file) => {
-            const { profile: extracted } = await cloudParseResumePdf(settings, await file.arrayBuffer())
-            save({ ...p, ...extracted, facts: p.facts }) // keep onboarding etc.
-            nav.back()
+            const { profile: result } = await cloudImportResume(settings, { mode: importMode, pdf: await file.arrayBuffer() })
+            setImportResult(result)
+            nav.push('reimport-review')
           }}
           onImport={async (text) => {
-            const extracted = await runExtractProfile(settings, text)
-            save({ ...p, ...extracted, facts: p.facts }) // keep onboarding etc.
-            nav.back()
+            const { profile: result } = await cloudImportResume(settings, { mode: importMode, cvText: text })
+            setImportResult(result)
+            nav.push('reimport-review')
           }}
         />
+      </Pushed>
+    )
+  }
+
+  // Step 3 — review before anything overwrites the profile. Identity is editable
+  // (fix a misparse here); Save applies, Cancel discards and the profile is
+  // untouched.
+  if (nav.screen === 'reimport-review') {
+    const r = importResult
+    if (!r) return <Pushed title={t.reimportReviewTitle} nav={nav} t={t}><div className="px-3 py-[26px] text-center text-[13px] text-faint">{t.nothingYet}</div></Pushed>
+    const setId = (k: keyof Profile['identity'], v: string) => setImportResult({ ...r, identity: { ...r.identity, [k]: v } })
+    const done = () => { setImportResult(null); nav.reset() }
+    return (
+      <Pushed title={t.reimportReviewTitle} nav={nav} t={t}>
+        <p className="m-0 text-[12.5px] leading-normal text-muted">{t.reimportReviewBody(r.work.length, skillNames(r).length)}</p>
+        {r.work.length > 0 && (
+          <div className="flex flex-col gap-1 rounded-card border border-line bg-bg p-2.5">
+            {r.work.map((w) => (
+              <div key={w.id} className="truncate text-[12.5px]">
+                <span className="font-medium">{w.title || t.untitled}</span>
+                {w.company && <span className="text-muted"> · {w.company}</span>}
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex gap-2.5 [&>*]:flex-1">
+          <Label>{t.firstName}<Input type="text" value={r.identity.firstName ?? ''} onChange={(e) => setId('firstName', e.target.value)} /></Label>
+          <Label>{t.lastName}<Input type="text" value={r.identity.lastName ?? ''} onChange={(e) => setId('lastName', e.target.value)} /></Label>
+        </div>
+        <Label>{t.email}<Input type="text" value={r.identity.email ?? ''} onChange={(e) => setId('email', e.target.value)} /></Label>
+        <div className="mt-2 flex flex-col gap-2">
+          <Button wide onClick={() => { save({ ...p, ...r, facts: p.facts }); done() }}>{t.reimportConfirm}</Button>
+          <Button variant="ghost" wide onClick={done}>{t.cancel}</Button>
+        </div>
       </Pushed>
     )
   }
@@ -379,7 +449,7 @@ export function ProfileTab({
               title={t.standardAnswersTitle}
               sub={t.standardAnswersSub}
               warn={factsFilled < 5}
-              right={<Count warn={factsFilled < 5}>{t.answeredOf(factsFilled, 9)}</Count>}
+              right={<Count warn={factsFilled < 5}>{t.answeredOf(factsFilled, 10)}</Count>}
               onClick={() => nav.push('facts')}
             />
           </div>
@@ -519,7 +589,7 @@ export function ProfileTab({
             <Icon name="up" /> {t.reimportTitle}
           </Button>
           <div className="flex items-center gap-[7px] text-[11.5px] text-faint">
-            <Cost>{t.oneCredit}</Cost> {t.reimportReplaces}
+            <Cost>{t.oneCredit}</Cost>
           </div>
         </Card>
           </>
@@ -889,10 +959,13 @@ function gapTarget(gap: Gap, p: Profile): string {
 function ImportBox({
   onImport,
   cloudPdf,
+  submitLabel,
 }: {
   onImport: (text: string) => Promise<void>
   // The server deep-reads the PDF (incl. OCR) and returns the profile.
   cloudPdf: (file: File) => Promise<void>
+  /** Submit-button label — mode-specific (replace vs. merge). */
+  submitLabel: string
 }) {
   const t = useContent('profile')
   const [text, setText] = useState('')
@@ -904,6 +977,7 @@ function ImportBox({
     <>
       <Button variant="ghost" wide disabled={busy} onClick={() => fileRef.current?.click()}>
         <Icon name="up" /> {busy ? t.readingPdf : t.uploadPdf}
+        {!busy && <Cost>{t.oneCredit}</Cost>}
       </Button>
       <input
         ref={fileRef} type="file" accept="application/pdf" className="hidden"
@@ -938,7 +1012,7 @@ function ImportBox({
           }
         }}
       >
-        {busy ? t.reading : t.rebuildProfile}
+        {busy ? t.reading : submitLabel}
         {!busy && <Cost onDark>{t.oneCredit}</Cost>}
       </Button>
       {err && <p className="my-1 text-[13px] text-bad">{err}</p>}

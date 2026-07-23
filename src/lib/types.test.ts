@@ -9,7 +9,7 @@
 // Run: bun test
 
 import { expect, test, describe } from 'bun:test'
-import { emptyProfile, hasProfileContent, markResumeHelpDone, normalizeProfile, normalizeSettings, resumeHelpDone } from './types'
+import { clearResumeWanted, emptyProfile, hasProfileContent, markResumeWanted, normalizeProfile, normalizeSettings, resumeHelpWanted } from './types'
 
 describe('normalizeSettings', () => {
   test('keeps auth fields — a migration must never sign the user out', () => {
@@ -81,24 +81,28 @@ describe('hasProfileContent', () => {
   })
 })
 
-describe('resume-help flag (the Home CTA gate)', () => {
-  test('a fresh profile has NOT done the builder — content alone does not count', () => {
-    expect(resumeHelpDone(emptyProfile())).toBe(false)
-    // Having a name/headline is NOT "done" — only going through the wizard is.
-    expect(resumeHelpDone({ ...emptyProfile(), headline: 'Engineer' })).toBe(false)
+describe('resume-help-wanted flag (the builder gate)', () => {
+  test('unset by default — legacy/has-CV accounts want no help, so the profile shows', () => {
+    expect(resumeHelpWanted(emptyProfile())).toBe(false)
+    // Content is irrelevant to the flag: it is set explicitly at sign-in, not derived.
+    expect(resumeHelpWanted({ ...emptyProfile(), headline: 'Engineer' })).toBe(false)
   })
 
-  test('markResumeHelpDone sets the flag and preserves the rest', () => {
+  test('markResumeWanted sets the flag and preserves the rest', () => {
     const p = { ...emptyProfile(), headline: 'Engineer', sources: { noCvIntro: { text: 'hi', at: 1 } } }
-    const done = markResumeHelpDone(p)
-    expect(resumeHelpDone(done)).toBe(true)
-    expect(done.headline).toBe('Engineer')
-    expect(done.sources).toEqual({ noCvIntro: { text: 'hi', at: 1 } })
+    const wanted = markResumeWanted(p)
+    expect(resumeHelpWanted(wanted)).toBe(true)
+    expect(wanted.headline).toBe('Engineer')
+    expect(wanted.sources).toEqual({ noCvIntro: { text: 'hi', at: 1 } })
+  })
+
+  test('clearResumeWanted turns it back off (help delivered)', () => {
+    expect(resumeHelpWanted(clearResumeWanted(markResumeWanted(emptyProfile())))).toBe(false)
   })
 
   test('is idempotent and survives normalizeProfile (syncs in the profile jsonb)', () => {
-    const done = markResumeHelpDone(emptyProfile())
-    expect(resumeHelpDone(markResumeHelpDone(done))).toBe(true)
-    expect(resumeHelpDone(normalizeProfile(done))).toBe(true)
+    const wanted = markResumeWanted(emptyProfile())
+    expect(resumeHelpWanted(markResumeWanted(wanted))).toBe(true)
+    expect(resumeHelpWanted(normalizeProfile(wanted))).toBe(true)
   })
 })

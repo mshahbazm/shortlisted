@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { cn } from '../lib/cn'
+import { useContent } from '../i18n'
 import { FIELD, Input, Textarea } from './ui'
 
 // Notion-style key/value row: reads as text, click to edit in place.
 export function KV({
   k,
   v,
-  placeholder = 'Empty',
+  placeholder,
   multiline = false,
+  numeric = false,
   url = false,
   invalidHint,
   onChange,
@@ -16,6 +18,9 @@ export function KV({
   v: string
   placeholder?: string
   multiline?: boolean
+  /** Numeric field — renders a number input. `v`/`onChange` stay strings; the
+   *  caller parses (facts store numbers). */
+  numeric?: boolean
   /** Validate as a URL on commit; a bare domain gets https:// prepended. */
   url?: boolean
   /** Shown under the field when a url commit fails validation. */
@@ -25,6 +30,8 @@ export function KV({
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(v)
   const [invalid, setInvalid] = useState(false)
+  const cc = useContent()
+  const ph = placeholder ?? cc.empty
 
   const commit = () => {
     let next = draft.trim()
@@ -53,7 +60,7 @@ export function KV({
         onClick={() => { setDraft(v); setEditing(true) }}
       >
         <span className="w-[130px] shrink-0 text-[12.5px] text-muted">{k}</span>
-        <span className={cn('text-[13.5px] [overflow-wrap:anywhere]', !v && 'text-faint')}>{v || placeholder}</span>
+        <span className={cn('text-[13.5px] [overflow-wrap:anywhere]', !v && 'text-faint')}>{v || ph}</span>
       </div>
     )
   }
@@ -71,7 +78,9 @@ export function KV({
       ) : (
         <Input
           autoFocus
-          type="text"
+          type={numeric ? 'number' : 'text'}
+          inputMode={numeric ? 'numeric' : undefined}
+          min={numeric ? 0 : undefined}
           value={draft}
           onChange={(e) => { setDraft(e.target.value); setInvalid(false) }}
           onBlur={commit}

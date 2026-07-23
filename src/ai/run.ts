@@ -137,12 +137,17 @@ export async function cloudPdfText(
   return cloudCall(settings, '/v1/pdf-text', { pdfBase64: bytesToBase64(pdf) })
 }
 
-// Send the PDF itself so the server can OCR scanned resumes. Account required.
-export async function cloudParseResumePdf(
+// Re-import into an existing account: `replace` the profile with this resume, or
+// `merge` it into the current profile without losing anything (the server loads
+// the existing profile itself). Accepts a PDF (OCR fallback) or pasted text.
+export async function cloudImportResume(
   settings: Settings,
-  pdf: ArrayBuffer,
-): Promise<{ profile: Profile; method: 'text' | 'ocr'; quality: string }> {
-  return cloudCall(settings, '/v1/parse-resume', { pdfBase64: bytesToBase64(pdf) })
+  args: { mode: 'replace' | 'merge'; pdf?: ArrayBuffer; cvText?: string },
+): Promise<{ profile: Profile; method?: 'text' | 'ocr'; quality?: string }> {
+  const body: Record<string, unknown> = { mode: args.mode }
+  if (args.pdf) body.pdfBase64 = bytesToBase64(args.pdf)
+  if (args.cvText) body.cvText = args.cvText
+  return cloudCall(settings, '/v1/import-resume', body)
 }
 
 export interface CloudUsage {
@@ -158,6 +163,23 @@ export async function cloudUsage(settings: Settings): Promise<CloudUsage> {
 }
 
 // ---- billing (Stripe) ----
+
+/** Pro pricing (from the cloud catalogue). Amounts are in the smallest currency
+ *  unit (cents). Mirrors the cloud's `/v1/billing/plans` shape. */
+export interface CloudPlans {
+  currency: string
+  monthly: { amount: number; interval: 'month' }
+  annual: { amount: number; interval: 'year' }
+  /** Monthly credit allotment per plan — drives the Free-vs-Pro comparison. */
+  credits: { free: number; pro: number }
+}
+
+/** Current Pro prices (account-gated — the settings card shows only when signed
+ *  in). The UI formats these and derives the annual saving, so a price change on
+ *  the server flows through untouched. */
+export async function cloudPlans(settings: Settings): Promise<CloudPlans> {
+  return cloudCall<CloudPlans>(settings, '/v1/billing/plans', undefined, 'GET')
+}
 
 /** Start a Pro subscription: returns a Stripe Checkout URL to open in a tab. */
 export async function cloudCheckout(settings: Settings, interval: 'monthly' | 'annual'): Promise<{ url: string }> {
@@ -214,10 +236,14 @@ export async function sendLoginCode(settings: Settings, email: string): Promise<
   await cloudCall(settings, '/v1/auth/send-code', { email })
 }
 
-export async function verifyLoginCode(settings: Settings, email: string, otp: string): Promise<CloudUsage> {
+export async function verifyLoginCode(
+  settings: Settings,
+  email: string,
+  otp: string,
+): Promise<CloudUsage & { isNewAccount: boolean }> {
   // Verify returns the Better Auth SESSION token — the credential every later
-  // call sends as its bearer.
-  const res = await cloudCall<CloudUsage & { token: string }>(settings, '/v1/auth/verify', { email, otp })
+  // call sends as its bearer — plus whether this was the account's first sign-in.
+  const res = await cloudCall<CloudUsage & { token: string; isNewAccount?: boolean }>(settings, '/v1/auth/verify', { email, otp })
   const newEmail = res.email ?? email
   // No per-user bucketing: a device caches one account at a time. Wipe the
   // previous account's cached content whenever a DIFFERENT account signs in.
@@ -227,7 +253,7 @@ export async function verifyLoginCode(settings: Settings, email: string, otp: st
   const prev = await store.get('settings')
   if (prev.dataOwner && prev.dataOwner !== newEmail) await store.clearAccountData()
   await store.update('settings', (s) => ({ ...s, cloudToken: res.token, accountEmail: newEmail, dataOwner: newEmail }))
-  return res
+  return { ...res, isNewAccount: Boolean(res.isNewAccount) }
 }
 
 // ---- account data (server holds the source of truth; see background mirror) ----

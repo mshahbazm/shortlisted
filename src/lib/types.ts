@@ -81,9 +81,10 @@ export interface CertificationEntry {
 }
 
 export interface ProfileFacts {
-  salaryExpectation?: string
-  jobType?: string // what they're after, e.g. "Full-time" / "Internship"
-  noticePeriod?: string
+  salaryHourly?: number // desired hourly rate — a plain number (currency-agnostic)
+  salaryMonthly?: number // desired monthly rate — a plain number
+  jobType?: string // stable keys they're after, comma-joined, e.g. "full_time, contract"
+  noticeDays?: number // days until they can start; 0 = immediately
   timezone?: string
   englishLevel?: string
   needsSponsorship?: string // plain answer, e.g. "No"
@@ -131,14 +132,16 @@ export interface Profile {
   /**
    * Onboarding / guided-help progress. Rides in the profile jsonb so it syncs
    * (server is the source of truth). Each guided flow nests its own state under
-   * a named key; `resume` is the guided resume builder. `done` means the account
-   * has been through that flow — the Home "build your profile" CTA nudges until
-   * it is set. This is a durable FLAG, not a content heuristic: going through the
-   * wizard is what counts, not whether a stray field got filled. Room to grow
+   * a named key; `resume` is the guided resume builder. `wanted` means we should
+   * help this account build a profile — set at sign-in when the user picks "no
+   * CV" (or signs in on a brand-new account), cleared once the builder finishes.
+   * It is set explicitly at sign-in, NOT derived from content: an unset flag
+   * (false — the default, and every legacy/has-CV account) means "no help
+   * needed," so the Profile view is shown rather than the builder. Room to grow
    * (e.g. a `step`/`answers` for resume-where-you-left-off).
    */
   onboarding?: {
-    resume?: { done?: boolean }
+    resume?: { wanted?: boolean }
   }
 }
 
@@ -207,16 +210,22 @@ export function hasProfileContent(p: Profile): boolean {
   return Boolean(p.identity.firstName || p.headline || p.work.length || p.skills.length)
 }
 
-/** Has this account been through the guided resume builder? A durable flag (see
- *  Profile.onboarding), set when the builder or the has-CV import completes — the
- *  Home "build your profile" CTA shows until it is true. */
-export function resumeHelpDone(p: Profile): boolean {
-  return Boolean(p.onboarding?.resume?.done)
+/** Should we offer this account the guided resume builder? A durable flag (see
+ *  Profile.onboarding), set at sign-in for the "no CV" door and brand-new logins,
+ *  cleared once the builder finishes. Drives the Profile-tab redirect and the
+ *  Home "build your profile" CTA. Default false → the profile is shown as-is. */
+export function resumeHelpWanted(p: Profile): boolean {
+  return Boolean(p.onboarding?.resume?.wanted)
 }
 
-/** Record that the guided resume builder finished — preserves everything else. */
-export function markResumeHelpDone(p: Profile): Profile {
-  return { ...p, onboarding: { ...p.onboarding, resume: { ...p.onboarding?.resume, done: true } } }
+/** Mark that this account wants the guided builder — preserves everything else. */
+export function markResumeWanted(p: Profile): Profile {
+  return { ...p, onboarding: { ...p.onboarding, resume: { ...p.onboarding?.resume, wanted: true } } }
+}
+
+/** Clear the guided-builder flag (help delivered) — preserves everything else. */
+export function clearResumeWanted(p: Profile): Profile {
+  return { ...p, onboarding: { ...p.onboarding, resume: { ...p.onboarding?.resume, wanted: false } } }
 }
 
 // ── No-CV guided builder ("intake") ─────────────────────────────────────────

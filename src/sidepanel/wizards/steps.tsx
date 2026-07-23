@@ -3,12 +3,24 @@
 // now; Phase 2 will lift it here to also replace SettingsTab's duplicate auth.)
 
 import { useContent } from '../../i18n'
-import { Button, Input, Label } from '../ui'
+import { Button, Input, Label, ToggleChips } from '../ui'
 import { StepFrame, Actions, type BaseCtx, type Step } from '../wizard'
 import { useStore } from '../hooks'
 import { Profile } from '../../lib/types'
 
 export type OnbContent = ReturnType<typeof useContent<'onboarding'>>
+
+// The job types offered on the "quick basics" step: a STABLE key (what we store,
+// comma-joined) plus its i18n label key (what we show). Storing the stable key —
+// not the localized label — means the selection survives a language switch.
+const JOB_TYPES = [
+  { value: 'full_time', key: 'jobTypeFullTime' },
+  { value: 'part_time', key: 'jobTypePartTime' },
+  { value: 'contract', key: 'jobTypeContract' },
+  { value: 'internship', key: 'jobTypeInternship' },
+  { value: 'freelance', key: 'jobTypeFreelance' },
+  { value: 'any', key: 'jobTypeOpenToAny' },
+] as const
 
 /** The context every onboarding wizard provides: the i18n bundle and a `finish`
  *  that ends the wizard (the App router then decides where the user lands). */
@@ -31,19 +43,21 @@ export function reviewStep<S>(next: string): Step<S, WizCtx> {
         saveProfile({ ...profile, identity: { ...profile.identity, [k]: v } })
       return (
         <StepFrame title={t.reviewTitle} lead={t.reviewLead(profile.work.length, profile.skills.length)}>
-          <div className="flex gap-2.5 [&>*]:flex-1">
-            <Label className="mb-2.5">{t.firstName}
-              <Input type="text" value={profile.identity.firstName} onChange={(e) => setIdentity('firstName', e.target.value)} /></Label>
-            <Label className="mb-2.5">{t.lastName}
-              <Input type="text" value={profile.identity.lastName} onChange={(e) => setIdentity('lastName', e.target.value)} /></Label>
-          </div>
-          <Label className="mb-2.5">{t.email}
-            <Input type="text" value={profile.identity.email} onChange={(e) => setIdentity('email', e.target.value)} /></Label>
-          <div className="flex gap-2.5 [&>*]:flex-1">
-            <Label className="mb-2.5">{t.phone}
-              <Input type="text" value={profile.identity.phone} onChange={(e) => setIdentity('phone', e.target.value)} /></Label>
-            <Label className="mb-2.5">{t.location}
-              <Input type="text" value={profile.identity.location} onChange={(e) => setIdentity('location', e.target.value)} /></Label>
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-2.5 [&>*]:flex-1">
+              <Label>{t.firstName}
+                <Input type="text" value={profile.identity.firstName} onChange={(e) => setIdentity('firstName', e.target.value)} /></Label>
+              <Label>{t.lastName}
+                <Input type="text" value={profile.identity.lastName} onChange={(e) => setIdentity('lastName', e.target.value)} /></Label>
+            </div>
+            <Label>{t.email}
+              <Input type="text" value={profile.identity.email} onChange={(e) => setIdentity('email', e.target.value)} /></Label>
+            <div className="flex gap-2.5 [&>*]:flex-1">
+              <Label>{t.phone}
+                <Input type="text" value={profile.identity.phone} onChange={(e) => setIdentity('phone', e.target.value)} /></Label>
+              <Label>{t.location}
+                <Input type="text" value={profile.identity.location} onChange={(e) => setIdentity('location', e.target.value)} /></Label>
+            </div>
           </div>
           <Actions>
             <Button onClick={() => api.next()}>{t.looksRight}</Button>
@@ -62,22 +76,34 @@ export function answersStep<S>(): Step<S, WizCtx> {
     view: ({ ctx }) => {
       const [profile, saveProfile] = useStore('profile')
       const t = ctx.t
-      const setFact = (k: keyof Profile['facts'], v: string) =>
+      const setFact = (k: keyof Profile['facts'], v: string | number | undefined) =>
         saveProfile({ ...profile, facts: { ...profile.facts, [k]: v } })
+      // Numeric facts: empty clears to undefined; anything non-numeric is ignored.
+      const setNum = (k: keyof Profile['facts'], raw: string) => {
+        const n = raw === '' ? undefined : Number(raw)
+        setFact(k, n === undefined || Number.isNaN(n) ? undefined : n)
+      }
+      const jobTypeOptions = JOB_TYPES.map((j) => ({ value: j.value, label: t[j.key] }))
+      const jobTypes = (profile.facts.jobType ?? '').split(',').map((s) => s.trim()).filter(Boolean)
       return (
         <StepFrame title={t.answersTitle} lead={t.answersLead}>
-          <Label className="mb-2.5">{t.jobTypeLabel}
-            <Input type="text" placeholder={t.jobTypePlaceholder} value={profile.facts.jobType ?? ''}
-              onChange={(e) => setFact('jobType', e.target.value)} autoFocus /></Label>
-          <Label className="mb-2.5">{t.salaryLabel}
-            <Input type="text" placeholder={t.salaryPlaceholder} value={profile.facts.salaryExpectation ?? ''}
-              onChange={(e) => setFact('salaryExpectation', e.target.value)} /></Label>
-          <Label className="mb-2.5">{t.noticeLabel}
-            <Input type="text" placeholder={t.noticePlaceholder} value={profile.facts.noticePeriod ?? ''}
-              onChange={(e) => setFact('noticePeriod', e.target.value)} /></Label>
-          <Label className="mb-2.5">{t.sponsorshipLabel}
-            <Input type="text" placeholder={t.sponsorshipPlaceholder} value={profile.facts.needsSponsorship ?? ''}
-              onChange={(e) => setFact('needsSponsorship', e.target.value)} /></Label>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-[5px]">
+              <span className="text-[11.5px] font-semibold text-muted">{t.jobTypeLabel}</span>
+              <ToggleChips values={jobTypes} options={jobTypeOptions} onChange={(next) => setFact('jobType', next.join(', '))} />
+            </div>
+            <div className="flex gap-2.5 [&>*]:flex-1">
+              <Label>{t.salaryHourlyLabel}
+                <Input type="number" inputMode="numeric" min={0} placeholder={t.salaryHourlyPlaceholder}
+                  value={profile.facts.salaryHourly ?? ''} onChange={(e) => setNum('salaryHourly', e.target.value)} /></Label>
+              <Label>{t.salaryMonthlyLabel}
+                <Input type="number" inputMode="numeric" min={0} placeholder={t.salaryMonthlyPlaceholder}
+                  value={profile.facts.salaryMonthly ?? ''} onChange={(e) => setNum('salaryMonthly', e.target.value)} /></Label>
+            </div>
+            <Label>{t.noticeDaysLabel}
+              <Input type="number" inputMode="numeric" min={0} placeholder={t.noticeDaysHint}
+                value={profile.facts.noticeDays ?? ''} onChange={(e) => setNum('noticeDays', e.target.value)} /></Label>
+          </div>
           <Actions>
             <Button onClick={ctx.finish}>{t.continue}</Button>
             <Button variant="link" onClick={ctx.finish}>{t.skip}</Button>

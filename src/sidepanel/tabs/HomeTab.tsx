@@ -12,7 +12,7 @@ import { cn } from '../../lib/cn'
 import { Body, Button, Card, Chip, Composer, Cost, FIELD, Feature, Icon, IconButton, Pill, Row, ScreenHead, Textarea, TopBar, useStack } from '../ui'
 import { PageContext, sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
-import { ApplicationRecord, base64ToBytes, resumeHelpDone, uid } from '../../lib/types'
+import { ApplicationRecord, base64ToBytes, resumeHelpWanted, uid } from '../../lib/types'
 import { cloudProfileNote, cloudUsage, runScoreFit, ScoreFitResult } from '../../ai/run'
 import { mergeEnrichment } from '../../lib/profileMerge'
 import { showToast } from '../toast'
@@ -260,11 +260,12 @@ export function HomeTab({
         }
       />
       <Body screen={nav.screen}>
-        {/* Hasn't been through the resume builder yet — the one thing that
+        {/* This account asked for help building a profile (the "no CV" door or
+            a brand-new sign-in) and hasn't finished yet — the one thing that
             unlocks everything else. A whole CTA up top, like the "fill this
-            page" one, that opens the builder. Gated by a durable flag (they
-            went through the wizard), not by whether a stray field is filled. */}
-        {!resumeHelpDone(profile) && (
+            page" one, that opens the builder. Gated by the explicit help flag
+            (set at sign-in), not by whether a stray field is filled. */}
+        {resumeHelpWanted(profile) && (
           <div className="flex w-full flex-col gap-[3px] rounded-xl border border-line bg-gradient-to-b from-[#faf9ff] to-bg p-3.5">
             <span className="text-base leading-[1.25] font-[650] tracking-[-0.01em]">{t.buildProfileTitle}</span>
             <span className="mb-3 text-[12.5px] leading-normal text-muted">{t.buildProfileSub}</span>
@@ -317,9 +318,9 @@ export function HomeTab({
           <Icon name="chev" />
         </button>
 
-        {/* Nothing to add to yet before the profile exists — the build CTA above
+        {/* While the account still wants the guided builder, the build CTA above
             is the only relevant action, so the "Update Profile" composer hides. */}
-        {resumeHelpDone(profile) && <TellMeComposer t={t} />}
+        {!resumeHelpWanted(profile) && <TellMeComposer t={t} />}
 
         {apps.length > 0 && (
           /* `apart` — a different subject from the composer above it, so it gets

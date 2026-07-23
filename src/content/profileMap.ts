@@ -8,6 +8,9 @@ interface Rule {
   value: (p: Profile) => string | undefined
 }
 
+// Facts store numbers now; forms want plain strings.
+const numStr = (n?: number): string | undefined => (n == null ? undefined : String(n))
+
 const RULES: Rule[] = [
   { test: /first\s*name|given\s*name/i, value: (p) => p.identity.firstName },
   { test: /last\s*name|family\s*name|surname/i, value: (p) => p.identity.lastName },
@@ -27,11 +30,15 @@ const RULES: Rule[] = [
   { test: /pronoun/i, value: (p) => p.identity.pronouns },
   { test: /current\s*(title|role|position)|job\s*title/i, value: (p) => p.headline },
   { test: /current\s*(company|employer)/i, value: (p) => p.work[0]?.company },
+  { test: /hour(ly)?\s*(rate|pay|wage)?|per\s*hour|\/\s*h(r|our)?\b/i, value: (p) => numStr(p.facts.salaryHourly) },
   {
-    test: /salary|compensation|rate\s*expectation|expected\s*(pay|ctc)|desired\s*(pay|salary)/i,
-    value: (p) => p.facts.salaryExpectation,
+    test: /salary|compensation|rate\s*expectation|expected\s*(pay|ctc)|desired\s*(pay|salary)|monthly\s*(rate|pay)/i,
+    value: (p) => numStr(p.facts.salaryMonthly ?? p.facts.salaryHourly),
   },
-  { test: /notice\s*period|how\s*soon|earliest.*start|start\s*date|available|availability/i, value: (p) => p.facts.noticePeriod },
+  {
+    test: /notice\s*period|how\s*soon|earliest.*start|start\s*date|available|availability/i,
+    value: (p) => (p.facts.noticeDays == null ? undefined : p.facts.noticeDays === 0 ? 'Immediately' : `${p.facts.noticeDays} days`),
+  },
   { test: /time\s*zone/i, value: (p) => p.facts.timezone },
   {
     test: /years?\s*(of)?\s*experience|how\s*long.*(working|experience)/i,
