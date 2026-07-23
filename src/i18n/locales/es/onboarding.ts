@@ -8,6 +8,8 @@ export const onboarding: tLocale['onboarding'] = {
   buildStartingSub: 'Estudiando, o buscando mi primer empleo.',
   buildWorkingTitle: 'Ya he trabajado',
   buildWorkingSub: 'Solo que nunca necesité un CV.',
+  buildHaveResumeTitle: 'Ya tengo un currículum',
+  buildHaveResumeSub: 'Súbelo y lo convertimos en tu perfil.',
   buildCv: 'Crear mi CV',
   probeNext: 'Siguiente',
   probeTitle: 'Un par de preguntas rápidas.',

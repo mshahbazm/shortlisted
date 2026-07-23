@@ -17,6 +17,43 @@ export interface WizCtx extends BaseCtx {
   finish: () => void
 }
 
+/** "Does this look right?" — shown after a CV is parsed (both the has-CV Entry
+ *  door and the have-a-resume Build door). Reads/writes the parsed identity in
+ *  the store directly (like answersStep), so it needs nothing from the wizard's
+ *  ctx beyond `t`. Advances to `next` via the button. Generic in wizard state. */
+export function reviewStep<S>(next: string): Step<S, WizCtx> {
+  return {
+    next,
+    view: ({ api, ctx }) => {
+      const [profile, saveProfile] = useStore('profile')
+      const t = ctx.t
+      const setIdentity = (k: keyof Profile['identity'], v: string) =>
+        saveProfile({ ...profile, identity: { ...profile.identity, [k]: v } })
+      return (
+        <StepFrame title={t.reviewTitle} lead={t.reviewLead(profile.work.length, profile.skills.length)}>
+          <div className="flex gap-2.5 [&>*]:flex-1">
+            <Label className="mb-2.5">{t.firstName}
+              <Input type="text" value={profile.identity.firstName} onChange={(e) => setIdentity('firstName', e.target.value)} /></Label>
+            <Label className="mb-2.5">{t.lastName}
+              <Input type="text" value={profile.identity.lastName} onChange={(e) => setIdentity('lastName', e.target.value)} /></Label>
+          </div>
+          <Label className="mb-2.5">{t.email}
+            <Input type="text" value={profile.identity.email} onChange={(e) => setIdentity('email', e.target.value)} /></Label>
+          <div className="flex gap-2.5 [&>*]:flex-1">
+            <Label className="mb-2.5">{t.phone}
+              <Input type="text" value={profile.identity.phone} onChange={(e) => setIdentity('phone', e.target.value)} /></Label>
+            <Label className="mb-2.5">{t.location}
+              <Input type="text" value={profile.identity.location} onChange={(e) => setIdentity('location', e.target.value)} /></Label>
+          </div>
+          <Actions>
+            <Button onClick={() => api.next()}>{t.looksRight}</Button>
+          </Actions>
+        </StepFrame>
+      )
+    },
+  }
+}
+
 /** The answer-bank seed — the final step of both the has-CV (Entry) and no-CV
  *  (Build) paths. Reads and writes the persisted profile facts directly and
  *  ends the wizard via `finish`. Generic in the wizard's state (it uses none). */

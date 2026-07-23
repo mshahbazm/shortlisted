@@ -11,6 +11,8 @@ export const onboarding = {
   buildStartingSub: 'Studying, or after my first job.',
   buildWorkingTitle: "I've been working",
   buildWorkingSub: 'I just never needed a CV before.',
+  buildHaveResumeTitle: 'I already have a resume',
+  buildHaveResumeSub: "Upload it — we'll turn it into your profile.",
   buildCv: 'Build my CV',
   probeNext: 'Next',
   probeTitle: 'A few quick questions.',

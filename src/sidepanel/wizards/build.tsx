@@ -7,17 +7,19 @@
 // exactly resumable: on open we fetch the in-progress session and drop the user
 // back on the round they left. Nothing is written to the profile until the end.
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { useContent } from '../../i18n'
 import { useStore } from '../hooks'
 import { BigChoice, Button, Textarea } from '../ui'
-import { StepFrame, Actions, ErrLine, WizardShell, useWizard, wizard, type Step } from '../wizard'
-import { intakeNext, loadIntakeSession, runBuildProfile } from '../../ai/run'
-import { markResumeHelpDone, type Persona } from '../../lib/types'
+import { StepFrame, Actions, ErrLine, Spinner, WizardShell, useWizard, wizard, type Step } from '../wizard'
+import { intakeNext, loadIntakeSession, runBuildProfile, runExtractProfile } from '../../ai/run'
+import { clearResumeWanted, type Persona } from '../../lib/types'
+import { sendMsg } from '../../lib/messaging'
 import { cn } from '../../lib/cn'
 import * as store from '../../lib/store'
-import { WizCtx, answersStep, type OnbContent } from './steps'
+import { WizCtx, answersStep, reviewStep, type OnbContent } from './steps'
+import { createUploadedResume, readCvPdf } from './cv'
 
 interface BuildState {
   persona: Persona
@@ -25,8 +27,11 @@ interface BuildState {
   round: number // current round number (1-based); 0 before any questions
   questions: string[] // the current round's questions
   answers: string[] // parallel to questions
+  cvText: string // the have-a-resume door: pasted text (Back-safe)
+  cvBase64?: string
+  cvFileName?: string
 }
-const initBuild = (): BuildState => ({ persona: 'working', intro: '', round: 0, questions: [], answers: [] })
+const initBuild = (): BuildState => ({ persona: 'working', intro: '', round: 0, questions: [], answers: [], cvText: '' })
 
 // The intro needs a bit of substance before the AI has anything to shape into a
 // CV. Show the count so the requirement isn't a mystery behind a dead button.
@@ -39,6 +44,11 @@ interface BuildCtx extends WizCtx {
   /** Finalize: extract the profile from the gathered intake and save it. Pass the
    *  current answers to record them first (used on skip). */
   finalize: (answers?: string[]) => Promise<void>
+  /** Have-a-resume door: read a PDF, save it as the account's resume, then
+   *  extract the profile from its text. */
+  extractFromPdf: (file: File) => Promise<void>
+  /** Have-a-resume door: extract the profile from pasted CV text. */
+  extractFromText: (text: string) => Promise<void>
 }
 
 const persona: Step<BuildState, BuildCtx> = {
@@ -48,9 +58,56 @@ const persona: Step<BuildState, BuildCtx> = {
       <div className="flex flex-col gap-2.5">
         <BigChoice title={<>{ctx.t.buildStartingTitle}</>} sub={<>{ctx.t.buildStartingSub}</>} onClick={() => api.next({ persona: 'starting' })} />
         <BigChoice title={<>{ctx.t.buildWorkingTitle}</>} sub={<>{ctx.t.buildWorkingSub}</>} onClick={() => api.next({ persona: 'working' })} />
+        <BigChoice title={<>{ctx.t.buildHaveResumeTitle}</>} sub={<>{ctx.t.buildHaveResumeSub}</>} onClick={() => api.goto('upload')} />
       </div>
     </StepFrame>
   ),
+}
+
+// Have-a-resume door: upload a PDF or paste text, then parse straight into the
+// profile. Mirrors the Entry wizard's `paste` step, but the user is already
+// signed in here — the resume is saved immediately and it goes to `review`.
+const upload: Step<BuildState, BuildCtx> = {
+  view: ({ api, ctx }) => {
+    const fileRef = useRef<HTMLInputElement>(null)
+    const s = api.state
+    return (
+      <StepFrame title={ctx.t.pasteTitle} lead={ctx.t.pasteLead}>
+        <div className="flex flex-col gap-2.5">
+          <BigChoice
+            title={<>{api.busy && <Spinner />}{api.busy ? ctx.t.readingCv : ctx.t.uploadPdf}</>}
+            sub={<>{api.busy ? ctx.t.readingCloudSub : ctx.t.uploadSubIdle}</>}
+            disabled={api.busy}
+            onClick={() => fileRef.current?.click()}
+          />
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              if (f) void api.run(() => ctx.extractFromPdf(f), 'review')
+              e.target.value = ''
+            }}
+          />
+          <Textarea
+            className="min-h-[150px] resize-y leading-normal"
+            placeholder={ctx.t.pastePlaceholder}
+            value={s.cvText}
+            onChange={(e) => api.set({ cvText: e.target.value })}
+            spellCheck={false}
+          />
+        </div>
+        <ErrLine msg={api.error} />
+        <Actions>
+          <Button disabled={api.busy || s.cvText.trim().length < 50} onClick={() => void api.run(() => ctx.extractFromText(s.cvText), 'review')}>
+            {ctx.t.buildProfile}
+          </Button>
+        </Actions>
+      </StepFrame>
+    )
+  },
 }
 
 const talk: Step<BuildState, BuildCtx> = {
@@ -160,7 +217,7 @@ const probe: Step<BuildState, BuildCtx> = {
   },
 }
 
-const buildSteps = { persona, talk, probe, answers: answersStep<BuildState>() }
+const buildSteps = { persona, talk, probe, upload, review: reviewStep<BuildState>('answers'), answers: answersStep<BuildState>() }
 const makeBuildWizard = (entry: string) => wizard<BuildState, BuildCtx>(entry, buildSteps)
 
 function BuildInner({ entry, init, onDone }: { entry: string; init: BuildState; onDone: () => void }) {
@@ -171,8 +228,8 @@ function BuildInner({ entry, init, onDone }: { entry: string; init: BuildState; 
   const ctx: BuildCtx = {
     t,
     finish: () => {
-      // Went through the builder — set the durable flag so the Home CTA stops.
-      void store.update('profile', markResumeHelpDone)
+      // Help delivered — clear the flag so the builder stops offering itself.
+      void store.update('profile', clearResumeWanted)
       onDone()
     },
     next: (body) => intakeNext(settings, body),
@@ -182,6 +239,20 @@ function BuildInner({ entry, init, onDone }: { entry: string; init: BuildState; 
       // (and anything else it doesn't return); overlay the built content, and
       // keep the existing facts (the job-prefs step owns those).
       saveProfile({ ...profile, ...built, facts: profile.facts })
+    },
+    extractFromPdf: async (file) => {
+      // Already signed in: save the resume now so it belongs to the account and
+      // syncs up (resume first, so it survives even if the AI pass fails), then
+      // structure the profile from its text.
+      const { cvText, cvBase64, cvFileName } = await readCvPdf(file, settings)
+      const id = await createUploadedResume(cvBase64, cvFileName)
+      void sendMsg({ type: 'intakeResume', resumeId: id })
+      const extracted = await runExtractProfile(settings, cvText)
+      saveProfile({ ...profile, ...extracted, facts: profile.facts })
+    },
+    extractFromText: async (text) => {
+      const extracted = await runExtractProfile(settings, text)
+      saveProfile({ ...profile, ...extracted, facts: profile.facts })
     },
   }
 
@@ -217,6 +288,7 @@ export function BuildWizard({ onDone }: { onDone: () => void }) {
               round: session.rounds.length,
               questions: cur.questions,
               answers: cur.answers.length ? cur.answers.slice() : cur.questions.map(() => ''),
+              cvText: '',
             },
           })
         } else {

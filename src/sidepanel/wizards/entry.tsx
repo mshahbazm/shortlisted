@@ -10,12 +10,12 @@ import { useContent } from '../../i18n'
 import { useStore } from '../hooks'
 import { BigChoice, Button, Input, Label, Textarea } from '../ui'
 import { StepFrame, Actions, ErrLine, Spinner, WizardShell, useWizard, wizard, type Step } from '../wizard'
-import { cloudPdfText, runExtractProfile, sendLoginCode, verifyLoginCode } from '../../ai/run'
-import { assessTextQuality, extractPdfTextFromFile } from '../../lib/pdfText'
+import { runExtractProfile, sendLoginCode, verifyLoginCode } from '../../ai/run'
 import { sendMsg } from '../../lib/messaging'
-import { Profile, Settings, bytesToBase64, markResumeHelpDone, uid } from '../../lib/types'
+import { markResumeWanted } from '../../lib/types'
 import * as store from '../../lib/store'
-import { WizCtx, answersStep } from './steps'
+import { WizCtx, answersStep, reviewStep } from './steps'
+import { createUploadedResume, readCvPdf } from './cv'
 
 const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())
 
@@ -26,51 +26,18 @@ interface EntryState {
   cvFileName?: string
   email: string
   otp: string
+  isNewAccount?: boolean // set by verify(): a first-ever sign-in for this email
 }
 const initEntry = (): EntryState => ({ door: 'noCv', cvText: '', email: '', otp: '' })
 
 interface EntryCtx extends WizCtx {
-  profile: Profile
   /** Signed in but built no resume in this flow (login / no-CV) — just close;
    *  the App router lands them on Home, where the "build" CTA still shows. */
   exit: () => void
-  setIdentity: (k: keyof Profile['identity'], v: string) => void
   sendCode: (email: string) => Promise<void>
-  verify: (email: string, otp: string) => Promise<void>
+  verify: (email: string, otp: string) => Promise<{ isNewAccount: boolean }>
   extract: (cvText: string, cvBase64?: string, cvFileName?: string) => Promise<void>
   onPdf: (file: File) => Promise<{ cvText: string; cvBase64: string; cvFileName: string }>
-}
-
-// Read a CV PDF's text (local layer, cloud OCR fallback). No AI, no credit, no
-// account — and crucially NO storage write: the file's bytes ride in wizard
-// state and only become a saved resume AFTER sign-in (createUploadedResume). A
-// logged-out upload therefore never becomes leftover local data that a different
-// account could adopt.
-async function readCvPdf(file: File, settings: Settings): Promise<{ cvText: string; cvBase64: string; cvFileName: string }> {
-  const buf = await file.arrayBuffer()
-  const local = await extractPdfTextFromFile(file).catch(() => '')
-  const cvText = local && assessTextQuality(local) !== 'low' ? local : (await cloudPdfText(settings, buf)).text
-  return { cvText, cvBase64: bytesToBase64(buf), cvFileName: file.name }
-}
-
-/** Save the uploaded PDF as this account's first resume — called only AFTER
- *  sign-in, so it belongs to the account and syncs up normally. Returns the id. */
-async function createUploadedResume(base64: string, fileName: string): Promise<string> {
-  const id = uid()
-  await store.update('resumes', (resumes) => [
-    ...resumes,
-    {
-      id,
-      label: fileName.replace(/\.pdf$/i, ''),
-      fileName,
-      tags: [],
-      isDefault: resumes.every((r) => !r.isDefault),
-      createdAt: Date.now(),
-      source: 'uploaded' as const,
-      dataBase64: base64,
-    },
-  ])
-  return id
 }
 
 const welcome: Step<EntryState, EntryCtx> = {
@@ -223,39 +190,21 @@ const building: Step<EntryState, EntryCtx> = {
   },
 }
 
-const review: Step<EntryState, EntryCtx> = {
-  next: 'answers',
-  view: ({ api, ctx }) => {
-    const p = ctx.profile
-    return (
-      <StepFrame title={ctx.t.reviewTitle} lead={ctx.t.reviewLead(p.work.length, p.skills.length)}>
-        <div className="flex gap-2.5 [&>*]:flex-1">
-          <Label className="mb-2.5">{ctx.t.firstName}
-            <Input type="text" value={p.identity.firstName} onChange={(e) => ctx.setIdentity('firstName', e.target.value)} /></Label>
-          <Label className="mb-2.5">{ctx.t.lastName}
-            <Input type="text" value={p.identity.lastName} onChange={(e) => ctx.setIdentity('lastName', e.target.value)} /></Label>
-        </div>
-        <Label className="mb-2.5">{ctx.t.email}
-          <Input type="text" value={p.identity.email} onChange={(e) => ctx.setIdentity('email', e.target.value)} /></Label>
-        <div className="flex gap-2.5 [&>*]:flex-1">
-          <Label className="mb-2.5">{ctx.t.phone}
-            <Input type="text" value={p.identity.phone} onChange={(e) => ctx.setIdentity('phone', e.target.value)} /></Label>
-          <Label className="mb-2.5">{ctx.t.location}
-            <Input type="text" value={p.identity.location} onChange={(e) => ctx.setIdentity('location', e.target.value)} /></Label>
-        </div>
-        <Actions>
-          <Button onClick={() => api.next()}>{ctx.t.looksRight}</Button>
-        </Actions>
-      </StepFrame>
-    )
-  },
-}
-
-// login / noCv / empty-CV terminal: end the wizard; the App router takes over.
+// login / noCv / empty-CV terminal: set the "help wanted" flag when it applies,
+// then end the wizard; the App router takes over. verify() already ran cloudPull,
+// so this write lands on top of the freshly-pulled profile.
 const end: Step<EntryState, EntryCtx> = {
-  view: ({ ctx }) => {
+  view: ({ api, ctx }) => {
     useEffect(() => {
-      ctx.exit()
+      const s = api.state
+      // We offer the guided builder to the "no CV" door, and to a brand-new
+      // account signing in through the Log-in door (treated as door 2). A has-CV
+      // door or an existing login keeps its own state (default: no help).
+      const wantsHelp = s.door === 'noCv' || (s.door === 'login' && !!s.isNewAccount)
+      void (async () => {
+        if (wantsHelp) await store.update('profile', markResumeWanted)
+        ctx.exit()
+      })()
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
     return <StepFrame busy title={ctx.t.checking} />
@@ -268,7 +217,7 @@ const entryWizard = wizard<EntryState, EntryCtx>('welcome', {
   email,
   code,
   building,
-  review,
+  review: reviewStep<EntryState>('answers'),
   end,
   answers: answersStep<EntryState>(),
 })
@@ -280,19 +229,17 @@ export function EntryWizard({ onDone }: { onDone: () => void }) {
 
   const ctx: EntryCtx = {
     t,
-    profile,
     finish: () => {
       // Reached only via the has-CV path; extract() already saved + intaked the
-      // CV. Just set the durable flag and hand back to the App router.
-      void store.update('profile', markResumeHelpDone)
+      // CV. No help flag — arriving with a CV is the path that skips the builder.
       onDone()
     },
     exit: () => onDone(),
-    setIdentity: (k, v) => saveProfile({ ...profile, identity: { ...profile.identity, [k]: v } }),
     sendCode: (e) => sendLoginCode(settings, e),
     verify: async (e, otp) => {
-      await verifyLoginCode(settings, e, otp) // wipes another account's cache on mismatch
+      const { isNewAccount } = await verifyLoginCode(settings, e, otp) // wipes another account's cache on mismatch
       await sendMsg({ type: 'cloudPull' }) // load THIS account's data from the server
+      return { isNewAccount }
     },
     extract: async (cvText, cvBase64, cvFileName) => {
       // Post-verify: create the resume now so it belongs to THIS account (and
