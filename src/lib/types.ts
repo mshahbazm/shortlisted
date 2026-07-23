@@ -411,10 +411,10 @@ export const defaultSettings = (): Settings => ({})
 
 // Settings keys from removed features — BYOK providers, provider toggle, job
 // finder, and the old user-settable cloudUrl (the endpoint is the install type
-// now, see config.ts). Stripped on read. The device token is deliberately NOT
-// invalidated here: the server is the authority on whether a token is still
-// valid, and a rejected one is re-provisioned on the next call (see run.ts), so
-// there is never a reason to throw it away locally.
+// now, see config.ts). Stripped on read. The session token is deliberately NOT
+// invalidated here: the server is the authority on whether it's still valid, and
+// a 401 clears the account and routes to sign-in (see run.ts) — so there is no
+// reason to throw it away during a settings normalize.
 const LEGACY_SETTINGS_KEYS = [
   'aiProvider', 'finderUrl', 'cloudUrl',
   'anthropicKey', 'anthropicModel', 'openaiKey', 'openaiModel',
