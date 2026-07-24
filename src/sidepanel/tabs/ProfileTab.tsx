@@ -25,8 +25,8 @@ import {
   ymString,
   workPeriodLabel,
 } from '../../lib/types'
-import { cloudImportResume, cloudProfileNote } from '../../ai/run'
-import { fileToProfilePhoto } from '../../lib/image'
+import { cloudImportResume, cloudProfileNote, cloudUploadPicture } from '../../ai/run'
+import { fileToDataUrl, fileToProfilePhoto } from '../../lib/image'
 import * as store from '../../lib/store'
 import { Gap, GapKey, profileStrength } from '../../lib/profileStrength'
 import { mergeEnrichment, needsCompletion } from '../../lib/profileMerge'
@@ -745,6 +745,7 @@ function TellMe({ t, settings }: { t: T; settings: Parameters<typeof cloudProfil
 
 function PhotoField({ photo, onChange, t }: { photo?: string; onChange: (v: string) => void; t: T }) {
   const ref = useRef<HTMLInputElement>(null)
+  const [settings] = useStore('settings')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   return (
@@ -781,7 +782,10 @@ function PhotoField({ photo, onChange, t }: { photo?: string; onChange: (v: stri
           setErr('')
           setBusy(true)
           try {
+            // The small JPEG derivative renders the CV and syncs in the profile…
             onChange(await fileToProfilePhoto(f))
+            // …and the original is preserved in cloud storage (best-effort).
+            void fileToDataUrl(f).then((orig) => cloudUploadPicture(settings, orig).catch(() => {}))
           } catch (ex) {
             setErr(ex instanceof Error ? ex.message : String(ex))
           } finally {

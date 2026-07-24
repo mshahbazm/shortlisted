@@ -62,6 +62,13 @@ export async function runExtractProfile(settings: Settings, cvText: string): Pro
   return cloudCall<Profile>(settings, '/v1/extract-profile', { cvText })
 }
 
+/** Preserve the ORIGINAL profile picture in cloud object storage (source of
+ *  truth). Best-effort — the small render copy still rides in the synced profile,
+ *  so a failure here never blocks setting the photo. */
+export async function cloudUploadPicture(settings: Settings, dataUrl: string): Promise<void> {
+  await cloudCall<{ ok: boolean }>(settings, '/v1/picture', { dataUrl })
+}
+
 export interface IntakeNext {
   enough: boolean
   theme: string // short topic heading for this round's questions; '' when enough

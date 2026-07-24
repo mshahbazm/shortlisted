@@ -5,6 +5,17 @@
 // files-to-s3 work) so we can re-derive any size/crop/format later; nothing is
 // thrown away. Until S3 lands, only this derivative rides in the profile.
 
+/** The raw file as a data: URL — the ORIGINAL upload, preserved as the source of
+ *  truth (kept in S3). Separate from the small render derivative below. */
+export function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader()
+    r.onload = () => resolve(r.result as string)
+    r.onerror = () => reject(r.error ?? new Error('Could not read the file.'))
+    r.readAsDataURL(file)
+  })
+}
+
 export async function fileToProfilePhoto(file: File, maxEdge = 600, quality = 0.82): Promise<string> {
   const bitmap = await createImageBitmap(file)
   try {
