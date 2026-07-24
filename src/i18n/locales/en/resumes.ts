@@ -24,6 +24,7 @@ export const resumes = {
   pickStyleTitle: 'Pick a style',
   pickStyleHint: 'Every style is ATS-safe — real text, standard fonts, parses cleanly. Pick the look that fits the job.',
   allStyles: 'All',
+  filterByField: 'Filter by field',
   tagEngineering: 'Engineering',
   tagData: 'Data',
   tagMarketing: 'Marketing',

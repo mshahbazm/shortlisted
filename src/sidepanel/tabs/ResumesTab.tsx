@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { cn } from '../../lib/cn'
-import { BigChoice, Body, Button, Checkbox, Chip, Cost, FIELD, Icon, Label, Pill, ScreenHead, Sheet, Textarea, TopBar, useStack } from '../ui'
+import { BigChoice, Body, Button, Checkbox, Chip, Cost, FIELD, Icon, Label, Pill, ScreenHead, Select, Sheet, Textarea, TopBar, useStack } from '../ui'
 import { Profile, ResumeVariant, base64ToBytes, bytesToBase64, roleCompanyLabel, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
@@ -13,10 +13,6 @@ import { ALL_TAGS, ResumeTemplate, TEMPLATES, TemplateTag } from '../../pdf/temp
 import { runTailorCv } from '../../ai/run'
 import { showToast } from '../toast'
 import type { tMerged } from '../../i18n/content'
-
-const FCHIP = 'cursor-pointer rounded-full border px-2.5 py-[5px] text-[11.5px] font-semibold'
-const FCHIP_ON = 'border-primary bg-primary text-primary-fg'
-const FCHIP_OFF = 'border-line bg-transparent text-muted hover:bg-hover'
 
 /** "Modern clean" → "Modern clean (2)" when the name is taken. */
 function uniqueLabel(base: string, existing: { label: string }[]): string {
@@ -422,20 +418,21 @@ function TemplatePicker({
       <div className="max-h-[88vh] w-full max-w-[640px] overflow-y-auto rounded-xl bg-bg p-4 shadow-[0_16px_48px_rgba(0,0,0,0.2)]" onClick={(e) => e.stopPropagation()}>
         <h3>{t.pickStyleTitle}</h3>
         <p className="m-0 text-[12.5px] leading-normal text-muted">{t.pickStyleHint}</p>
-        <div className="my-2.5 flex flex-wrap gap-[5px]">
-          <button className={cn(FCHIP, tag === null ? FCHIP_ON : FCHIP_OFF)} onClick={() => setTag(null)}>{t.allStyles}</button>
-          {ALL_TAGS.map((tg) => (
-            <button key={tg} className={cn(FCHIP, tag === tg ? FCHIP_ON : FCHIP_OFF)} onClick={() => setTag(tg)}>
-              {tagLabel[tg]}
-            </button>
-          ))}
-        </div>
-        <div className="mb-3 grid grid-cols-1 gap-2.5 min-[440px]:grid-cols-2">
+        <Label className="my-3">{t.filterByField}
+          <Select<'all' | TemplateTag>
+            value={tag ?? 'all'}
+            onChange={(v) => setTag(v === 'all' ? null : v)}
+            options={[{ value: 'all', label: t.allStyles }, ...ALL_TAGS.map((tg) => ({ value: tg, label: tagLabel[tg] }))]}
+          />
+        </Label>
+        <div className="mb-3 flex flex-col gap-4">
           {shown.map((tpl) => (
             <button key={tpl.id} className="flex cursor-pointer flex-col gap-1.5 rounded-[9px] border border-transparent p-1 text-left" onClick={() => onPick(tpl.id)}>
               <PdfThumb tpl={tpl} profile={profile} cache={cache.current} />
-              <span className="text-center text-[11.5px] font-semibold text-muted">{styleName(t, tpl.id)}</span>
-              <span className="text-[10.5px] text-muted">{tpl.tags.slice(0, 2).map((tg) => tagLabel[tg]).join(' · ')}</span>
+              <div className="flex flex-col gap-0.5 px-0.5">
+                <span className="text-[12.5px] font-semibold text-fg">{styleName(t, tpl.id)}</span>
+                <span className="text-[11px] text-muted">{tpl.tags.slice(0, 2).map((tg) => tagLabel[tg]).join(' · ')}</span>
+              </div>
             </button>
           ))}
         </div>

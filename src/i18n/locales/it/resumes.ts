@@ -24,6 +24,7 @@ export const resumes: tLocale['resumes'] = {
   pickStyleTitle: 'Scegli uno stile',
   pickStyleHint: 'Ogni stile è sicuro per gli ATS — testo reale, font standard, si legge senza errori. Scegli il look adatto al ruolo.',
   allStyles: 'Tutti',
+  filterByField: 'Filtra per settore',
   tagEngineering: 'Ingegneria',
   tagData: 'Dati',
   tagMarketing: 'Marketing',
