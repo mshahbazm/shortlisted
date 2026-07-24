@@ -68,29 +68,33 @@ function makeIcons(doc: jsPDF) {
 export function renderEuropass(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate): string {
   const accent = tpl.accent ?? ACCENT
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
-  const p = painter(doc, 'helvetica')
+  // Reserve room for the header band at the top of EVERY page (drawn per page at
+  // the end); content — page 1 and every break — starts below it.
+  const HEADER_TOP = MARGIN + 44
+  const p = painter(doc, 'helvetica', HEADER_TOP)
   const ic = makeIcons(doc)
   const id = profile.identity
 
   const railRight = MARGIN + RAIL_W
   const colX = MARGIN + RAIL_W + GAP
   const pageRight = PAGE_W - MARGIN
-  const col: Cursor = { x: colX, w: pageRight - colX, y: MARGIN }
+  const col: Cursor = { x: colX, w: pageRight - colX, y: HEADER_TOP }
   const name = `${id.firstName} ${id.lastName}`.trim()
 
-  // ---- Header band: logo, "Curriculum Vitae", name — all centred on one line ----
-  const headerC = MARGIN + 8 // vertical centre of the header row
+  // ---- Header band (logo + "Curriculum Vitae" + name), repeated on every page ----
+  const headerC = MARGIN + 12 // vertical centre of the header row (with top breathing room)
   const logoH = 32
   const logoW = logoH * (132 / 50)
-  try {
-    doc.addImage(EUROPASS_LOGO, 'JPEG', MARGIN, headerC - logoH / 2, logoW, logoH)
-  } catch {
-    /* fall back to nothing */
+  const drawHeader = () => {
+    try {
+      doc.addImage(EUROPASS_LOGO, 'JPEG', MARGIN, headerC - logoH / 2, logoW, logoH)
+    } catch {
+      /* fall back to nothing */
+    }
+    p.setFont(false, 10, accent)
+    doc.text('Curriculum Vitae', colX, headerC + 3.4)
+    doc.text(name, pageRight, headerC + 3.4, { align: 'right' })
   }
-  p.setFont(false, 10, accent)
-  doc.text('Curriculum Vitae', colX, headerC + 3.4)
-  doc.text(name, pageRight, headerC + 3.4, { align: 'right' })
-  col.y = headerC + logoH / 2 + 12
 
   // Right-aligned rail label (Europass blue) at a given baseline.
   const railLabel = (label: string, y: number) => {
@@ -114,7 +118,7 @@ export function renderEuropass(profile: Profile, variant: TailoredResume, tpl: R
     doc.line(colX, lineY, pageRight, lineY)
     doc.setFillColor(accent)
     doc.rect(pageRight - 6, lineY - 6, 6, 6, 'F') // square sits ON TOP of the line's end
-    col.y = lineY + 21 // generous space below the separator
+    col.y = lineY + 26 // generous space below the separator
   }
 
   // A sub-item under a section — rail label only, no rule. Content is rendered by
@@ -140,13 +144,17 @@ export function renderEuropass(profile: Profile, variant: TailoredResume, tpl: R
       }
     }
     render(col)
-    col.y = Math.max(col.y, y0 + 12) + 6
+    // If the content page-broke mid-entry, col.y is on a fresh page (< y0) — don't
+    // pull it back to the stale y0 (that orphaned a line and forced a blank page).
+    if (col.y >= y0) col.y = Math.max(col.y, y0 + 12)
+    col.y += 13 // more air between blocks
   }
 
   // ---- Personal information (no rule): the name sits on the label's line, the
   // photo hangs in the rail, and the personal-detail line drops to the photo's
   // bottom edge — exactly like the official Europass. ----
-  col.y += 16
+  // Content starts right at HEADER_TOP so the header→content gap is identical on
+  // every page (page 1 and every break resume at the same offset).
   p.ensure(col, 150)
   const labelY = col.y + 3
   railLabel('Personal information', labelY)
@@ -237,7 +245,7 @@ export function renderEuropass(profile: Profile, variant: TailoredResume, tpl: R
     for (const { v, w } of works) {
       const s = w!
       entry(euRange(s.startYear, s.startMonth, s.endYear, s.endMonth, s.isCurrent), (r) => {
-        p.text(r, s.title, 10, { bold: true, color: accent })
+        p.text(r, s.title, 10.5, { color: accent })
         p.text(r, [s.company, s.location].filter(Boolean).join(', '), 9, { color: SOFT, gap: 1 })
         const bullets = v.bullets.length ? v.bullets : s.highlights
         for (const b of bullets) p.bullet(r, b, 9, accent)
@@ -253,7 +261,7 @@ export function renderEuropass(profile: Profile, variant: TailoredResume, tpl: R
     for (const e of edus) {
       const ed = e!
       entry(euRange(ed.startYear, undefined, ed.endYear, undefined, ed.isCurrent), (r) => {
-        p.text(r, [ed.degree, ed.fieldOfStudy].filter(Boolean).join(', '), 10, { bold: true, color: accent })
+        p.text(r, [ed.degree, ed.fieldOfStudy].filter(Boolean).join(', '), 10.5, { color: accent })
         p.text(r, ed.school, 9, { color: SOFT, gap: 1 })
         if (ed.description) p.text(r, ed.description, 8.5, { color: SOFT, gap: 1 })
       })
@@ -322,16 +330,17 @@ export function renderEuropass(profile: Profile, variant: TailoredResume, tpl: R
     }
   }
 
-  // ---- Footer (on every page), like the official Europass ----
+  // ---- Header + footer on EVERY page, like the official Europass ----
   const pages = doc.getNumberOfPages()
   for (let pg = 1; pg <= pages; pg++) {
     doc.setPage(pg)
-    p.setFont(false, 7.5, SOFT)
+    drawHeader()
     doc.setDrawColor(LINE)
     doc.setLineWidth(0.5)
-    doc.line(MARGIN, PAGE_H - 34, PAGE_W - MARGIN, PAGE_H - 34)
-    doc.text('© European Union | europass.europa.eu', MARGIN, PAGE_H - 24)
-    doc.text(`Page ${pg} / ${pages}`, PAGE_W - MARGIN, PAGE_H - 24, { align: 'right' })
+    doc.line(MARGIN, PAGE_H - 32, pageRight, PAGE_H - 32)
+    p.setFont(false, 7.5, SOFT)
+    doc.text('© European Union, 2002-2024 | europass.europa.eu', PAGE_W / 2, PAGE_H - 22, { align: 'center' })
+    doc.text(`Page ${pg} / ${pages}`, pageRight, PAGE_H - 22, { align: 'right' })
   }
 
   return toBase64(doc)

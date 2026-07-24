@@ -46,17 +46,19 @@ export function toCefr(p: LanguageProficiency): Cefr {
 export const isMotherTongue = (p: LanguageProficiency) => p === 'native_bilingual'
 
 /** A minimal painter over a jsPDF doc: fonts, page-break-aware text, bullets. */
-export function painter(doc: jsPDF, family: 'helvetica' | 'times' = 'helvetica') {
+export function painter(doc: jsPDF, family: 'helvetica' | 'times' = 'helvetica', newPageTop: number = MARGIN) {
   const setFont = (bold: boolean, size: number, color: string = INK) => {
     doc.setFont(family, bold ? 'bold' : 'normal')
     doc.setFontSize(size)
     doc.setTextColor(color)
   }
 
+  // New pages resume at `newPageTop` — formats with a repeating header pass room
+  // for it so content never lands under the header band.
   const ensure = (c: Cursor, need: number) => {
     if (c.y + need <= PAGE_H - MARGIN) return
     doc.addPage()
-    c.y = MARGIN
+    c.y = newPageTop
   }
 
   const text = (
