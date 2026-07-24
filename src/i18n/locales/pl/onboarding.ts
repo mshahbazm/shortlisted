@@ -93,7 +93,7 @@ export const onboarding: tLocale['onboarding'] = {
   sending: 'Wysyłanie…',
   inboxTitle: 'Sprawdź skrzynkę.',
   inboxLead: (email: string) =>
-    `Wysłaliśmy 6-cyfrowy kod na ${email}. Wpisz go poniżej, aby zakończyć.`,
+    `Wysłaliśmy 6-cyfrowy kod na ${email}. Wpisz go poniżej, aby zakończyć — sprawdź folder spam lub wiadomości-śmieci, jeśli nie ma go w skrzynce odbiorczej.`,
   codeLabel: 'Kod',
   codePlaceholder: '123456',
   verifyStart: 'Potwierdź i zaczynamy',

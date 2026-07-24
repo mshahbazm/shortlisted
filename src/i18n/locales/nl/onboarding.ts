@@ -87,7 +87,7 @@ export const onboarding: tLocale['onboarding'] = {
   sending: 'Versturen…',
   inboxTitle: 'Kijk in je inbox.',
   inboxLead: (email: string) =>
-    `We hebben een 6-cijferige code naar ${email} gestuurd. Typ hem hieronder om af te ronden.`,
+    `We hebben een 6-cijferige code naar ${email} gestuurd. Typ hem hieronder om af te ronden — kijk in je spam- of ongewenste-map als hij niet in je inbox staat.`,
   codeLabel: 'Code',
   codePlaceholder: '123456',
   verifyStart: 'Bevestigen & starten',

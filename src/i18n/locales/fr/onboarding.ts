@@ -87,7 +87,7 @@ export const onboarding: tLocale['onboarding'] = {
   sending: 'Envoi…',
   inboxTitle: 'Vérifiez votre boîte mail.',
   inboxLead: (email: string) =>
-    `Nous avons envoyé un code à 6 chiffres à ${email}. Saisissez-le ci-dessous pour terminer.`,
+    `Nous avons envoyé un code à 6 chiffres à ${email}. Saisissez-le ci-dessous pour terminer — vérifiez vos spams ou courriers indésirables s'il n'est pas dans votre boîte de réception.`,
   codeLabel: 'Code',
   codePlaceholder: '123456',
   verifyStart: 'Vérifier et démarrer',

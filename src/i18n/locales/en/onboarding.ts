@@ -89,7 +89,7 @@ export const onboarding = {
   sending: 'Sending…',
   inboxTitle: 'Check your inbox.',
   inboxLead: (email: string) =>
-    `We sent a 6-digit code to ${email}. Enter it below to finish.`,
+    `We sent a 6-digit code to ${email}. Enter it below to finish — check your spam or junk folder if it's not in your inbox.`,
   codeLabel: 'Code',
   codePlaceholder: '123456',
   verifyStart: 'Verify & start',
