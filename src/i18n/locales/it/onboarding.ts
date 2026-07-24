@@ -54,8 +54,6 @@ export const onboarding: tLocale['onboarding'] = {
   reviewLead: (roles: number, skills: number) =>
     `Trovat${roles === 1 ? 'o 1 ruolo' : `i ${roles} ruoli`} e ${skills} competenze. Correggi quello che non torna — il resto lo modifichi quando vuoi.`,
   looksRight: 'Tutto giusto',
-  yourName: 'Il tuo nome',
-  yourNamePlaceholder: 'es. Alex Johnson',
   linksHeading: 'Link',
   linkedin: 'LinkedIn',
   github: 'GitHub',

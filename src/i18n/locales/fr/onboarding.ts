@@ -54,8 +54,6 @@ export const onboarding: tLocale['onboarding'] = {
   reviewLead: (roles: number, skills: number) =>
     `${roles} poste${roles > 1 ? 's' : ''} et ${skills} compétences trouvés. Corrigez ce qui cloche — le reste sera modifiable plus tard.`,
   looksRight: 'C’est bon',
-  yourName: 'Votre nom',
-  yourNamePlaceholder: 'p. ex. Alex Johnson',
   linksHeading: 'Liens',
   linkedin: 'LinkedIn',
   github: 'GitHub',

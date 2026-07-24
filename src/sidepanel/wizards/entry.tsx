@@ -24,28 +24,24 @@ interface EntryState {
   cvText: string
   cvBase64?: string // the uploaded PDF, kept until sign-in (see readCvPdf)
   cvFileName?: string
-  name: string // full name typed at signup (split into first/last on save)
+  firstName: string // captured at signup
+  lastName: string
   email: string
   otp: string
   isNewAccount?: boolean // set by verify(): a first-ever sign-in for this email
 }
-const initEntry = (): EntryState => ({ door: 'noCv', cvText: '', name: '', email: '', otp: '' })
+const initEntry = (): EntryState => ({ door: 'noCv', cvText: '', firstName: '', lastName: '', email: '', otp: '' })
 
-// Signup captures ONE "your name" field; split it into the profile's first/last
-// on the first space. Fills identity only where it's still blank, so an existing
-// value (e.g. from a parsed CV) always wins — the typed name is just a fallback
-// so we never end up nameless. `authEmail` seeds identity.email when it's empty.
-function seedIdentity(p: Profile, fullName: string, authEmail: string): Profile {
-  const name = fullName.trim()
-  const sp = name.indexOf(' ')
-  const first = sp === -1 ? name : name.slice(0, sp)
-  const last = sp === -1 ? '' : name.slice(sp + 1).trim()
+// Seed the signup name/email onto identity, filling only fields that are still
+// blank — so an existing value (e.g. from a parsed CV) always wins and the typed
+// name is just a fallback that keeps us from ever being nameless.
+function seedIdentity(p: Profile, firstName: string, lastName: string, authEmail: string): Profile {
   return {
     ...p,
     identity: {
       ...p.identity,
-      firstName: p.identity.firstName || first,
-      lastName: p.identity.lastName || last,
+      firstName: p.identity.firstName || firstName.trim(),
+      lastName: p.identity.lastName || lastName.trim(),
       email: p.identity.email || authEmail.trim(),
     },
   }
@@ -57,7 +53,7 @@ interface EntryCtx extends WizCtx {
   exit: () => void
   sendCode: (email: string) => Promise<void>
   verify: (email: string, otp: string) => Promise<{ isNewAccount: boolean }>
-  extract: (cvText: string, cvBase64: string | undefined, cvFileName: string | undefined, name: string, authEmail: string) => Promise<void>
+  extract: (cvText: string, cvBase64: string | undefined, cvFileName: string | undefined, firstName: string, lastName: string, authEmail: string) => Promise<void>
   onPdf: (file: File) => Promise<{ cvText: string; cvBase64: string; cvFileName: string }>
 }
 
@@ -125,7 +121,7 @@ const email: Step<EntryState, EntryCtx> = {
     // Returning users (login door) give email only; the two signup doors also
     // capture a name so every new account/profile has one to build a CV from.
     const isSignup = s.door !== 'login'
-    const nameOk = !isSignup || s.name.trim().length > 0
+    const nameOk = !isSignup || s.firstName.trim().length > 0
     const ready = emailOk(s.email) && nameOk
     const send = () => api.run(() => ctx.sendCode(s.email.trim()), 'code')
     return (
@@ -134,14 +130,12 @@ const email: Step<EntryState, EntryCtx> = {
         lead={s.door === 'login' ? ctx.t.loginLead : ctx.t.verifyLead}
       >
         {isSignup && (
-          <Label className="mb-2.5">{ctx.t.yourName}
-            <Input
-              type="text"
-              placeholder={ctx.t.yourNamePlaceholder}
-              value={s.name}
-              autoFocus
-              onChange={(e) => api.set({ name: e.target.value })}
-            /></Label>
+          <div className="mb-2.5 flex gap-2.5 [&>*]:flex-1">
+            <Label>{ctx.t.firstName}
+              <Input type="text" value={s.firstName} autoFocus onChange={(e) => api.set({ firstName: e.target.value })} /></Label>
+            <Label>{ctx.t.lastName}
+              <Input type="text" value={s.lastName} onChange={(e) => api.set({ lastName: e.target.value })} /></Label>
+          </div>
         )}
         <Label className="mb-2.5">{ctx.t.email}
           <Input
@@ -205,7 +199,7 @@ const code: Step<EntryState, EntryCtx> = {
 const building: Step<EntryState, EntryCtx> = {
   view: ({ api, ctx }) => {
     const run = () =>
-      api.run(() => ctx.extract(api.state.cvText, api.state.cvBase64, api.state.cvFileName, api.state.name, api.state.email), 'review', { reset: true })
+      api.run(() => ctx.extract(api.state.cvText, api.state.cvBase64, api.state.cvFileName, api.state.firstName, api.state.lastName, api.state.email), 'review', { reset: true })
     useEffect(() => {
       void run()
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -240,7 +234,7 @@ const end: Step<EntryState, EntryCtx> = {
       void (async () => {
         // Signup doors typed a name — seed it onto the freshly-pulled profile so
         // the builder (and CV) always have a name. The login door has no name.
-        if (s.door !== 'login' && s.name.trim()) await store.update('profile', (p) => seedIdentity(p, s.name, s.email))
+        if (s.door !== 'login' && s.firstName.trim()) await store.update('profile', (p) => seedIdentity(p, s.firstName, s.lastName, s.email))
         if (wantsHelp) await store.update('profile', markResumeWanted)
         ctx.exit()
       })()
@@ -282,7 +276,7 @@ export function EntryWizard({ onDone }: { onDone: (builtProfile?: boolean) => vo
       await sendMsg({ type: 'cloudPull' }) // load THIS account's data from the server
       return { isNewAccount }
     },
-    extract: async (cvText, cvBase64, cvFileName, name, authEmail) => {
+    extract: async (cvText, cvBase64, cvFileName, firstName, lastName, authEmail) => {
       // Post-verify: create the resume now so it belongs to THIS account (and
       // syncs up), resume first so it survives even if the AI pass fails.
       if (cvBase64 && cvFileName) {
@@ -293,7 +287,7 @@ export function EntryWizard({ onDone }: { onDone: (builtProfile?: boolean) => vo
       // Spread the existing profile first so the extract keeps `onboarding`; the
       // CV's identity wins, and the typed name/email backfill only what it left
       // blank (so a CV that missed the name is never left nameless).
-      saveProfile(seedIdentity({ ...profile, ...extracted, facts: profile.facts }, name, authEmail))
+      saveProfile(seedIdentity({ ...profile, ...extracted, facts: profile.facts }, firstName, lastName, authEmail))
     },
     onPdf: (file) => readCvPdf(file, settings),
   }

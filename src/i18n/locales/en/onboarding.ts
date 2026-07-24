@@ -56,8 +56,6 @@ export const onboarding = {
   reviewLead: (roles: number, skills: number) =>
     `Found ${roles} role${roles === 1 ? '' : 's'} and ${skills} skills. Fix anything that's off — the rest is editable later.`,
   looksRight: 'Looks right',
-  yourName: 'Your name',
-  yourNamePlaceholder: 'e.g. Alex Johnson',
   linksHeading: 'Links',
   linkedin: 'LinkedIn',
   github: 'GitHub',
