@@ -68,10 +68,21 @@ export type LanguageProficiency =
   | 'full_professional'
   | 'native_bilingual'
 
+export type CefrLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'
+export interface CefrSkills {
+  listening: CefrLevel
+  reading: CefrLevel
+  spokenInteraction: CefrLevel
+  spokenProduction: CefrLevel
+  writing: CefrLevel
+}
 export interface LanguageEntry {
   langCode: string // 2-letter ISO
   name: string
   proficiency: LanguageProficiency
+  /** Optional per-skill CEFR self-assessment (Europass grid). When absent, the
+   *  single `proficiency` is mapped and repeated across all five skills. */
+  cefr?: CefrSkills
 }
 
 export interface CertificationEntry {
@@ -109,6 +120,8 @@ export interface Profile {
     photo?: string // a data: URL (JPEG/PNG) — embedded top-right on photo formats
     dateOfBirth?: string // free text or ISO 'YYYY-MM-DD'
     nationality?: string
+    sex?: string // e.g. "Male"/"Female" — shown on Europass; optional everywhere
+    drivingLicence?: string // e.g. "B" — Europass personal skills
   }
   headline: string // "AI Agent Engineer"
   summary: string
@@ -125,6 +138,21 @@ export interface Profile {
   certifications: CertificationEntry[]
   links: ProfileLinks
   facts: ProfileFacts
+  /** Optional Europass "Personal skills" extras + additional information. Used
+   *  only by the Europass format; every other format ignores them. */
+  europass?: {
+    communicationSkills?: string[]
+    organisationalSkills?: string[]
+    digitalSkills?: {
+      informationProcessing?: string
+      communication?: string
+      contentCreation?: string
+      safety?: string
+      problemSolving?: string
+      note?: string
+    }
+    additionalInformation?: { label: string; value: string }[]
+  }
   /**
    * The raw material this profile was DERIVED from, kept verbatim so we can
    * re-process it with a better prompt, ground the profile-site agent in the
