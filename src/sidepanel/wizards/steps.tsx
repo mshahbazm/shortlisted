@@ -63,7 +63,6 @@ export function reviewStep<S>(next: string): Step<S, WizCtx> {
                 <Input type="text" value={profile.identity.location} onChange={(e) => setIdentity('location', e.target.value)} /></Label>
             </div>
             <div className="flex flex-col gap-2.5">
-              <span className="text-[11.5px] font-semibold text-muted">{t.linksHeading}</span>
               <Label>{t.linkedin}
                 <Input type="text" placeholder={t.linkedinPlaceholder} value={profile.links.linkedin ?? ''} onChange={(e) => setLink('linkedin', e.target.value)} /></Label>
               <Label>{t.github}

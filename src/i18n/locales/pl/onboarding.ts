@@ -60,7 +60,6 @@ export const onboarding: tLocale['onboarding'] = {
       'umiejętności',
     )}. Popraw, co się nie zgadza — resztę możesz edytować później.`,
   looksRight: 'Zgadza się',
-  linksHeading: 'Linki',
   linkedin: 'LinkedIn',
   github: 'GitHub',
   portfolio: 'Portfolio',
