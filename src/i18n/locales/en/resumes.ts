@@ -24,7 +24,6 @@ export const resumes = {
   pickStyleTitle: 'Pick a style',
   pickStyleHint: 'Every style is ATS-safe — real text, standard fonts, parses cleanly. Pick the look that fits the job.',
   allStyles: 'All',
-  filterByField: 'Filter by field',
   tagEngineering: 'Engineering',
   tagData: 'Data',
   tagMarketing: 'Marketing',
@@ -60,4 +59,8 @@ export const resumes = {
   tailoredBody: 'Re-angled around what fits this job. Every line traces back to something already in your profile.',
   removeCvTitle: 'Delete this CV?',
   removeCvWarning: 'A tailored CV costs a credit to make again. Applications you already sent keep the copy that went with them.',
+  formatAts: "Standard",
+  formatEuropass: "Europass",
+  formatContinental: "Continental",
+  formatWarn: "This format usually shows a photo and personal details you haven’t added yet — add them in your profile, or generate without.",
 }

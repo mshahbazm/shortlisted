@@ -2,14 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { cn } from '../../lib/cn'
-import { BigChoice, Body, Button, Checkbox, Chip, Cost, FIELD, Icon, Label, Pill, ScreenHead, Select, Sheet, Textarea, TopBar, useStack } from '../ui'
+import { BigChoice, Body, Button, Checkbox, Chip, Cost, FIELD, Icon, Label, Pill, ScreenHead, Sheet, Textarea, TopBar, useStack } from '../ui'
 import { Profile, ResumeVariant, base64ToBytes, bytesToBase64, roleCompanyLabel, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
 import { applyEnrichment } from '../../lib/profileMerge'
 import { renderPdfPages, renderPdfThumbnail } from '../../lib/pdfText'
 import { masterVariant, renderResumePdf } from '../../pdf/resumePdf'
-import { ALL_TAGS, ResumeTemplate, TEMPLATES, TemplateTag, templateFormat } from '../../pdf/templates'
+import { FORMATS, FormatId, ResumeTemplate, TEMPLATES, TemplateTag, templateFormat } from '../../pdf/templates'
 import { runTailorCv } from '../../ai/run'
 import { showToast } from '../toast'
 import type { tMerged } from '../../i18n/content'
@@ -28,6 +28,7 @@ function styleName(t: tMerged<'resumes'>, id: string): string {
     harvard: t.tplHarvard, atlas: t.tplAtlas, onyx: t.tplOnyx, azure: t.tplAzure,
     meridian: t.tplMeridian, regent: t.tplRegent, pivot: t.tplPivot, coral: t.tplCoral,
     ivory: t.tplIvory, slate: t.tplSlate, amber: t.tplAmber, mint: t.tplMint,
+    europass: t.tplEuropass, lebenslauf: t.tplLebenslauf,
   }
   return names[id] ?? id
 }
@@ -401,14 +402,11 @@ function TemplatePicker({
   onCancel: () => void
 }) {
   const t = useContent('resumes')
-  const [tag, setTag] = useState<TemplateTag | null>(null)
+  // FORMAT is the user-facing filter (a few tags); styles are browsed within it.
+  const [format, setFormat] = useState<FormatId>('ats')
   // Rendered previews live as long as the picker does — filter clicks reuse them.
   const cache = useRef(new Map<string, string>())
-  // Only Anglo/ATS styles are exposed for now — the FORMAT selector (Europass,
-  // Continental) and the photo/personal-data editing land next; until then the
-  // regional formats stay out of the picker so no half-wired card shows.
-  const ats = TEMPLATES.filter((tpl) => templateFormat(tpl) === 'ats')
-  const shown = tag ? ats.filter((tpl) => tpl.tags.includes(tag)) : ats
+  const shown = TEMPLATES.filter((tpl) => templateFormat(tpl) === format)
 
   const tagLabel: Record<TemplateTag, string> = {
     engineering: t.tagEngineering, data: t.tagData, marketing: t.tagMarketing, sales: t.tagSales,
@@ -417,18 +415,33 @@ function TemplatePicker({
     executive: t.tagExecutive, student: t.tagStudent,
   }
 
+  // What the chosen format wants but the profile is missing — a soft warning,
+  // never a block (per the format's `expects`).
+  const fmt = FORMATS.find((f) => f.id === format)
+  const missing = fmt ? fmt.expects.filter((k) => !profile.identity[k]) : []
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4" onClick={onCancel}>
       <div className="max-h-[88vh] w-full max-w-[640px] overflow-y-auto rounded-xl bg-bg p-4 shadow-[0_16px_48px_rgba(0,0,0,0.2)]" onClick={(e) => e.stopPropagation()}>
         <h3>{t.pickStyleTitle}</h3>
         <p className="m-0 text-[12.5px] leading-normal text-muted">{t.pickStyleHint}</p>
-        <Label className="my-3">{t.filterByField}
-          <Select<'all' | TemplateTag>
-            value={tag ?? 'all'}
-            onChange={(v) => setTag(v === 'all' ? null : v)}
-            options={[{ value: 'all', label: t.allStyles }, ...ALL_TAGS.map((tg) => ({ value: tg, label: tagLabel[tg] }))]}
-          />
-        </Label>
+        <div className="my-3 flex flex-wrap gap-[6px]">
+          {FORMATS.map((f) => (
+            <button
+              key={f.id}
+              className={cn(
+                'cursor-pointer rounded-full border px-3 py-[5px] text-[12px] font-semibold',
+                format === f.id ? 'border-primary bg-primary text-primary-fg' : 'border-line bg-transparent text-muted hover:bg-hover',
+              )}
+              onClick={() => setFormat(f.id)}
+            >
+              {(t as Record<string, string>)[f.labelKey]}
+            </button>
+          ))}
+        </div>
+        {missing.length > 0 && (
+          <p className="mb-2 rounded-md bg-warn-bg px-2.5 py-1.5 text-[11.5px] leading-snug text-warn">{t.formatWarn}</p>
+        )}
         <div className="mb-3 flex flex-col gap-4">
           {shown.map((tpl) => (
             <button key={tpl.id} className="flex cursor-pointer flex-col gap-1.5 rounded-[9px] border border-transparent p-1 text-left" onClick={() => onPick(tpl.id)}>

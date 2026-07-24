@@ -24,7 +24,6 @@ export const resumes: tLocale['resumes'] = {
   pickStyleTitle: 'Elige un estilo',
   pickStyleHint: 'Todos los estilos son seguros para ATS — texto real, fuentes estándar, se leen sin errores. Elige el look que encaje con el puesto.',
   allStyles: 'Todos',
-  filterByField: 'Filtrar por área',
   tagEngineering: 'Ingeniería',
   tagData: 'Datos',
   tagMarketing: 'Marketing',
@@ -60,4 +59,8 @@ export const resumes: tLocale['resumes'] = {
   tailoredBody: 'Reenfocado en lo que encaja con este empleo. Cada línea sale de tu perfil.',
   removeCvTitle: '¿Eliminar este CV?',
   removeCvWarning: 'Volver a hacer un CV adaptado cuesta un crédito. Las solicitudes ya enviadas conservan la copia que fue con ellas.',
+  formatAts: "Standard",
+  formatEuropass: "Europass",
+  formatContinental: "Continental",
+  formatWarn: "Este formato suele mostrar una foto y datos personales que aún no has añadido: agrégalos en tu perfil o genera sin ellos.",
 }

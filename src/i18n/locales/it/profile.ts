@@ -132,4 +132,8 @@ export const profile: tLocale['profile'] = {
   lvlProfessional: 'Professionale',
   lvlFull: 'Fluente',
   lvlNative: 'Madrelingua',
+  photo: "Foto",
+  addPhoto: "Aggiungi foto",
+  changePhoto: "Cambia foto",
+  photoHint: "Per i CV Europass e continentali.",
 }

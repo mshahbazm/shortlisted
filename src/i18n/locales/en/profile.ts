@@ -132,4 +132,8 @@ export const profile = {
   lvlProfessional: 'Professional',
   lvlFull: 'Fluent',
   lvlNative: 'Native',
+  photo: "Photo",
+  addPhoto: "Add photo",
+  changePhoto: "Change photo",
+  photoHint: "Used by Europass & Continental CVs.",
 }

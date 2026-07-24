@@ -37,4 +37,8 @@ export const common: tLocale['common'] = {
   tplMint: 'Verde fresco',
   back: 'Atrás',
   settings: 'Ajustes',
+  dateOfBirth: "Fecha de nacimiento",
+  nationality: "Nacionalidad",
+  tplEuropass: "Europass",
+  tplLebenslauf: "Lebenslauf",
 }

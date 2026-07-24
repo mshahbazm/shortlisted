@@ -24,7 +24,6 @@ export const resumes: tLocale['resumes'] = {
   pickStyleTitle: 'Kies een stijl',
   pickStyleHint: 'Elke stijl is ATS-veilig — echte tekst, standaardfonts, wordt netjes gelezen. Kies de look die bij de baan past.',
   allStyles: 'Alle',
-  filterByField: 'Filter op vakgebied',
   tagEngineering: 'Engineering',
   tagData: 'Data',
   tagMarketing: 'Marketing',
@@ -60,4 +59,8 @@ export const resumes: tLocale['resumes'] = {
   tailoredBody: 'Toegespitst op wat bij deze vacature past. Elke regel is terug te voeren op je profiel.',
   removeCvTitle: 'Dit cv verwijderen?',
   removeCvWarning: 'Een cv op maat kost opnieuw een credit. Al verstuurde sollicitaties houden het exemplaar dat meeging.',
+  formatAts: "Standard",
+  formatEuropass: "Europass",
+  formatContinental: "Continental",
+  formatWarn: "Dit formaat toont meestal een foto en persoonlijke gegevens die je nog niet hebt toegevoegd — voeg ze toe in je profiel, of genereer zonder.",
 }

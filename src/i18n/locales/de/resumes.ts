@@ -25,7 +25,6 @@ export const resumes: tLocale['resumes'] = {
   pickStyleTitle: 'Stil wählen',
   pickStyleHint: 'Jeder Stil ist ATS-sicher — echter Text, Standardschriften, sauber lesbar. Wähl den Look, der zur Stelle passt.',
   allStyles: 'Alle',
-  filterByField: 'Nach Bereich filtern',
   tagEngineering: 'Engineering',
   tagData: 'Daten',
   tagMarketing: 'Marketing',
@@ -61,4 +60,8 @@ export const resumes: tLocale['resumes'] = {
   tailoredBody: 'Neu ausgerichtet auf das, was zu diesem Job passt. Jede Zeile lässt sich auf dein Profil zurückführen.',
   removeCvTitle: 'Diesen Lebenslauf löschen?',
   removeCvWarning: 'Ein zugeschnittener Lebenslauf kostet erneut einen Credit. Bereits verschickte Bewerbungen behalten ihre Kopie.',
+  formatAts: "Standard",
+  formatEuropass: "Europass",
+  formatContinental: "Continental",
+  formatWarn: "Dieses Format zeigt üblicherweise ein Foto und persönliche Daten, die noch fehlen — ergänze sie im Profil oder erstelle den CV ohne.",
 }

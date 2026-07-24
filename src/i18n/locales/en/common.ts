@@ -38,4 +38,8 @@ export const common = {
   tplMint: 'Fresh green',
   back: 'Back',
   settings: 'Settings',
+  dateOfBirth: "Date of birth",
+  nationality: "Nationality",
+  tplEuropass: "Europass",
+  tplLebenslauf: "Lebenslauf",
 }

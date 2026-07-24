@@ -26,6 +26,7 @@ import {
   workPeriodLabel,
 } from '../../lib/types'
 import { cloudImportResume, cloudProfileNote } from '../../ai/run'
+import { fileToProfilePhoto } from '../../lib/image'
 import * as store from '../../lib/store'
 import { Gap, GapKey, profileStrength } from '../../lib/profileStrength'
 import { mergeEnrichment, needsCompletion } from '../../lib/profileMerge'
@@ -742,6 +743,56 @@ function TellMe({ t, settings }: { t: T; settings: Parameters<typeof cloudProfil
   )
 }
 
+function PhotoField({ photo, onChange, t }: { photo?: string; onChange: (v: string) => void; t: T }) {
+  const ref = useRef<HTMLInputElement>(null)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  return (
+    <div className="flex items-center gap-3 py-1.5">
+      {photo ? (
+        <img src={photo} alt="" className="size-14 rounded-md border border-line object-cover" />
+      ) : (
+        <div className="size-14 rounded-md border border-dashed border-line" />
+      )}
+      <div className="flex flex-col gap-1">
+        <div className="text-[11.5px] font-semibold text-muted">{t.photo}</div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" disabled={busy} onClick={() => ref.current?.click()}>
+            {busy ? '…' : photo ? t.changePhoto : t.addPhoto}
+          </Button>
+          {photo && (
+            <Button variant="link" onClick={() => onChange('')}>
+              {t.remove}
+            </Button>
+          )}
+        </div>
+        <div className="text-[10.5px] text-faint">{t.photoHint}</div>
+        {err && <div className="text-[10.5px] text-bad">{err}</div>}
+      </div>
+      <input
+        ref={ref}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={async (e) => {
+          const f = e.target.files?.[0]
+          e.target.value = ''
+          if (!f) return
+          setErr('')
+          setBusy(true)
+          try {
+            onChange(await fileToProfilePhoto(f))
+          } catch (ex) {
+            setErr(ex instanceof Error ? ex.message : String(ex))
+          } finally {
+            setBusy(false)
+          }
+        }}
+      />
+    </div>
+  )
+}
+
 function AboutEditor({ p, set, t }: { p: Profile; set: (patch: Partial<Profile>) => void; t: T }) {
   const setIdentity = (k: keyof typeof p.identity, v: string) => set({ identity: { ...p.identity, [k]: v } })
   return (
@@ -753,6 +804,10 @@ function AboutEditor({ p, set, t }: { p: Profile; set: (patch: Partial<Profile>)
       <KV k={t.location} v={p.identity.location} placeholder={t.locationPlaceholder} onChange={(v) => setIdentity('location', v)} />
       <KV k={t.city} v={p.identity.city ?? ''} onChange={(v) => setIdentity('city', v)} />
       <KV k={t.countryIso} v={p.identity.country ?? ''} placeholder="PK" onChange={(v) => setIdentity('country', v)} />
+      {/* Used by the Europass / Continental CV formats — optional for everyone else. */}
+      <KV k={t.dateOfBirth} v={p.identity.dateOfBirth ?? ''} onChange={(v) => setIdentity('dateOfBirth', v)} />
+      <KV k={t.nationality} v={p.identity.nationality ?? ''} onChange={(v) => setIdentity('nationality', v)} />
+      <PhotoField photo={p.identity.photo} onChange={(v) => setIdentity('photo', v)} t={t} />
       <KV k={t.headline} v={p.headline} placeholder={t.headlinePlaceholder} onChange={(v) => set({ headline: v })} />
       <KV k={t.summary} v={p.summary} multiline onChange={(v) => set({ summary: v })} />
       <Label>{t.industries}

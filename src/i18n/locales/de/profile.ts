@@ -132,4 +132,8 @@ export const profile: tLocale['profile'] = {
   lvlProfessional: 'Verhandlungssicher',
   lvlFull: 'Fließend',
   lvlNative: 'Muttersprache',
+  photo: "Foto",
+  addPhoto: "Foto hinzufügen",
+  changePhoto: "Foto ändern",
+  photoHint: "Für Europass- und kontinentale Lebensläufe.",
 }
