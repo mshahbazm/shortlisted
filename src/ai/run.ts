@@ -285,6 +285,13 @@ export async function pushCloudData(settings: Settings, patch: Record<string, un
   await cloudCall(settings, '/v1/data', patch, 'PUT')
 }
 
+/** One resume's PDF bytes on demand — /v1/data no longer ships them, so the
+ *  mirror fetches only the resumes it doesn't already have cached. */
+export async function fetchResumePdf(settings: Settings, id: string): Promise<string> {
+  const { dataBase64 } = await cloudCall<{ dataBase64: string }>(settings, `/v1/resume/${encodeURIComponent(id)}`, undefined, 'GET')
+  return dataBase64 ?? ''
+}
+
 // ---- plumbing ----
 
 async function cloudCall<T>(

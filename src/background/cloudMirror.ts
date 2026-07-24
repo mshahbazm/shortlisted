@@ -14,7 +14,7 @@
 // delete-by-absence, so a second device pushing a list that predates a row this
 // device just added can't wipe it — the cornerstone of safe multi-device sync.
 
-import { fetchCloudData, pushCloudData } from '../ai/run'
+import { fetchCloudData, fetchResumePdf, pushCloudData } from '../ai/run'
 import * as store from '../lib/store'
 import { StorageShape, SyncState, emptyProfile, hasProfileContent } from '../lib/types'
 
@@ -203,7 +203,12 @@ export async function pullFromCloud(opts?: { force?: boolean }): Promise<void> {
   if (remote.profile) await applyRemote('profile', remote.profile)
   else if (hasProfileContent(local.profile)) await applyRemote('profile', emptyProfile())
 
-  await reconcile('resumes', remote.resumes, local.resumes)
+  // Resume rows arrive WITHOUT their PDF bytes (dataBase64 empty). Fill them from
+  // the local cache where we already have them (an id's bytes never change — a
+  // regenerated CV gets a new id), and fetch the rest on demand. So a steady-state
+  // sync transfers no PDF bytes at all.
+  const hydratedResumes = await hydrateResumeBytes(settings, remote.resumes, local.resumes)
+  await reconcile('resumes', hydratedResumes, local.resumes)
   await reconcile('applications', remote.applications, local.applications)
   await reconcile('queue', remote.savedJobs, local.queue)
   await reconcile('answerBank', remote.answers, local.answerBank)
@@ -219,6 +224,30 @@ export async function pullFromCloud(opts?: { force?: boolean }): Promise<void> {
   knownIds.answers = collectionIds(remote.answers)
   lastPullAt = Date.now()
   await persist()
+}
+
+/** Fill each remote resume's PDF bytes: reuse the local cache when we already
+ *  have them (bytes are immutable per id), else fetch on demand. Inline (dev)
+ *  rows already carry their bytes. A failed fetch leaves the row empty for a
+ *  later sync to retry. */
+async function hydrateResumeBytes(
+  settings: StorageShape['settings'],
+  remote: StorageShape['resumes'],
+  local: StorageShape['resumes'],
+): Promise<StorageShape['resumes']> {
+  const cached = new Map(local.map((r) => [r.id, r.dataBase64]))
+  return Promise.all(
+    remote.map(async (r) => {
+      if (r.dataBase64) return r
+      const have = cached.get(r.id)
+      if (have) return { ...r, dataBase64: have }
+      try {
+        return { ...r, dataBase64: await fetchResumePdf(settings, r.id) }
+      } catch {
+        return r
+      }
+    }),
+  )
 }
 
 /** Mirror one array key from the server: server has rows → apply them; server is
