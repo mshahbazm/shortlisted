@@ -335,9 +335,7 @@ export function renderEuropass(profile: Profile, variant: TailoredResume, tpl: R
   for (let pg = 1; pg <= pages; pg++) {
     doc.setPage(pg)
     drawHeader()
-    doc.setDrawColor(LINE)
-    doc.setLineWidth(0.5)
-    doc.line(MARGIN, PAGE_H - 32, pageRight, PAGE_H - 32)
+    // No rule above the footer — the official Europass footer sits on plain space.
     p.setFont(false, 7.5, SOFT)
     doc.text('© European Union, 2002-2024 | europass.europa.eu', PAGE_W / 2, PAGE_H - 22, { align: 'center' })
     doc.text(`Page ${pg} / ${pages}`, pageRight, PAGE_H - 22, { align: 'right' })
