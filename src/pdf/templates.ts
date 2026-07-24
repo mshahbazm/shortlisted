@@ -25,8 +25,17 @@ export type TemplateTag =
   | 'executive'
   | 'student'
 
+// A FORMAT is the document standard/region — it decides the STRUCTURE (which
+// sections, personal fields, layout), and picks which renderer runs. Distinct
+// from a template's visual tokens (the "style"). `ats` is the Anglo/ATS default
+// that every legacy template belongs to; the others are regional standards with
+// their own dedicated renderer in src/pdf/formats/*.
+export type FormatId = 'ats' | 'europass' | 'lebenslauf'
+
 export interface ResumeTemplate {
   id: string
+  /** The document format/standard this template renders as. Omitted = 'ats'. */
+  format?: FormatId
   tags: TemplateTag[]
   font: 'helvetica' | 'times'
   /** Accent hex for name/rules/bullet markers; null = pure monochrome. */
@@ -38,6 +47,22 @@ export interface ResumeTemplate {
   /** Skills block right under the summary (hybrid) instead of after experience. */
   skillsFirst: boolean
 }
+
+/** A template's format, defaulting legacy (Anglo/ATS) templates to 'ats'. */
+export const templateFormat = (t: ResumeTemplate): FormatId => t.format ?? 'ats'
+
+/** A user-facing FORMAT choice (the filter). `expects` lists identity fields the
+ *  format wants — used to warn (never block) when the profile is missing them. */
+export interface ResumeFormat {
+  id: FormatId
+  labelKey: string // i18n key in the `resumes` namespace
+  expects: ('photo' | 'dateOfBirth' | 'nationality')[]
+}
+
+export const FORMATS: ResumeFormat[] = [
+  { id: 'ats', labelKey: 'formatAts', expects: [] },
+  { id: 'europass', labelKey: 'formatEuropass', expects: [] }, // photo optional in Europass
+]
 
 export const TEMPLATES: ResumeTemplate[] = [
   {
@@ -183,6 +208,20 @@ export const TEMPLATES: ResumeTemplate[] = [
     layout: 'single',
     density: 'normal',
     skillsFirst: true,
+  },
+  {
+    // The EU's official standardized CV. Its own dedicated renderer
+    // (src/pdf/formats/europass.ts) — the tokens below only seed the accent.
+    id: 'europass',
+    format: 'europass',
+    tags: ['operations', 'education', 'executive'],
+    font: 'helvetica',
+    accent: '#003399', // EU blue
+    headerStyle: 'left',
+    sectionStyle: 'rule',
+    layout: 'single',
+    density: 'normal',
+    skillsFirst: false,
   },
 ]
 

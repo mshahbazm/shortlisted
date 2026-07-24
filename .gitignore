@@ -12,3 +12,6 @@ SPEC.md
 .env.*
 !.env.example
 *.log
+
+# Dev-only sample CV renders
+sample-cvs/

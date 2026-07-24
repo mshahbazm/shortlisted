@@ -5,7 +5,8 @@
 
 import { jsPDF } from 'jspdf'
 import { Profile, TailoredResume, workPeriodLabel } from '../lib/types'
-import { ResumeTemplate, getTemplate } from './templates'
+import { ResumeTemplate, getTemplate, templateFormat } from './templates'
+import { renderEuropass } from './formats/europass'
 
 const PAGE_W = 595.28 // A4 points
 const PAGE_H = 841.89
@@ -35,6 +36,10 @@ interface Col {
 
 export function renderResumePdf(profile: Profile, variant: TailoredResume, templateId?: string): string {
   const tpl = getTemplate(templateId)
+  // Regional formats have their own dedicated renderers (structurally different
+  // documents). Everything else is the Anglo/ATS renderer below, unchanged.
+  if (templateFormat(tpl) === 'europass') return renderEuropass(profile, variant, tpl)
+
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
 
   const base = tpl.density === 'compact' ? 8.8 : 9.5

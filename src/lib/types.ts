@@ -104,6 +104,11 @@ export interface Profile {
     city?: string
     country?: string // 2-letter ISO where known
     pronouns?: string
+    // Regional-format fields — only used by photo/personal-data CV formats
+    // (Europass, Continental). Optional; Anglo/ATS formats ignore them.
+    photo?: string // a data: URL (JPEG/PNG) — embedded top-right on photo formats
+    dateOfBirth?: string // free text or ISO 'YYYY-MM-DD'
+    nationality?: string
   }
   headline: string // "AI Agent Engineer"
   summary: string

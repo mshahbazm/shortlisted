@@ -9,7 +9,7 @@ import * as store from '../../lib/store'
 import { applyEnrichment } from '../../lib/profileMerge'
 import { renderPdfPages, renderPdfThumbnail } from '../../lib/pdfText'
 import { masterVariant, renderResumePdf } from '../../pdf/resumePdf'
-import { ALL_TAGS, ResumeTemplate, TEMPLATES, TemplateTag } from '../../pdf/templates'
+import { ALL_TAGS, ResumeTemplate, TEMPLATES, TemplateTag, templateFormat } from '../../pdf/templates'
 import { runTailorCv } from '../../ai/run'
 import { showToast } from '../toast'
 import type { tMerged } from '../../i18n/content'
@@ -404,7 +404,11 @@ function TemplatePicker({
   const [tag, setTag] = useState<TemplateTag | null>(null)
   // Rendered previews live as long as the picker does — filter clicks reuse them.
   const cache = useRef(new Map<string, string>())
-  const shown = tag ? TEMPLATES.filter((tpl) => tpl.tags.includes(tag)) : TEMPLATES
+  // Only Anglo/ATS styles are exposed for now — the FORMAT selector (Europass,
+  // Continental) and the photo/personal-data editing land next; until then the
+  // regional formats stay out of the picker so no half-wired card shows.
+  const ats = TEMPLATES.filter((tpl) => templateFormat(tpl) === 'ats')
+  const shown = tag ? ats.filter((tpl) => tpl.tags.includes(tag)) : ats
 
   const tagLabel: Record<TemplateTag, string> = {
     engineering: t.tagEngineering, data: t.tagData, marketing: t.tagMarketing, sales: t.tagSales,
