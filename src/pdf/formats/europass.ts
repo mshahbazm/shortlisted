@@ -44,13 +44,18 @@ export function renderEuropass(profile: Profile, variant: TailoredResume, tpl: R
   // ---- Personal information (labelled two-column rows) ----
   const infoRow = (label: string, value?: string) => {
     if (!value) return
-    p.ensure(c, 14)
+    p.setFont(false, 9.5, INK)
+    const lines = doc.splitTextToSize(value, c.w - 96) as string[]
+    p.ensure(c, Math.max(14, lines.length * 12))
     p.setFont(false, 8.5, SOFT)
     doc.text(label, c.x, c.y)
     p.setFont(false, 9.5, INK)
-    const lines = doc.splitTextToSize(value, c.w - 96) as string[]
-    doc.text(lines[0] ?? '', c.x + 96, c.y)
-    c.y += 14
+    let vy = c.y
+    for (const ln of lines) {
+      doc.text(ln, c.x + 96, vy)
+      vy += 12
+    }
+    c.y += Math.max(14, lines.length * 12)
   }
   const web = [profile.links.website, profile.links.linkedin, profile.links.github, profile.links.portfolio]
     .filter(Boolean)
