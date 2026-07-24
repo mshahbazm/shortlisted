@@ -61,7 +61,7 @@ export interface ResumeFormat {
 
 export const FORMATS: ResumeFormat[] = [
   { id: 'ats', labelKey: 'formatAts', expects: [] },
-  { id: 'europass', labelKey: 'formatEuropass', expects: [] }, // photo optional in Europass
+  { id: 'europass', labelKey: 'formatEuropass', expects: ['photo'] }, // official Europass shows a photo
   { id: 'lebenslauf', labelKey: 'formatContinental', expects: ['photo', 'dateOfBirth', 'nationality'] },
 ]
 

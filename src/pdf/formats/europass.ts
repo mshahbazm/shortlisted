@@ -1,203 +1,336 @@
-// Europass — the EU's official standardized CV. Fixed structure (the standard
-// dictates it), so this renderer largely ignores visual tokens and follows the
-// canonical section order:
-//   Personal information → About me → Work experience → Education and training
-//   → Language skills (with the CEFR self-assessment grid) → Digital skills
-// Ref: europass.europa.eu. Photo/date-of-birth/nationality are optional.
+// Europass — the EU's official standardized CV, rebuilt to match the real layout
+// (europa.eu): a TWO-COLUMN grid — a left rail holds the section labels and the
+// date ranges (right-aligned), content sits in the right column; the photo lives
+// in the rail; contact details use small icons; section rules carry the Europass
+// square end-cap. Fixed order: Personal information → Position → About me → Work
+// experience → Education and training → Language skills (CEFR self-assessment
+// grid) → Digital skills.
 
 import { jsPDF } from 'jspdf'
-import { Profile, TailoredResume, workPeriodLabel } from '../../lib/types'
+import { Profile, TailoredResume } from '../../lib/types'
 import { ResumeTemplate } from '../templates'
-import { Cursor, INK, LINE, MARGIN, PAGE_W, SOFT, isMotherTongue, painter, toBase64, toCefr } from './shared'
+import { Cursor, INK, LINE, MARGIN, PAGE_H, PAGE_W, SOFT, isMotherTongue, painter, toBase64, toCefr } from './shared'
+import { EUROPASS_LOGO } from './europassLogo'
 
-const ACCENT = '#003399' // EU blue
+const ACCENT = '#0e4194' // the official Europass blue (sampled from the EU template)
+const RAIL_W = 150
+const GAP = 16
+const MONTHS_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+/** "June 2007" / "2007" / "". */
+const fullYm = (y?: number, m?: number) => (y ? `${m ? MONTHS_FULL[m - 1] + ' ' : ''}${y}` : '')
+
+/** Europass date range: "From June 2007 to December 2015" / "From 2007 to present". */
+function euRange(sY?: number, sM?: number, eY?: number, eM?: number, current?: boolean): string {
+  const s = fullYm(sY, sM)
+  const e = current ? 'present' : fullYm(eY, eM)
+  if (!s && !e) return ''
+  if (s && e) return `From ${s} to ${e}`
+  return `From ${s || e}`
+}
+
+// Small line-drawn contact icons (jsPDF standard fonts can't render icon glyphs,
+// so we draw them). Top-left at (x, y), ~10pt box, stroked in the accent.
+function makeIcons(doc: jsPDF) {
+  const set = (c: string) => {
+    doc.setDrawColor(c)
+    doc.setFillColor(c)
+    doc.setLineWidth(0.8)
+  }
+  return {
+    pin: (x: number, y: number, c: string) => {
+      set(c)
+      doc.circle(x + 4.5, y + 4, 3.2, 'S')
+      doc.line(x + 2.1, y + 5.6, x + 4.5, y + 10.5)
+      doc.line(x + 6.9, y + 5.6, x + 4.5, y + 10.5)
+      doc.circle(x + 4.5, y + 4, 1, 'F')
+    },
+    phone: (x: number, y: number, c: string) => {
+      set(c)
+      doc.roundedRect(x + 2.4, y, 5.4, 10.4, 1.2, 1.2, 'S')
+      doc.line(x + 3.7, y + 8.6, x + 6.5, y + 8.6)
+    },
+    mail: (x: number, y: number, c: string) => {
+      set(c)
+      doc.rect(x + 0.5, y + 1.8, 9, 6.6, 'S')
+      doc.line(x + 0.5, y + 1.8, x + 5, y + 5.6)
+      doc.line(x + 9.5, y + 1.8, x + 5, y + 5.6)
+    },
+    globe: (x: number, y: number, c: string) => {
+      set(c)
+      doc.circle(x + 5, y + 5, 4.4, 'S')
+      doc.ellipse(x + 5, y + 5, 1.9, 4.4, 'S')
+      doc.line(x + 0.6, y + 5, x + 9.4, y + 5)
+    },
+  }
+}
 
 export function renderEuropass(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate): string {
   const accent = tpl.accent ?? ACCENT
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   const p = painter(doc, 'helvetica')
-  const CONTENT_W = PAGE_W - MARGIN * 2
+  const ic = makeIcons(doc)
   const id = profile.identity
-  const c: Cursor = { x: MARGIN, w: CONTENT_W, y: MARGIN }
 
-  // ---- Photo (optional, top-right) ----
-  let photoBottom = MARGIN
-  const PW = 74
-  const PH = 95
+  const railRight = MARGIN + RAIL_W
+  const colX = MARGIN + RAIL_W + GAP
+  const pageRight = PAGE_W - MARGIN
+  const col: Cursor = { x: colX, w: pageRight - colX, y: MARGIN }
+  const name = `${id.firstName} ${id.lastName}`.trim()
+
+  // ---- Header band: logo, "Curriculum Vitae", name — all centred on one line ----
+  const headerC = MARGIN + 8 // vertical centre of the header row
+  const logoH = 32
+  const logoW = logoH * (132 / 50)
+  try {
+    doc.addImage(EUROPASS_LOGO, 'JPEG', MARGIN, headerC - logoH / 2, logoW, logoH)
+  } catch {
+    /* fall back to nothing */
+  }
+  p.setFont(false, 10, accent)
+  doc.text('Curriculum Vitae', colX, headerC + 3.4)
+  doc.text(name, pageRight, headerC + 3.4, { align: 'right' })
+  col.y = headerC + logoH / 2 + 12
+
+  // Right-aligned rail label (Europass blue) at a given baseline.
+  const railLabel = (label: string, y: number) => {
+    p.setFont(false, 8, accent)
+    let yy = y
+    for (const ln of doc.splitTextToSize(label.toUpperCase(), RAIL_W) as string[]) {
+      doc.text(ln, railRight, yy, { align: 'right', charSpace: 0.3 })
+      yy += 9.5
+    }
+  }
+
+  // Section: rail label CENTRED on a full-width Europass-blue rule with the
+  // square end-cap — line and square in the same blue at a matching weight.
+  const section = (label: string) => {
+    col.y += 16 // consistent space above every separator
+    p.ensure(col, 26)
+    const lineY = col.y
+    railLabel(label, lineY + 2.6) // baseline just below the line → text sits on it
+    doc.setDrawColor(accent)
+    doc.setLineWidth(1.4)
+    doc.line(colX, lineY, pageRight, lineY)
+    doc.setFillColor(accent)
+    doc.rect(pageRight - 5, lineY - 2.5, 5, 5, 'F')
+    col.y = lineY + 15 // and consistent space below
+  }
+
+  // A dated entry: date range in the rail (right-aligned), content in the column,
+  // both starting at the same baseline.
+  const entry = (dateStr: string, render: (r: Cursor) => void) => {
+    p.ensure(col, 30)
+    const y0 = col.y
+    if (dateStr) {
+      p.setFont(false, 8.5, SOFT)
+      let yy = y0
+      for (const ln of doc.splitTextToSize(dateStr, RAIL_W - 4) as string[]) {
+        doc.text(ln, railRight, yy, { align: 'right' })
+        yy += 10
+      }
+    }
+    render(col)
+    col.y = Math.max(col.y, y0 + 12) + 6
+  }
+
+  // ---- Personal information (no rule): the name sits on the label's line, the
+  // photo hangs in the rail, and the personal-detail line drops to the photo's
+  // bottom edge — exactly like the official Europass. ----
+  col.y += 16
+  p.ensure(col, 132)
+  const labelY = col.y + 3
+  railLabel('Personal information', labelY)
+  // Europass convention: first name + SURNAME in caps.
+  const displayName = `${id.firstName} ${id.lastName.toUpperCase()}`.trim()
+  p.setFont(false, 14, INK)
+  doc.text(displayName || ' ', colX, labelY)
+  // Photo in the rail, right edge on the label line.
+  const PW = 92
+  const PH = 116
+  const photoTop = labelY + 10
   if (id.photo) {
     try {
       const fmt = id.photo.startsWith('data:image/png') ? 'PNG' : 'JPEG'
-      doc.addImage(id.photo, fmt, PAGE_W - MARGIN - PW, MARGIN, PW, PH)
-      photoBottom = MARGIN + PH
+      doc.addImage(id.photo, fmt, railRight - PW, photoTop, PW, PH)
     } catch {
-      // A broken image must never break the CV — just skip it.
+      // A broken image must never break the CV.
     }
   }
-
-  // ---- Name + headline (narrowed if a photo sits to the right) ----
-  const name = `${id.firstName} ${id.lastName}`.trim()
-  const head: Cursor = { x: MARGIN, w: id.photo ? CONTENT_W - PW - 16 : CONTENT_W, y: MARGIN + 8 }
-  p.text(head, name || ' ', 20, { bold: true, color: accent, gap: 2 })
-  if (variant.headline) p.text(head, variant.headline, 11.5, { color: SOFT, gap: 2 })
-  c.y = Math.max(head.y, photoBottom) + 8
-
-  // ---- Personal information (labelled two-column rows) ----
-  const infoRow = (label: string, value?: string) => {
-    if (!value) return
-    p.setFont(false, 9.5, INK)
-    const lines = doc.splitTextToSize(value, c.w - 96) as string[]
-    p.ensure(c, Math.max(14, lines.length * 12))
-    p.setFont(false, 8.5, SOFT)
-    doc.text(label, c.x, c.y)
-    p.setFont(false, 9.5, INK)
-    let vy = c.y
-    for (const ln of lines) {
-      doc.text(ln, c.x + 96, vy)
-      vy += 12
+  const photoBottom = id.photo ? photoTop + PH : labelY + 6
+  // Contact rows (icons) under the name.
+  const iconRow = (draw: (x: number, y: number, c: string) => void, text?: string) => {
+    if (!text) return
+    draw(colX, col.y - 8, accent)
+    p.setFont(false, 9, INK)
+    let yy = col.y
+    for (const ln of doc.splitTextToSize(text, col.w - 16) as string[]) {
+      doc.text(ln, colX + 16, yy)
+      yy += 12
     }
-    c.y += Math.max(14, lines.length * 12)
+    col.y = yy + 1
   }
+  col.y = labelY + 20
   const web = [profile.links.website, profile.links.linkedin, profile.links.github, profile.links.portfolio]
     .filter(Boolean)
     .join('   ')
-  infoRow('Address', id.location)
-  infoRow('Phone', id.phone)
-  infoRow('Email', id.email)
-  infoRow('Website', web)
-  infoRow('Date of birth', id.dateOfBirth)
-  infoRow('Nationality', id.nationality)
+  iconRow(ic.pin, id.location)
+  iconRow(ic.phone, id.phone)
+  iconRow(ic.mail, id.email)
+  iconRow(ic.globe, web)
+  // Personal-detail line (Date of birth / Nationality) at the photo's bottom edge.
+  const detailY = Math.max(col.y + 2, photoBottom)
+  if (id.dateOfBirth || id.nationality) {
+    let x = colX
+    const seg = (label: string, val: string) => {
+      p.setFont(false, 8.5, accent)
+      doc.text(label + ' ', x, detailY)
+      x += doc.getTextWidth(label + ' ')
+      p.setFont(false, 9, INK)
+      doc.text(val, x, detailY)
+      x += doc.getTextWidth(val) + 12
+    }
+    if (id.dateOfBirth) seg('Date of birth', id.dateOfBirth)
+    if (id.nationality) seg('Nationality', id.nationality)
+  }
+  col.y = detailY + 6
 
-  // ---- Section heading (accent caps + full-width rule) ----
-  const heading = (title: string) => {
-    c.y += 12
-    p.ensure(c, 24)
-    p.setFont(true, 10.5, accent)
-    doc.text(title.toUpperCase(), c.x, c.y, { charSpace: 0.4 })
-    c.y += 5
-    doc.setDrawColor(accent)
-    doc.setLineWidth(1)
-    doc.line(c.x, c.y, c.x + c.w, c.y)
-    c.y += 12
+  // ---- Position ----
+  if (variant.headline) {
+    section('Position')
+    p.text(col, variant.headline, 12, { bold: true, color: INK, gap: 2 })
   }
 
   // ---- About me ----
   if (variant.summary) {
-    heading('About me')
-    p.text(c, variant.summary, 9.5, { gap: 2 })
+    section('About me')
+    p.text(col, variant.summary, 9.5, { gap: 2 })
   }
 
   // ---- Work experience ----
   const workById = new Map(profile.work.map((w) => [w.id, w]))
-  const workEntries = variant.work.map((v) => ({ v, w: workById.get(v.sourceId) })).filter((e) => e.w)
-  if (workEntries.length) {
-    heading('Work experience')
-    for (const { v, w } of workEntries) {
-      const src = w!
-      p.ensure(c, 30)
-      p.text(c, workPeriodLabel(src), 9, { color: SOFT })
-      p.text(c, src.title, 10.5, { bold: true })
-      p.text(c, [src.company, src.location].filter(Boolean).join(' — '), 9.5, { color: SOFT, gap: 2 })
-      const bullets = v.bullets.length ? v.bullets : src.highlights
-      for (const b of bullets) p.bullet(c, b, 9.5, accent)
-      c.y += 4
+  const works = variant.work.map((v) => ({ v, w: workById.get(v.sourceId) })).filter((e) => e.w)
+  if (works.length) {
+    section('Work experience')
+    for (const { v, w } of works) {
+      const s = w!
+      entry(euRange(s.startYear, s.startMonth, s.endYear, s.endMonth, s.isCurrent), (r) => {
+        p.text(r, s.title, 10, { bold: true, color: accent })
+        p.text(r, [s.company, s.location].filter(Boolean).join(', '), 9, { color: SOFT, gap: 1 })
+        const bullets = v.bullets.length ? v.bullets : s.highlights
+        for (const b of bullets) p.bullet(r, b, 9, accent)
+      })
     }
   }
 
   // ---- Education and training ----
   const eduById = new Map(profile.education.map((e) => [e.id, e]))
-  const edus = variant.educationIds.map((eid) => eduById.get(eid)).filter(Boolean)
+  const edus = variant.educationIds.map((i) => eduById.get(i)).filter(Boolean)
   if (edus.length) {
-    heading('Education and training')
+    section('Education and training')
     for (const e of edus) {
       const ed = e!
-      p.ensure(c, 26)
-      const dates = [ed.startYear, ed.isCurrent ? 'Present' : ed.endYear].filter(Boolean).join(' — ')
-      if (dates) p.text(c, dates, 9, { color: SOFT })
-      p.text(c, [ed.degree, ed.fieldOfStudy].filter(Boolean).join(', '), 10.5, { bold: true })
-      p.text(c, ed.school, 9.5, { color: SOFT, gap: 2 })
-      if (ed.description) p.text(c, ed.description, 9, { color: SOFT, gap: 2 })
+      entry(euRange(ed.startYear, undefined, ed.endYear, undefined, ed.isCurrent), (r) => {
+        p.text(r, [ed.degree, ed.fieldOfStudy].filter(Boolean).join(', '), 10, { bold: true, color: accent })
+        p.text(r, ed.school, 9, { color: SOFT, gap: 1 })
+        if (ed.description) p.text(r, ed.description, 8.5, { color: SOFT, gap: 1 })
+      })
     }
   }
 
-  // ---- Language skills (mother tongue line + CEFR self-assessment grid) ----
+  // ---- Language skills ----
   if (profile.languages.length) {
-    heading('Language skills')
     const mother = profile.languages.filter((l) => isMotherTongue(l.proficiency))
     const others = profile.languages.filter((l) => !isMotherTongue(l.proficiency))
     if (mother.length) {
-      infoRow('Mother tongue(s)', mother.map((l) => l.name).join(', '))
-      c.y += 4
+      section('Mother tongue(s)')
+      p.text(col, mother.map((l) => l.name).join(', '), 9.5, { gap: 2 })
     }
-    if (others.length) drawCefrGrid(doc, p, c, others.map((l) => ({ name: l.name, level: toCefr(l.proficiency) })))
+    if (others.length) {
+      section('Other language(s)')
+      drawCefrGrid(doc, p, col, accent, others.map((l) => ({ name: l.name, level: toCefr(l.proficiency) })))
+      p.text(col, 'Levels: A1/A2 Basic user · B1/B2 Independent user · C1/C2 Proficient user', 7, { color: accent, gap: 2 })
+    }
   }
 
-  // ---- Skills ----
+  // ---- Digital skills ----
   if (variant.skills.length) {
-    heading('Skills')
-    p.text(c, variant.skills.join('   ·   '), 9.5, { gap: 2 })
+    section('Digital skills')
+    p.text(col, variant.skills.join('   ·   '), 9.5, { gap: 2 })
+  }
+
+  // ---- Footer (on every page), like the official Europass ----
+  const pages = doc.getNumberOfPages()
+  for (let pg = 1; pg <= pages; pg++) {
+    doc.setPage(pg)
+    p.setFont(false, 7.5, SOFT)
+    doc.setDrawColor(LINE)
+    doc.setLineWidth(0.5)
+    doc.line(MARGIN, PAGE_H - 34, PAGE_W - MARGIN, PAGE_H - 34)
+    doc.text('© European Union | europass.europa.eu', MARGIN, PAGE_H - 24)
+    doc.text(`Page ${pg} / ${pages}`, PAGE_W - MARGIN, PAGE_H - 24, { align: 'right' })
   }
 
   return toBase64(doc)
 }
 
-/** The Europass self-assessment grid: a two-row header (Understanding / Speaking
- *  / Writing grouping over Listening, Reading, Spoken interaction, Spoken
- *  production, Writing) and one row per language, each cell holding the CEFR level. */
+/** The Europass self-assessment grid, sized to the content column: a two-row
+ *  header (Understanding / Speaking / Writing over the five skills) and one row
+ *  per language with the CEFR level in each cell. */
 function drawCefrGrid(
   doc: jsPDF,
   p: ReturnType<typeof painter>,
   c: Cursor,
+  accent: string,
   langs: { name: string; level: string }[],
 ) {
-  const LANG_W = 116
+  // Match the real Europass grid: NO header fill (white throughout), blue header
+  // text, thin light-blue borders, a blank top-left cell, right-aligned language
+  // names. Only cell borders — no background tint.
+  const GRID = '#c6d0e2' // light blue-grey rule, like the official grid
+  const LANG_W = 80
   const cellW = (c.w - LANG_W) / 5
-  const GH = 13 // group header height
-  const SH = 24 // skill header height (labels wrap)
-  const DH = 15 // data row height
-
+  const GH = 13
+  const SH = 27
+  const DH = 15
   p.ensure(c, GH + SH + langs.length * DH + 6)
   const x0 = c.x
   const xs = [x0 + LANG_W, x0 + LANG_W + cellW, x0 + LANG_W + cellW * 2, x0 + LANG_W + cellW * 3, x0 + LANG_W + cellW * 4]
   const right = x0 + c.w
-  let y = c.y
+  const y = c.y
 
-  const cell = (x: number, yy: number, w: number, h: number, txt: string, o: { bold?: boolean; size?: number; fill?: string } = {}) => {
-    if (o.fill) {
-      doc.setFillColor(o.fill)
-      doc.rect(x, yy, w, h, 'F')
-    }
-    doc.setDrawColor(LINE)
+  const cell = (x: number, yy: number, w: number, h: number, txt: string, o: { bold?: boolean; size?: number; color?: string; align?: 'center' | 'right' } = {}) => {
+    doc.setDrawColor(GRID)
     doc.setLineWidth(0.5)
     doc.rect(x, yy, w, h)
     if (!txt) return
-    const size = o.size ?? 7.5
-    p.setFont(o.bold ?? false, size, INK)
-    const lines = doc.splitTextToSize(txt, w - 4) as string[]
+    const size = o.size ?? 7
+    p.setFont(o.bold ?? false, size, o.color ?? INK)
+    const lines = doc.splitTextToSize(txt, w - 5) as string[]
     const lh = size * 1.12
     let ty = yy + h / 2 - ((lines.length - 1) * lh) / 2 + size * 0.35
     for (const ln of lines) {
-      doc.text(ln, x + w / 2, ty, { align: 'center' })
+      if (o.align === 'right') doc.text(ln, x + w - 4, ty, { align: 'right' })
+      else doc.text(ln, x + w / 2, ty, { align: 'center' })
       ty += lh
     }
   }
 
-  const soft = '#eef2fb'
-  // Group header row: language cell spans both header rows.
-  cell(x0, y, LANG_W, GH + SH, 'Language', { bold: true, size: 8, fill: soft })
-  cell(xs[0], y, cellW * 2, GH, 'Understanding', { bold: true, size: 7.5, fill: soft })
-  cell(xs[2], y, cellW * 2, GH, 'Speaking', { bold: true, size: 7.5, fill: soft })
-  cell(xs[4], y, right - xs[4], GH, 'Writing', { bold: true, size: 7.5, fill: soft })
-  // Skill header row.
+  // Header — blue text, unfilled.
+  cell(x0, y, LANG_W, GH + SH, '') // blank top-left, spans both header rows
+  cell(xs[0], y, cellW * 2, GH, 'Understanding', { size: 7, color: accent })
+  cell(xs[2], y, cellW * 2, GH, 'Speaking', { size: 7, color: accent })
+  cell(xs[4], y, right - xs[4], GH, 'Writing', { size: 7, color: accent })
   const yy = y + GH
-  cell(xs[0], yy, cellW, SH, 'Listening', { size: 7, fill: soft })
-  cell(xs[1], yy, cellW, SH, 'Reading', { size: 7, fill: soft })
-  cell(xs[2], yy, cellW, SH, 'Spoken interaction', { size: 7, fill: soft })
-  cell(xs[3], yy, cellW, SH, 'Spoken production', { size: 7, fill: soft })
-  cell(xs[4], yy, right - xs[4], SH, 'Writing', { size: 7, fill: soft })
-  // Data rows: the mapped CEFR level fills every skill column.
+  cell(xs[0], yy, cellW, SH, 'Listening', { size: 6.5, color: accent })
+  cell(xs[1], yy, cellW, SH, 'Reading', { size: 6.5, color: accent })
+  cell(xs[2], yy, cellW, SH, 'Spoken interaction', { size: 6.5, color: accent })
+  cell(xs[3], yy, cellW, SH, 'Spoken production', { size: 6.5, color: accent })
+  cell(xs[4], yy, right - xs[4], SH, 'Writing', { size: 6.5, color: accent })
+  // Data rows — language name right-aligned, levels centred, black text.
   let ry = y + GH + SH
   for (const l of langs) {
-    cell(x0, ry, LANG_W, DH, l.name, { bold: true, size: 8 })
+    cell(x0, ry, LANG_W, DH, l.name, { size: 8, align: 'right' })
     cell(xs[0], ry, cellW, DH, l.level, { size: 8 })
     cell(xs[1], ry, cellW, DH, l.level, { size: 8 })
     cell(xs[2], ry, cellW, DH, l.level, { size: 8 })
