@@ -62,6 +62,7 @@ export interface ResumeFormat {
 export const FORMATS: ResumeFormat[] = [
   { id: 'ats', labelKey: 'formatAts', expects: [] },
   { id: 'europass', labelKey: 'formatEuropass', expects: [] }, // photo optional in Europass
+  { id: 'lebenslauf', labelKey: 'formatContinental', expects: ['photo', 'dateOfBirth', 'nationality'] },
 ]
 
 export const TEMPLATES: ResumeTemplate[] = [
@@ -217,6 +218,20 @@ export const TEMPLATES: ResumeTemplate[] = [
     tags: ['operations', 'education', 'executive'],
     font: 'helvetica',
     accent: '#003399', // EU blue
+    headerStyle: 'left',
+    sectionStyle: 'rule',
+    layout: 'single',
+    density: 'normal',
+    skillsFirst: false,
+  },
+  {
+    // German tabellarischer Lebenslauf — its own renderer
+    // (src/pdf/formats/lebenslauf.ts).
+    id: 'lebenslauf',
+    format: 'lebenslauf',
+    tags: ['operations', 'finance', 'engineering'],
+    font: 'helvetica',
+    accent: '#334155', // slate
     headerStyle: 'left',
     sectionStyle: 'rule',
     layout: 'single',
