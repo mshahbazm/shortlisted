@@ -224,6 +224,23 @@ export const TEMPLATES: ResumeTemplate[] = [
     density: 'normal',
     skillsFirst: false,
   },
+  // The post-2020 europa.eu editor designs — one shared renderer
+  // (src/pdf/formats/europassEditor.ts), selected by id. All under the europass
+  // format; the plain `europass` above stays the legacy 2002–2017 layout.
+  ...(['classic', 'modern', 'timeline'] as const).map(
+    (d): ResumeTemplate => ({
+      id: `europass-${d}`,
+      format: 'europass',
+      tags: ['operations', 'education', 'executive'],
+      font: 'helvetica',
+      accent: '#004494', // EU blue (sampled from the official app)
+      headerStyle: 'left',
+      sectionStyle: 'rule',
+      layout: d === 'modern' || d === 'timeline' ? 'sidebar' : 'single',
+      density: 'normal',
+      skillsFirst: false,
+    }),
+  ),
   {
     // German tabellarischer Lebenslauf — its own renderer
     // (src/pdf/formats/lebenslauf.ts).
