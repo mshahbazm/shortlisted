@@ -18,6 +18,7 @@ import {
   LanguageEntry,
   LanguageProficiency,
   Profile,
+  ProfileFacts,
   WorkEntry,
   parseYm,
   skillNames,
@@ -512,6 +513,40 @@ export function ProfileTab({
           </DeltaSection>
         )}
 
+        {d.communicationSkills.length > 0 && (
+          <DeltaSection title={t.communicationSkills}>
+            {d.communicationSkills.map((s, i) => (
+              <DeltaRow key={`c${i}`} label={s} removeLabel={t.removeItem}
+                onRemove={() => upd({ communicationSkills: d.communicationSkills.filter((_, j) => j !== i) })} />
+            ))}
+          </DeltaSection>
+        )}
+
+        {d.organisationalSkills.length > 0 && (
+          <DeltaSection title={t.organisationalSkills}>
+            {d.organisationalSkills.map((s, i) => (
+              <DeltaRow key={`o${i}`} label={s} removeLabel={t.removeItem}
+                onRemove={() => upd({ organisationalSkills: d.organisationalSkills.filter((_, j) => j !== i) })} />
+            ))}
+          </DeltaSection>
+        )}
+
+        {d.digitalSkills && (
+          <DeltaSection title={t.digitalSkills}>
+            <DeltaRow label={t.digitalSkills} sub={digitalSummary(d.digitalSkills)} removeLabel={t.removeItem}
+              onRemove={() => upd({ digitalSkills: undefined })} />
+          </DeltaSection>
+        )}
+
+        {Object.keys(d.facts).length > 0 && (
+          <DeltaSection title={t.standardAnswersTitle}>
+            {(Object.keys(d.facts) as (keyof ProfileFacts)[]).map((k) => (
+              <DeltaRow key={k} label={factLabel(k, t)} sub={String(d.facts[k])} removeLabel={t.removeItem}
+                onRemove={() => { const next = { ...d.facts }; delete next[k]; upd({ facts: next }) }} />
+            ))}
+          </DeltaSection>
+        )}
+
         <div className="mt-2 flex flex-col gap-2">
           <Button wide onClick={apply}>{t.reimportMergeButton}</Button>
           <Button variant="ghost" wide onClick={done}>{t.cancel}</Button>
@@ -598,6 +633,10 @@ export function ProfileTab({
           {p.identity.email && <Fact k={t.email} v={p.identity.email} />}
           {p.identity.phone && <Fact k={t.phone} v={p.identity.phone} />}
           {p.identity.location && <Fact k={t.location} v={p.identity.location} />}
+          {p.identity.dateOfBirth && <Fact k={t.dateOfBirth} v={p.identity.dateOfBirth} />}
+          {p.identity.nationality && <Fact k={t.nationality} v={p.identity.nationality} />}
+          {p.identity.sex && <Fact k={t.sex} v={sexLabel(p.identity.sex, t)} />}
+          {p.identity.drivingLicence && <Fact k={t.drivingLicence} v={p.identity.drivingLicence} />}
           {p.industries.length > 0 && <Fact k={t.industries} v={p.industries.join(', ')} />}
         </div>
         {p.summary && <p className="m-0 text-[12.5px] leading-[1.55] text-muted">{p.summary}</p>}
@@ -717,6 +756,47 @@ export function ProfileTab({
             ))}
           </div>
         )}
+
+        {/* Europass "personal skills" + additional info — shown only when present
+            (usually from an uploaded Europass CV). */}
+        {p.europass?.communicationSkills?.length ? (
+          <>
+            <Band title={t.communicationSkills} />
+            <ul className="m-0 flex list-disc flex-col gap-[5px] pl-[17px] text-[12.5px]">
+              {p.europass.communicationSkills.map((s, i) => <li key={i}>{s}</li>)}
+            </ul>
+          </>
+        ) : null}
+        {p.europass?.organisationalSkills?.length ? (
+          <>
+            <Band title={t.organisationalSkills} />
+            <ul className="m-0 flex list-disc flex-col gap-[5px] pl-[17px] text-[12.5px]">
+              {p.europass.organisationalSkills.map((s, i) => <li key={i}>{s}</li>)}
+            </ul>
+          </>
+        ) : null}
+        {p.europass?.digitalSkills ? (
+          <>
+            <Band title={t.digitalSkills} />
+            <div className="flex flex-col gap-1.5">
+              {DIGITAL_AREAS.map(([key, labelKey]) => {
+                const v = p.europass!.digitalSkills![key]
+                return v ? <Fact key={key} k={t[labelKey]} v={v} /> : null
+              })}
+              {p.europass.digitalSkills.note && (
+                <p className="m-0 text-[12.5px] leading-[1.55] text-muted">{p.europass.digitalSkills.note}</p>
+              )}
+            </div>
+          </>
+        ) : null}
+        {p.europass?.additionalInformation?.length ? (
+          <>
+            <Band title={t.additionalInfo} />
+            <div className="flex flex-col gap-1.5">
+              {p.europass.additionalInformation.map((a, i) => <Fact key={i} k={a.label} v={a.value} />)}
+            </div>
+          </>
+        ) : null}
 
         {/* 5. Re-import last: a destructive rebuild belongs at the bottom */}
         <Card className="mt-1.5 gap-[9px] bg-[#fafaf8]">
@@ -909,6 +989,38 @@ function sexLabel(v: string, t: T): string {
 
 function identityExtraValue(key: keyof ProfileDelta['identity'], val: string, t: T): string {
   return key === 'sex' ? sexLabel(val, t) : val
+}
+
+// Europass digital-skills self-assessment areas (the 5 DigComp competences).
+const DIGITAL_AREAS: [keyof NonNullable<NonNullable<Profile['europass']>['digitalSkills']>, 'dsInfoProcessing' | 'dsCommunication' | 'dsContentCreation' | 'dsSafety' | 'dsProblemSolving'][] = [
+  ['informationProcessing', 'dsInfoProcessing'],
+  ['communication', 'dsCommunication'],
+  ['contentCreation', 'dsContentCreation'],
+  ['safety', 'dsSafety'],
+  ['problemSolving', 'dsProblemSolving'],
+]
+
+/** One-line summary of a digital-skills block — for the compact review row. */
+function digitalSummary(ds: NonNullable<ProfileDelta['digitalSkills']>): string {
+  return [ds.informationProcessing, ds.communication, ds.contentCreation, ds.safety, ds.problemSolving, ds.note]
+    .filter(Boolean)
+    .join(' · ')
+}
+
+function factLabel(key: keyof ProfileFacts, t: T): string {
+  switch (key) {
+    case 'salaryHourly': return t.salaryHourly
+    case 'salaryMonthly': return t.salaryMonthly
+    case 'jobType': return t.jobType
+    case 'noticeDays': return t.noticeDays
+    case 'timezone': return t.timezone
+    case 'englishLevel': return t.englishLevel
+    case 'needsSponsorship': return t.visaSponsorship
+    case 'authorizedCountries': return t.authorizedIn
+    case 'relocation': return t.relocation
+    case 'hoursOverlap': return t.hoursOverlap
+    case 'yearsOfExperience': return t.yearsOfExperience
+  }
 }
 
 /** Free words in, filed into the right profile slots. Reports what the merge

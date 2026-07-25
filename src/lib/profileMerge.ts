@@ -8,6 +8,7 @@ import {
   EducationEntry,
   LanguageEntry,
   Profile,
+  ProfileFacts,
   ProfileLinks,
   SkillEntry,
   WorkEntry,
@@ -200,6 +201,13 @@ export interface ProfileDelta {
   identity: Partial<Pick<Profile['identity'], 'dateOfBirth' | 'nationality' | 'sex' | 'drivingLicence'>>
   /** New "additional information" blocks (Publications, Awards…) not on file. */
   additionalInfo: { label: string; value: string }[]
+  /** Europass "personal skills" the CV adds — bullets not on file / a digital-
+   *  skills self-assessment when the profile has none. */
+  communicationSkills: string[]
+  organisationalSkills: string[]
+  digitalSkills?: NonNullable<Profile['europass']>['digitalSkills']
+  /** Standard-answer facts the CV stated and the profile lacks — fill-if-empty. */
+  facts: Partial<ProfileFacts>
 }
 
 const LINK_SLOTS = ['website', 'github', 'linkedin', 'portfolio', 'other'] as const
@@ -218,7 +226,11 @@ export function deltaCount(d: ProfileDelta): number {
     Object.keys(d.links).length +
     d.industries.length +
     Object.keys(d.identity).length +
-    d.additionalInfo.length
+    d.additionalInfo.length +
+    d.communicationSkills.length +
+    d.organisationalSkills.length +
+    (d.digitalSkills ? 1 : 0) +
+    Object.keys(d.facts).length
   )
 }
 
@@ -326,7 +338,38 @@ export function diffProfile(existing: Profile, extracted: Profile): ProfileDelta
     .filter((a) => a.label?.trim() && a.value?.trim() && !haveLabels.has(a.label.toLowerCase().trim()))
     .map((a) => ({ label: a.label.trim(), value: a.value.trim() }))
 
-  return { work, workHighlights, education, skills, languages, certifications, links, industries, identity, additionalInfo }
+  // Europass personal-skills bullets not already on file (case-insensitive).
+  const communicationSkills = dedupStrings(extracted.europass?.communicationSkills, existing.europass?.communicationSkills)
+  const organisationalSkills = dedupStrings(extracted.europass?.organisationalSkills, existing.europass?.organisationalSkills)
+  // Digital-skills self-assessment: offer it only when the profile has none.
+  const digitalSkills = !existing.europass?.digitalSkills ? extracted.europass?.digitalSkills : undefined
+
+  // Standard-answer facts the CV stated and the profile lacks — fill-if-empty.
+  const facts: Partial<ProfileFacts> = {}
+  const ef = extracted.facts as Record<string, unknown>
+  const cf = existing.facts as Record<string, unknown>
+  for (const k of Object.keys(ef)) {
+    const v = ef[k]
+    if (v !== undefined && v !== '' && (cf[k] === undefined || cf[k] === '')) (facts as Record<string, unknown>)[k] = v
+  }
+
+  return {
+    work, workHighlights, education, skills, languages, certifications, links, industries, identity, additionalInfo,
+    communicationSkills, organisationalSkills, digitalSkills, facts,
+  }
+}
+
+/** Case-insensitive additive dedup for a bullet list against what's on file. */
+function dedupStrings(incoming: string[] | undefined, have: string[] | undefined): string[] {
+  const seen = new Set((have ?? []).map((s) => s.toLowerCase().trim()))
+  const out: string[] = []
+  for (const s of incoming ?? []) {
+    const k = s.toLowerCase().trim()
+    if (!k || seen.has(k)) continue
+    seen.add(k)
+    out.push(s.trim())
+  }
+  return out
 }
 
 /** Fold a (user-trimmed) delta into the profile, additively. Never touches
@@ -366,20 +409,37 @@ export function applyProfileDelta(p: Profile, d: ProfileDelta): Profile {
     if (v && !identity[k]) identity[k] = v
   }
 
-  // Additional-information blocks: append the ones not already on file (by label).
-  let europass = p.europass
+  // Europass block: append new bullets / additional-information, fill the
+  // digital-skills self-assessment only if the profile has none.
+  const eDraft: NonNullable<Profile['europass']> = { ...(p.europass ?? {}) }
+  let eChanged = false
+  const appendBullets = (key: 'communicationSkills' | 'organisationalSkills', incoming: string[]) => {
+    if (!incoming.length) return
+    const have = new Set((p.europass?.[key] ?? []).map((s) => s.toLowerCase().trim()))
+    const fresh = incoming.filter((s) => !have.has(s.toLowerCase().trim()))
+    if (fresh.length) { eDraft[key] = [...(p.europass?.[key] ?? []), ...fresh]; eChanged = true }
+  }
+  appendBullets('communicationSkills', d.communicationSkills)
+  appendBullets('organisationalSkills', d.organisationalSkills)
   if (d.additionalInfo.length) {
     const have = new Set((p.europass?.additionalInformation ?? []).map((a) => a.label.toLowerCase().trim()))
     const fresh = d.additionalInfo.filter((a) => !have.has(a.label.toLowerCase().trim()))
-    if (fresh.length) {
-      europass = { ...(p.europass ?? {}), additionalInformation: [...(p.europass?.additionalInformation ?? []), ...fresh] }
-    }
+    if (fresh.length) { eDraft.additionalInformation = [...(p.europass?.additionalInformation ?? []), ...fresh]; eChanged = true }
   }
+  if (d.digitalSkills && !p.europass?.digitalSkills) { eDraft.digitalSkills = d.digitalSkills; eChanged = true }
+  const europass = eChanged ? eDraft : p.europass
+
+  // Standard-answer facts: fill only the slots still empty on the profile.
+  const facts = { ...p.facts }
+  const fr = facts as Record<string, unknown>
+  const dfr = d.facts as Record<string, unknown>
+  for (const k of Object.keys(dfr)) if (fr[k] === undefined || fr[k] === '') fr[k] = dfr[k]
 
   return {
     ...p,
     identity,
     europass,
+    facts,
     skills: [...p.skills, ...d.skills],
     languages: [...p.languages, ...d.languages],
     certifications: [...p.certifications, ...d.certifications],
