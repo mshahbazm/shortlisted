@@ -94,6 +94,7 @@ async function handle(msg: Msg): Promise<unknown> {
         label: msg.fileName.replace(/\.pdf$/i, ''),
         fileName: msg.fileName,
         tags: [],
+        status: 'pending',
         isDefault: false,
         createdAt: Date.now(),
         source: 'uploaded',
@@ -352,16 +353,24 @@ async function intakeResume(resumeId: string): Promise<void> {
   if (!settings.accountEmail) return
   const r = resumes.find((x) => x.id === resumeId)
   if (!r) return
+  const setStatus = (status: ResumeVariant['status']) =>
+    store.update('resumes', (list) => list.map((x) => (x.id === resumeId ? { ...x, status } : x)))
+  await setStatus('learning')
   try {
     const facts = await cloudEnrichFromCv(settings, r.dataBase64)
-    if (facts.tags.length) {
-      await store.update('resumes', (list) =>
-        list.map((x) => (x.id === resumeId && x.tags.length === 0 ? { ...x, tags: facts.tags } : x)),
-      )
-    }
+    // Tags + status in ONE write so the card doesn't flash "done" then re-tag.
+    // Tags are set only when still empty, so a retry never clobbers edits.
+    await store.update('resumes', (list) =>
+      list.map((x) =>
+        x.id === resumeId
+          ? { ...x, status: 'done', tags: x.tags.length === 0 && facts.tags.length ? facts.tags : x.tags }
+          : x,
+      ),
+    )
     await store.update('profile', (p) => applyEnrichment(p, facts))
   } catch (e) {
     console.warn('[shortlisted] resume intake failed:', e)
+    await setStatus('failed')
   }
 }
 

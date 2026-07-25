@@ -101,6 +101,11 @@ export const profile: tLocale['profile'] = {
   reimportReviewBody: (roles: number, skills: number) =>
     `${roles} Position${roles === 1 ? '' : 'en'} und ${skills} Fähigkeiten. Es wird nichts gespeichert, bis du bestätigst.`,
   reimportConfirm: 'Im Profil speichern',
+  reimportMergeReviewBody: (count: number) =>
+    `${count === 1 ? '1 neues Element' : `${count} neue Elemente`} in diesem Lebenslauf gefunden. Entferne, was du nicht möchtest, und füge den Rest hinzu.`,
+  reimportNothingNew: 'Nichts Neues in diesem Lebenslauf — dein Profil deckt das bereits ab.',
+  reimportNewHighlights: 'Mehr zu deinen Stationen',
+  linkOther: 'Sonstiges',
   reimportMergeButton: 'Zu meinem Profil hinzufügen',
   moreCount: 'weitere',
   nothingYet: 'Noch nichts hier',

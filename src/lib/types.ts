@@ -376,6 +376,11 @@ export interface ResumeVariant {
   label: string // "AI Engineer", "Full-stack"
   fileName: string
   tags: string[]
+  /** Background intake state for UPLOADED resumes (tagging + additive learning):
+   *  `pending` queued, `learning` in flight, `done` finished, `failed` errored
+   *  (retryable). Undefined on generated resumes and legacy rows — treated as
+   *  `done`. Rides in the synced JSON; there's no server-side queue yet. */
+  status?: 'pending' | 'learning' | 'done' | 'failed'
   isDefault: boolean
   createdAt: number
   source: 'uploaded' | 'generated'

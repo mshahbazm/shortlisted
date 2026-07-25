@@ -16,6 +16,7 @@ import {
   bytesToBase64,
 } from '../lib/types'
 import { cloudBaseUrl } from '../lib/config'
+import type { ProfileDelta } from '../lib/profileMerge'
 import * as store from '../lib/store'
 import type {
   AssistField,
@@ -60,6 +61,23 @@ export async function cloudFillAssist(
 
 export async function runExtractProfile(settings: Settings, cvText: string): Promise<Profile> {
   return cloudCall<Profile>(settings, '/v1/extract-profile', { cvText })
+}
+
+/**
+ * "Learn more about me": the server parses the CV (PDF w/ OCR fallback, or pasted
+ * text) and diffs it against the account's current profile, returning ONLY the
+ * new items as a ProfileDelta — grouped by category so the review screen can drop
+ * individual items. Identity and the user's curated fields are never touched.
+ * Accepts a PDF (ArrayBuffer) or pasted text.
+ */
+export async function cloudLearnFromResume(
+  settings: Settings,
+  args: { pdf?: ArrayBuffer; cvText?: string },
+): Promise<{ delta: ProfileDelta; method?: 'text' | 'ocr'; quality?: string }> {
+  const body: Record<string, unknown> = {}
+  if (args.pdf) body.pdfBase64 = bytesToBase64(args.pdf)
+  if (args.cvText) body.cvText = args.cvText
+  return cloudCall(settings, '/v1/learn-resume', body)
 }
 
 /** Preserve the ORIGINAL profile picture in cloud object storage (source of

@@ -68,6 +68,12 @@ export function ResumesTab() {
   const removeResume = (id: string) => void store.update('resumes', (list) => list.filter((x) => x.id !== id))
   const makeDefault = (id: string) =>
     void store.update('resumes', (list) => list.map((x) => ({ ...x, isDefault: x.id === id })))
+  // Re-run background intake after a failure (e.g. the server was down).
+  // Optimistically flip to learning so the spinner returns immediately.
+  const retryIntake = (id: string) => {
+    void store.update('resumes', (list) => list.map((x) => (x.id === id ? { ...x, status: 'learning' } : x)))
+    void sendMsg({ type: 'intakeResume', resumeId: id })
+  }
 
   // Same shape as generateMaster and runTailor: busy state up front, errors
   // surfaced, busy cleared in finally. This one used to do none of it, so a
@@ -80,12 +86,12 @@ export function ResumesTab() {
       const id = uid()
       const dataBase64 = bytesToBase64(await file.arrayBuffer())
       await addResume((list) => ({
-        id, label: file.name.replace(/\.pdf$/i, ''), fileName: file.name, tags: [],
+        id, label: file.name.replace(/\.pdf$/i, ''), fileName: file.name, tags: [], status: 'pending',
         isDefault: list.length === 0, createdAt: Date.now(), source: 'uploaded', dataBase64,
       }))
       showToast(t.cvReady)
       // Background: tag the CV for the roles it targets, fold new facts into
-      // the profile (additive only).
+      // the profile (additive only). Drives the resume's status pill.
       void sendMsg({ type: 'intakeResume', resumeId: id })
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
@@ -289,11 +295,21 @@ export function ResumesTab() {
                   {r.isDefault && <Pill tone="good">{t.defaultChip}</Pill>}
                   {r.source === 'uploaded' && !r.isDefault && <Pill>{t.fromUploadTitle}</Pill>}
                 </div>
-                {r.tags.length > 0 && (
+                {r.status === 'pending' || r.status === 'learning' ? (
+                  <div className="flex items-center gap-1.5 text-[11.5px] text-muted">
+                    <span className="size-3 shrink-0 animate-spin rounded-full border-2 border-line border-t-accent" aria-hidden />
+                    {t.intakeLearning}
+                  </div>
+                ) : r.status === 'failed' ? (
+                  <div className="flex items-center gap-2 text-[11.5px] text-faint">
+                    <span>{t.intakeFailed}</span>
+                    <Button variant="link" onClick={() => retryIntake(r.id)}>{t.intakeRetry}</Button>
+                  </div>
+                ) : r.tags.length > 0 ? (
                   <div className="flex flex-wrap gap-[5px]">
                     {r.tags.slice(0, 3).map((tag) => <Chip key={tag}>{tag}</Chip>)}
                   </div>
-                )}
+                ) : null}
                 <div className="flex flex-wrap gap-[13px] pt-0.5">
                   <Button variant="link" onClick={() => void openPreview(r)}>{t.previewLabel}</Button>
                   <Button variant="link" onClick={() => download(r)}>{t.pdf}</Button>

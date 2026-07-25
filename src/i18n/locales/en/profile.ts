@@ -101,6 +101,11 @@ export const profile = {
   reimportReviewBody: (roles: number, skills: number) =>
     `Found ${roles} role${roles === 1 ? '' : 's'} and ${skills} skills. Nothing saves until you confirm.`,
   reimportConfirm: 'Save to profile',
+  reimportMergeReviewBody: (count: number) =>
+    `Found ${count} new item${count === 1 ? '' : 's'} in this CV. Remove anything you don’t want, then add the rest.`,
+  reimportNothingNew: 'Nothing new in this CV — your profile already covers it.',
+  reimportNewHighlights: 'More about your roles',
+  linkOther: 'Other',
   reimportMergeButton: 'Add to my profile',
   moreCount: 'more',
   nothingYet: 'Nothing here yet',

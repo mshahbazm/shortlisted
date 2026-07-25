@@ -101,6 +101,11 @@ export const profile: tLocale['profile'] = {
   reimportReviewBody: (roles: number, skills: number) =>
     `${roles} functie${roles === 1 ? '' : 's'} en ${skills} vaardigheden. Er wordt niets opgeslagen tot je bevestigt.`,
   reimportConfirm: 'Opslaan in profiel',
+  reimportMergeReviewBody: (count: number) =>
+    `${count === 1 ? '1 nieuw item' : `${count} nieuwe items`} in dit cv gevonden. Verwijder wat je niet wilt en voeg de rest toe.`,
+  reimportNothingNew: 'Niets nieuws in dit cv — je profiel bevat dit al.',
+  reimportNewHighlights: 'Meer over je functies',
+  linkOther: 'Overig',
   reimportMergeButton: 'Aan mijn profiel toevoegen',
   moreCount: 'meer',
   nothingYet: 'Hier nog niets',

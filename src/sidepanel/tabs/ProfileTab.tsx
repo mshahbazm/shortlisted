@@ -25,11 +25,11 @@ import {
   ymString,
   workPeriodLabel,
 } from '../../lib/types'
-import { cloudImportResume, cloudProfileNote, cloudUploadPicture } from '../../ai/run'
+import { cloudImportResume, cloudLearnFromResume, cloudProfileNote, cloudUploadPicture } from '../../ai/run'
 import { fileToDataUrl, fileToProfilePhoto } from '../../lib/image'
 import * as store from '../../lib/store'
 import { Gap, GapKey, profileStrength } from '../../lib/profileStrength'
-import { mergeEnrichment, needsCompletion } from '../../lib/profileMerge'
+import { ProfileDelta, WorkHighlightAddition, applyProfileDelta, deltaCount, mergeEnrichment, needsCompletion } from '../../lib/profileMerge'
 import { showToast } from '../toast'
 
 type T = ReturnType<typeof useContent<'profile'>>
@@ -50,6 +50,9 @@ export function ProfileTab({
    *  user's confirm on the review screen (nothing is saved until they accept). */
   const [importMode, setImportMode] = useState<'replace' | 'merge'>('merge')
   const [importResult, setImportResult] = useState<Profile | null>(null)
+  /** "Learn more about me": only the NEW items a re-imported CV adds, itemized
+   *  and individually removable. Held here (mutable) until the user confirms. */
+  const [mergeDelta, setMergeDelta] = useState<ProfileDelta | null>(null)
   const [profile, saveProfileRaw, loaded] = useStore('profile')
   const [settings] = useStore('settings')
   const [bank] = useStore('answerBank')
@@ -336,12 +339,26 @@ export function ProfileTab({
         <ImportBox
           submitLabel={importMode === 'merge' ? t.reimportMergeButton : t.rebuildProfile}
           cloudPdf={async (file) => {
-            const { profile: result } = await cloudImportResume(settings, { mode: importMode, pdf: await file.arrayBuffer() })
+            // Merge learns only what's new (the server parses + diffs, identity
+            // stays as the user set it); replace rebuilds the whole profile.
+            if (importMode === 'merge') {
+              const { delta } = await cloudLearnFromResume(settings, { pdf: await file.arrayBuffer() })
+              setMergeDelta(delta)
+              nav.push('reimport-merge-review')
+              return
+            }
+            const { profile: result } = await cloudImportResume(settings, { mode: 'replace', pdf: await file.arrayBuffer() })
             setImportResult(result)
             nav.push('reimport-review')
           }}
           onImport={async (text) => {
-            const { profile: result } = await cloudImportResume(settings, { mode: importMode, cvText: text })
+            if (importMode === 'merge') {
+              const { delta } = await cloudLearnFromResume(settings, { cvText: text })
+              setMergeDelta(delta)
+              nav.push('reimport-merge-review')
+              return
+            }
+            const { profile: result } = await cloudImportResume(settings, { mode: 'replace', cvText: text })
             setImportResult(result)
             nav.push('reimport-review')
           }}
@@ -378,6 +395,107 @@ export function ProfileTab({
         <Label>{t.email}<Input type="text" value={r.identity.email ?? ''} onChange={(e) => setId('email', e.target.value)} /></Label>
         <div className="mt-2 flex flex-col gap-2">
           <Button wide onClick={() => { save({ ...p, ...r, facts: p.facts }); done() }}>{t.reimportConfirm}</Button>
+          <Button variant="ghost" wide onClick={done}>{t.cancel}</Button>
+        </div>
+      </Pushed>
+    )
+  }
+
+  // "Learn more about me" review — only what the CV ADDS, grouped by category,
+  // each item removable. No identity here: this door never re-confirms who you
+  // are, it just files in things you didn't have. Save folds the kept items into
+  // the live profile (store.update, so a background sync can't clobber it).
+  if (nav.screen === 'reimport-merge-review') {
+    const d = mergeDelta
+    const done = () => { setMergeDelta(null); nav.reset() }
+    if (!d) return <Pushed title={t.reimportReviewTitle} nav={nav} t={t}><div className="px-3 py-[26px] text-center text-[13px] text-faint">{t.nothingYet}</div></Pushed>
+    const total = deltaCount(d)
+    if (total === 0) {
+      return (
+        <Pushed title={t.reimportReviewTitle} nav={nav} t={t}>
+          <div className="px-3 py-[26px] text-center text-[13px] text-faint">{t.reimportNothingNew}</div>
+          <Button variant="ghost" wide onClick={done}>{t.back}</Button>
+        </Pushed>
+      )
+    }
+    const upd = (patch: Partial<ProfileDelta>) => setMergeDelta({ ...d, ...patch })
+    const apply = () => { void store.update('profile', (cur) => applyProfileDelta(cur, d)); showToast(t.savedToast); done() }
+    return (
+      <Pushed title={t.reimportReviewTitle} nav={nav} t={t}>
+        <p className="m-0 text-[12.5px] leading-normal text-muted">{t.reimportMergeReviewBody(total)}</p>
+
+        {d.work.length > 0 && (
+          <DeltaSection title={t.workTitle}>
+            {d.work.map((w) => (
+              <DeltaRow key={w.id} label={w.title || t.untitled} sub={w.company} removeLabel={t.removeItem}
+                onRemove={() => upd({ work: d.work.filter((x) => x.id !== w.id) })} />
+            ))}
+          </DeltaSection>
+        )}
+
+        {d.workHighlights.length > 0 && (
+          <DeltaSection title={t.reimportNewHighlights}>
+            {d.workHighlights.flatMap((h) =>
+              h.highlights.map((b, i) => (
+                <DeltaRow key={`${h.workId}:${i}`} label={b} sub={h.company} removeLabel={t.removeItem}
+                  onRemove={() => upd({ workHighlights: removeHighlightAt(d.workHighlights, h.workId, i) })} />
+              )),
+            )}
+          </DeltaSection>
+        )}
+
+        {d.education.length > 0 && (
+          <DeltaSection title={t.educationTitle}>
+            {d.education.map((e) => (
+              <DeltaRow key={e.id} label={[e.degree, e.fieldOfStudy].filter(Boolean).join(', ') || e.school} sub={e.school}
+                removeLabel={t.removeItem} onRemove={() => upd({ education: d.education.filter((x) => x.id !== e.id) })} />
+            ))}
+          </DeltaSection>
+        )}
+
+        {d.skills.length > 0 && (
+          <DeltaSection title={t.skillsTitle}>
+            <DeltaPills items={d.skills.map((s) => s.name)} removeLabel={t.removeItem}
+              onRemove={(name) => upd({ skills: d.skills.filter((s) => s.name !== name) })} />
+          </DeltaSection>
+        )}
+
+        {d.languages.length > 0 && (
+          <DeltaSection title={t.languagesTitle}>
+            {d.languages.map((l) => (
+              <DeltaRow key={l.name} label={l.name} sub={levelLabel(l.proficiency, t)} removeLabel={t.removeItem}
+                onRemove={() => upd({ languages: d.languages.filter((x) => x.name !== l.name) })} />
+            ))}
+          </DeltaSection>
+        )}
+
+        {d.certifications.length > 0 && (
+          <DeltaSection title={t.certificationsTitle}>
+            {d.certifications.map((c) => (
+              <DeltaRow key={c.name} label={c.name} sub={[c.issuingOrganization, c.year].filter(Boolean).join(' · ')}
+                removeLabel={t.removeItem} onRemove={() => upd({ certifications: d.certifications.filter((x) => x.name !== c.name) })} />
+            ))}
+          </DeltaSection>
+        )}
+
+        {d.industries.length > 0 && (
+          <DeltaSection title={t.industries}>
+            <DeltaPills items={d.industries} removeLabel={t.removeItem}
+              onRemove={(name) => upd({ industries: d.industries.filter((x) => x !== name) })} />
+          </DeltaSection>
+        )}
+
+        {Object.keys(d.links).length > 0 && (
+          <DeltaSection title={t.linksTitle}>
+            {(Object.keys(d.links) as (keyof Profile['links'])[]).map((k) => (
+              <DeltaRow key={k} label={linkLabel(k, t)} sub={prettyLink(d.links[k] ?? '')} removeLabel={t.removeItem}
+                onRemove={() => { const next = { ...d.links }; delete next[k]; upd({ links: next }) }} />
+            ))}
+          </DeltaSection>
+        )}
+
+        <div className="mt-2 flex flex-col gap-2">
+          <Button wide onClick={apply}>{t.reimportMergeButton}</Button>
           <Button variant="ghost" wide onClick={done}>{t.cancel}</Button>
         </div>
       </Pushed>
@@ -688,6 +806,69 @@ function prettyLink(url: string): string {
     return new URL(url).hostname.replace(/^www\./, '')
   } catch {
     return url
+  }
+}
+
+/* ---------- "learn more about me" review pieces ---------- */
+
+/** A titled group of new items in the merge-review screen. */
+function DeltaSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="text-[11px] font-[650] tracking-[0.07em] text-muted uppercase">{title}</div>
+      <div className="flex flex-col gap-0.5 rounded-card border border-line bg-bg p-1.5">{children}</div>
+    </div>
+  )
+}
+
+/** One new item, with the x that drops it from the merge before saving. */
+function DeltaRow({ label, sub, removeLabel, onRemove }: { label: string; sub?: string; removeLabel: string; onRemove: () => void }) {
+  return (
+    <div className="flex items-center gap-1.5 rounded-lg px-1.5 py-1 hover:bg-hover">
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-[12.5px] font-medium">{label}</span>
+        {sub && <span className="truncate text-[11.5px] text-muted">{sub}</span>}
+      </span>
+      <RemoveButton label={removeLabel} onClick={onRemove} />
+    </div>
+  )
+}
+
+/** Short many-of-a-kind items (skills, industries) as removable pills. */
+function DeltaPills({ items, removeLabel, onRemove }: { items: string[]; removeLabel: string; onRemove: (item: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-1.5 p-0.5">
+      {items.map((it) => (
+        <span key={it} className="inline-flex items-center gap-1 rounded-[5px] bg-accent-soft py-[2.5px] pr-1 pl-[7px] text-[11px] text-accent">
+          {it}
+          <button
+            aria-label={`${removeLabel} ${it}`}
+            onClick={() => onRemove(it)}
+            className="grid size-4 cursor-pointer place-items-center rounded-[4px] border-0 bg-transparent p-0 text-accent opacity-70 hover:text-bad hover:opacity-100"
+          >
+            <Icon name="close" className="size-[11px]" />
+          </button>
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/** Drop one highlight (by index) from a role's group, dropping the group when
+ *  its last highlight goes. */
+function removeHighlightAt(list: WorkHighlightAddition[], workId: string, index: number): WorkHighlightAddition[] {
+  return list
+    .map((h) => (h.workId === workId ? { ...h, highlights: h.highlights.filter((_, i) => i !== index) } : h))
+    .filter((h) => h.highlights.length > 0)
+}
+
+function linkLabel(key: keyof Profile['links'], t: T): string {
+  switch (key) {
+    case 'website': return t.website
+    case 'github': return t.github
+    case 'linkedin': return t.linkedin
+    case 'portfolio': return t.portfolio
+    case 'other': return t.linkOther
   }
 }
 

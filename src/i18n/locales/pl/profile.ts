@@ -102,6 +102,11 @@ export const profile: tLocale['profile'] = {
   reimportReviewBody: (roles: number, skills: number) =>
     `${roles} stanowisk${roles === 1 ? 'o' : 'a'} i ${skills} umiejętności. Nic nie zapisze się, dopóki nie potwierdzisz.`,
   reimportConfirm: 'Zapisz w profilu',
+  reimportMergeReviewBody: (count: number) =>
+    `Znaleziono ${count === 1 ? '1 nowy element' : `${count} nowych elementów`} w tym CV. Usuń, czego nie chcesz, i dodaj resztę.`,
+  reimportNothingNew: 'Nic nowego w tym CV — Twój profil już to zawiera.',
+  reimportNewHighlights: 'Więcej o Twoich stanowiskach',
+  linkOther: 'Inne',
   reimportMergeButton: 'Dodaj do profilu',
   moreCount: 'więcej',
   nothingYet: 'Jeszcze nic tutaj',
