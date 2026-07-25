@@ -195,9 +195,15 @@ export interface ProfileDelta {
   certifications: CertificationEntry[]
   links: Partial<ProfileLinks>
   industries: string[]
+  /** Personal-detail EXTRAS the CV adds and the profile lacks (never the core
+   *  name/email/phone the user set) — fill-if-empty. */
+  identity: Partial<Pick<Profile['identity'], 'dateOfBirth' | 'nationality' | 'sex' | 'drivingLicence'>>
+  /** New "additional information" blocks (Publications, Awards…) not on file. */
+  additionalInfo: { label: string; value: string }[]
 }
 
 const LINK_SLOTS = ['website', 'github', 'linkedin', 'portfolio', 'other'] as const
+const IDENTITY_EXTRA_KEYS = ['dateOfBirth', 'nationality', 'sex', 'drivingLicence'] as const
 
 /** Total new items across every category — the true count for the review header
  *  (0 means the CV held nothing the profile didn't already have). */
@@ -210,7 +216,9 @@ export function deltaCount(d: ProfileDelta): number {
     d.languages.length +
     d.certifications.length +
     Object.keys(d.links).length +
-    d.industries.length
+    d.industries.length +
+    Object.keys(d.identity).length +
+    d.additionalInfo.length
   )
 }
 
@@ -303,7 +311,22 @@ export function diffProfile(existing: Profile, extracted: Profile): ProfileDelta
     if (val && !existing.links[slot]) links[slot] = val
   }
 
-  return { work, workHighlights, education, skills, languages, certifications, links, industries }
+  // Personal-detail extras: fill-if-empty. NEVER the core name/email/phone —
+  // those are the identity the user set; only the extras a CV can add.
+  const identity: ProfileDelta['identity'] = {}
+  for (const k of IDENTITY_EXTRA_KEYS) {
+    const val = extracted.identity[k]?.trim()
+    if (val && !existing.identity[k]) identity[k] = val
+  }
+
+  // "Additional information" blocks (Publications, Awards…) not already on file,
+  // matched by label case-insensitively.
+  const haveLabels = new Set((existing.europass?.additionalInformation ?? []).map((a) => a.label.toLowerCase().trim()))
+  const additionalInfo = (extracted.europass?.additionalInformation ?? [])
+    .filter((a) => a.label?.trim() && a.value?.trim() && !haveLabels.has(a.label.toLowerCase().trim()))
+    .map((a) => ({ label: a.label.trim(), value: a.value.trim() }))
+
+  return { work, workHighlights, education, skills, languages, certifications, links, industries, identity, additionalInfo }
 }
 
 /** Fold a (user-trimmed) delta into the profile, additively. Never touches
@@ -336,8 +359,27 @@ export function applyProfileDelta(p: Profile, d: ProfileDelta): Profile {
     return fresh.length ? { ...w, highlights: [...w.highlights, ...fresh] } : w
   })
 
+  // Personal-detail extras: fill only slots still empty on the current profile.
+  const identity: Profile['identity'] = { ...p.identity }
+  for (const k of Object.keys(d.identity) as (keyof ProfileDelta['identity'])[]) {
+    const v = d.identity[k]
+    if (v && !identity[k]) identity[k] = v
+  }
+
+  // Additional-information blocks: append the ones not already on file (by label).
+  let europass = p.europass
+  if (d.additionalInfo.length) {
+    const have = new Set((p.europass?.additionalInformation ?? []).map((a) => a.label.toLowerCase().trim()))
+    const fresh = d.additionalInfo.filter((a) => !have.has(a.label.toLowerCase().trim()))
+    if (fresh.length) {
+      europass = { ...(p.europass ?? {}), additionalInformation: [...(p.europass?.additionalInformation ?? []), ...fresh] }
+    }
+  }
+
   return {
     ...p,
+    identity,
+    europass,
     skills: [...p.skills, ...d.skills],
     languages: [...p.languages, ...d.languages],
     certifications: [...p.certifications, ...d.certifications],

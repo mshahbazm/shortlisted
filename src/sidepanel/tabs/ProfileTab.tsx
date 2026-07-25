@@ -494,6 +494,24 @@ export function ProfileTab({
           </DeltaSection>
         )}
 
+        {Object.keys(d.identity).length > 0 && (
+          <DeltaSection title={t.personalDetails}>
+            {(Object.keys(d.identity) as (keyof ProfileDelta['identity'])[]).map((k) => (
+              <DeltaRow key={k} label={identityExtraLabel(k, t)} sub={identityExtraValue(k, d.identity[k] ?? '', t)} removeLabel={t.removeItem}
+                onRemove={() => { const next = { ...d.identity }; delete next[k]; upd({ identity: next }) }} />
+            ))}
+          </DeltaSection>
+        )}
+
+        {d.additionalInfo.length > 0 && (
+          <DeltaSection title={t.additionalInfo}>
+            {d.additionalInfo.map((a, i) => (
+              <DeltaRow key={`${a.label}:${i}`} label={a.label} sub={a.value} removeLabel={t.removeItem}
+                onRemove={() => upd({ additionalInfo: d.additionalInfo.filter((_, j) => j !== i) })} />
+            ))}
+          </DeltaSection>
+        )}
+
         <div className="mt-2 flex flex-col gap-2">
           <Button wide onClick={apply}>{t.reimportMergeButton}</Button>
           <Button variant="ghost" wide onClick={done}>{t.cancel}</Button>
@@ -872,6 +890,27 @@ function linkLabel(key: keyof Profile['links'], t: T): string {
   }
 }
 
+function identityExtraLabel(key: keyof ProfileDelta['identity'], t: T): string {
+  switch (key) {
+    case 'dateOfBirth': return t.dateOfBirth
+    case 'nationality': return t.nationality
+    case 'sex': return t.sex
+    case 'drivingLicence': return t.drivingLicence
+  }
+}
+
+/** We only support Male / Female / Other — show the localized label. */
+function sexLabel(v: string, t: T): string {
+  if (v === 'Male') return t.sexMale
+  if (v === 'Female') return t.sexFemale
+  if (v === 'Other') return t.sexOther
+  return v
+}
+
+function identityExtraValue(key: keyof ProfileDelta['identity'], val: string, t: T): string {
+  return key === 'sex' ? sexLabel(val, t) : val
+}
+
 /** Free words in, filed into the right profile slots. Reports what the merge
  *  actually stored, never what the model proposed: a highlight for a job that
  *  isn't on file has nowhere to go, and claiming it saved is how a fact appears
@@ -992,6 +1031,19 @@ function AboutEditor({ p, set, t }: { p: Profile; set: (patch: Partial<Profile>)
       {/* Used by the Europass / Continental CV formats — optional for everyone else. */}
       <KV k={t.dateOfBirth} v={p.identity.dateOfBirth ?? ''} onChange={(v) => setIdentity('dateOfBirth', v)} />
       <KV k={t.nationality} v={p.identity.nationality ?? ''} onChange={(v) => setIdentity('nationality', v)} />
+      <Label>{t.sex}
+        <Select
+          value={p.identity.sex ?? ''}
+          onChange={(v) => setIdentity('sex', v)}
+          options={[
+            { value: '', label: '—' },
+            { value: 'Male', label: t.sexMale },
+            { value: 'Female', label: t.sexFemale },
+            { value: 'Other', label: t.sexOther },
+          ]}
+        />
+      </Label>
+      <KV k={t.drivingLicence} v={p.identity.drivingLicence ?? ''} placeholder="B" onChange={(v) => setIdentity('drivingLicence', v)} />
       <PhotoField photo={p.identity.photo} onChange={(v) => setIdentity('photo', v)} t={t} />
       <KV k={t.headline} v={p.headline} placeholder={t.headlinePlaceholder} onChange={(v) => set({ headline: v })} />
       <KV k={t.summary} v={p.summary} multiline onChange={(v) => set({ summary: v })} />
