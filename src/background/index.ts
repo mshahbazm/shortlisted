@@ -350,11 +350,16 @@ async function handle(msg: Msg): Promise<unknown> {
  */
 async function intakeResume(resumeId: string): Promise<void> {
   const [settings, resumes] = await Promise.all([store.get('settings'), store.get('resumes')])
-  if (!settings.accountEmail) return
   const r = resumes.find((x) => x.id === resumeId)
   if (!r) return
   const setStatus = (status: ResumeVariant['status']) =>
     store.update('resumes', (list) => list.map((x) => (x.id === resumeId ? { ...x, status } : x)))
+  // No session (signed out or expired): mark it failed so the card shows Retry
+  // rather than a spinner that never resolves. Retry works once signed back in.
+  if (!settings.accountEmail) {
+    await setStatus('failed')
+    return
+  }
   await setStatus('learning')
   try {
     const facts = await cloudEnrichFromCv(settings, r.dataBase64)

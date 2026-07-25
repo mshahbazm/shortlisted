@@ -312,6 +312,23 @@ export function applyProfileDelta(p: Profile, d: ProfileDelta): Profile {
   const hlByWork = new Map<string, string[]>()
   for (const h of d.workHighlights) hlByWork.set(h.workId, [...(hlByWork.get(h.workId) ?? []), ...h.highlights])
 
+  // The delta was diffed against the profile the SERVER loaded; by apply time the
+  // client profile can differ (a role added since, not yet synced). Re-check each
+  // new role against the CURRENT profile by company, so a race can't create a
+  // duplicate role — fold its highlights into the existing one instead.
+  const byCompany = new Map(p.work.map((w) => [w.company.toLowerCase().trim(), w]))
+  const freshWork: WorkEntry[] = []
+  for (const nw of d.work) {
+    const key = nw.company.toLowerCase().trim()
+    const match = key ? byCompany.get(key) : undefined
+    if (match) {
+      hlByWork.set(match.id, [...(hlByWork.get(match.id) ?? []), ...nw.highlights])
+    } else {
+      freshWork.push(nw)
+      if (key) byCompany.set(key, nw)
+    }
+  }
+
   const work = p.work.map((w) => {
     const add = hlByWork.get(w.id)
     if (!add?.length) return w
@@ -327,7 +344,7 @@ export function applyProfileDelta(p: Profile, d: ProfileDelta): Profile {
     education: [...p.education, ...d.education],
     industries: [...p.industries, ...d.industries],
     links: { ...p.links, ...d.links },
-    work: [...work, ...d.work],
+    work: [...work, ...freshWork],
   }
 }
 
