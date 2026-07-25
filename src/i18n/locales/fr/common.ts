@@ -45,5 +45,6 @@ export const common: tLocale['common'] = {
   tplEuropassTimeline: "Europass Chronologie",
   tplEuropassProgress: "Europass Progression",
   tplEuropassAccent: "Europass Accent",
+  tplEuropassElegant: "Europass Élégant",
   tplLebenslauf: "Lebenslauf",
 }

@@ -46,5 +46,6 @@ export const common = {
   tplEuropassTimeline: "Europass Timeline",
   tplEuropassProgress: "Europass Progress",
   tplEuropassAccent: "Europass Accent",
+  tplEuropassElegant: "Europass Elegant",
   tplLebenslauf: "Lebenslauf",
 }

@@ -31,7 +31,7 @@ function styleName(t: tMerged<'resumes'>, id: string): string {
     europass: t.tplEuropass, lebenslauf: t.tplLebenslauf,
     'europass-classic': t.tplEuropassClassic, 'europass-modern': t.tplEuropassModern,
     'europass-timeline': t.tplEuropassTimeline, 'europass-progress': t.tplEuropassProgress,
-    'europass-accent': t.tplEuropassAccent,
+    'europass-accent': t.tplEuropassAccent, 'europass-elegant': t.tplEuropassElegant,
   }
   return names[id] ?? id
 }

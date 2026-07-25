@@ -185,6 +185,8 @@ export function renderEuropassEditor(profile: Profile, variant: TailoredResume, 
       return progress(profile, variant, tpl)
     case 'europass-accent':
       return accent(profile, variant, tpl)
+    case 'europass-elegant':
+      return elegant(profile, variant, tpl)
     case 'europass-classic':
     default:
       return classic(profile, variant, tpl)
@@ -935,6 +937,7 @@ function timeline(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate
     section('Education & Training')
     edus.forEach((e, i) => {
       if (i > 0) col.y += 14
+      p.ensure(col, 60) // keep the date, dot and title on one page (no orphan dot)
       const dl = eduRange(e)
       if (dl) {
         boldThenNormal(dl + ' ', BLUE, 11, '', BLUE, 11)
@@ -951,6 +954,7 @@ function timeline(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate
     section('Work experience')
     works.forEach(({ w }, i) => {
       if (i > 0) col.y += 14
+      p.ensure(col, 60) // keep the dot, company and title on one page (no orphan dot)
       dot(col.y - 3.5)
       boldThenNormal(w.company + ' ', TITLE, 11, w.location || '', '#4F4F4F', 9)
       col.y += 17
@@ -1537,6 +1541,216 @@ function accent(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate):
     }
     p.setFont(false, 10, VAL)
     doc.text(`Page ${pg}/${pages}`, R - 12, PAGE_H - 42, { align: 'right' })
+  }
+
+  return doc.output('datauristring').split(',')[1]
+}
+
+// ------------------------------------------------------------------ ELEGANT --
+// Pixel-matched to the official editor's "Elegant" SVG. A left rail holds the
+// right-aligned blue UPPERCASE section titles and bracketed date ranges; a
+// full-width hairline rule sits beside each title, and the body content lives
+// to the right (x=160). Blue entry titles + language names, italic-bold org
+// names, photo top-left with a gray ring, and stacked per-language CEFR blocks
+// (two skill lines each). europass mark top-right on page 1.
+function elegant(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate): string {
+  void tpl
+  const ACCENT = '#0C56A5' // section + entry titles, language names
+  const NAME = '#404040' // name, italic org, bold labels
+  const VAL = '#565656' // body, values
+  const DATE = '#6B6B6B'
+  const RULE = '#727272' // hairline (#4F4F4F @ 0.8 over white)
+  const LINKC = '#004494'
+  const RING = '#4F4F4F'
+  const LH = 13
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+  const p = painter(doc, 'helvetica', 44)
+  const id = profile.identity
+  const L = 160 // content x
+  const RAIL = 148 // right-align x for titles + dates
+  const R = PAGE_W - 23
+  const name = `${id.firstName} ${id.lastName}`.trim()
+
+  // ---- Header: photo top-left (gray ring), dark name, contact run ----
+  const pcx = 86
+  const pcy = 120
+  const r = 48
+  if (id.photo) circleImage(doc, id.photo, pcx, pcy, r, '#ffffff')
+  doc.setDrawColor(RING)
+  doc.setLineWidth(2)
+  doc.circle(pcx, pcy, r + 1, 'S')
+  p.setFont(true, 16, NAME)
+  doc.text(name || ' ', L, 88)
+
+  const col: Cursor = { x: L, w: R - L, y: 108 }
+  const cy = inlineGroups(doc, p, [accentDetail(profile, NAME, VAL, LINKC)], L, 108, R - L, 18, 10, VAL, VAL)
+  col.y = Math.max(cy, 190)
+
+  const section = (labelT: string) => {
+    col.y += 26
+    p.ensure(col, 34)
+    doc.setDrawColor(RULE)
+    doc.setLineWidth(0.5)
+    doc.line(L, col.y - 3.8, R, col.y - 3.8)
+    p.setFont(true, 11, ACCENT)
+    const lines = doc.splitTextToSize(labelT.toUpperCase(), RAIL - 30) as string[]
+    lines.forEach((ln, i) => doc.text(ln, RAIL, col.y + i * 13, { align: 'right' }))
+    col.y += (lines.length - 1) * 13 + 20
+  }
+  const para = (t: string) => {
+    p.setFont(false, 10, VAL)
+    for (const ln of doc.splitTextToSize(t, R - L) as string[]) {
+      p.ensure(col, LH)
+      doc.text(ln, L, col.y)
+      col.y += LH
+    }
+  }
+  const bullet = (b: string) => {
+    p.setFont(false, 10, VAL)
+    const lines = doc.splitTextToSize(b, R - 185) as string[]
+    lines.forEach((ln, j) => {
+      if (j > 0) col.y += LH
+      p.ensure(col, LH)
+      doc.text((j === 0 ? '•  ' : '') + ln, j === 0 ? 175 : 185, col.y)
+    })
+    col.y += LH
+  }
+  // date right-aligned in the rail + blue title at L, on one baseline
+  const dateTitle = (dateStr: string, title: string) => {
+    p.ensure(col, 16)
+    if (dateStr) {
+      p.setFont(false, 10, DATE)
+      doc.text(`[ ${dateStr} ]`, RAIL, col.y, { align: 'right' })
+    }
+    p.setFont(true, 11, ACCENT)
+    for (const ln of doc.splitTextToSize(title, R - L) as string[]) {
+      doc.text(ln, L, col.y)
+      col.y += 17
+    }
+  }
+  const orgLine = (nameT: string, tail: string) => {
+    p.ensure(col, 15)
+    doc.setFont('helvetica', 'bolditalic')
+    doc.setFontSize(11)
+    doc.setTextColor(NAME)
+    doc.text(nameT, L, col.y)
+    if (tail) {
+      const w0 = doc.getTextWidth(nameT + ' ')
+      p.setFont(false, 11, NAME)
+      doc.text(tail, L + w0, col.y)
+    }
+    col.y += 17
+  }
+
+  if (variant.summary) {
+    section('About me')
+    para(variant.summary)
+  }
+
+  const edus = resolveEdu(profile, variant)
+  if (edus.length) {
+    section('Education & Training')
+    edus.forEach((e, i) => {
+      if (i > 0) col.y += 10
+      dateTitle(eduRange(e), e.degree)
+      orgLine(e.school, '')
+      if (e.description) para(e.description)
+    })
+  }
+
+  const works = resolveWork(profile, variant)
+  if (works.length) {
+    section('Work experience')
+    works.forEach(({ w }, i) => {
+      if (i > 0) col.y += 12
+      orgLine(w.company, w.location ? `- ${w.location}` : '')
+      dateTitle(workRange(w), w.title)
+      for (const b of w.highlights) {
+        col.y += 1
+        bullet(b)
+      }
+    })
+  }
+
+  if (variant.skills.length) {
+    section('Skills')
+    col.y = inlineGroups(
+      doc,
+      p,
+      variant.skills.map((s) => [{ t: s, color: VAL }]),
+      L,
+      col.y,
+      R - L,
+      LH,
+      9,
+      '#C2C2C2',
+      VAL,
+    )
+  }
+
+  const mother = profile.languages.filter((l) => l.proficiency === 'native_bilingual')
+  const graded = profile.languages.filter((l) => l.cefr && l.proficiency !== 'native_bilingual')
+  if (profile.languages.length) {
+    section('Language Skills')
+    if (mother.length) {
+      p.setFont(true, 11, NAME)
+      doc.text('Mother tongue(s): ', L, col.y)
+      const w0 = doc.getTextWidth('Mother tongue(s): ')
+      p.setFont(false, 11, VAL)
+      doc.text(mother.map((l) => l.name).join(', '), L + w0, col.y)
+      col.y += 18
+    }
+    if (graded.length) {
+      p.setFont(true, 11, NAME)
+      doc.text('Other language(s):', L, col.y)
+      col.y += 18
+      const drawPairs = (yy: number, pairs: [string, string][]) => {
+        let cx = L
+        for (const [lab, lv] of pairs) {
+          p.setFont(true, 10, NAME)
+          doc.text(lab + ': ', cx, yy)
+          cx += doc.getTextWidth(lab + ': ')
+          p.setFont(false, 10, VAL)
+          doc.text(lv + '  ', cx, yy)
+          cx += doc.getTextWidth(lv + '  ')
+        }
+      }
+      for (const l of graded) {
+        p.ensure(col, 54)
+        p.setFont(true, 11, ACCENT)
+        doc.text(l.name, L, col.y)
+        col.y += 18
+        const c = l.cefr!
+        drawPairs(col.y, [
+          ['LISTENING', c.listening],
+          ['READING', c.reading],
+          ['WRITING', c.writing],
+        ])
+        col.y += 18
+        drawPairs(col.y, [
+          ['SPOKEN PRODUCTION', c.spokenProduction],
+          ['SPOKEN INTERACTION', c.spokenInteraction],
+        ])
+        col.y += 18
+      }
+    }
+  }
+
+  // ---- Footer: europass mark top-right on page 1, page number bottom-right ----
+  const pages = doc.getNumberOfPages()
+  const lgW = 122
+  const lgH = lgW * (92 / 360)
+  for (let pg = 1; pg <= pages; pg++) {
+    doc.setPage(pg)
+    if (pg === 1) {
+      try {
+        doc.addImage(EUROPASS_LOGO_NEW, 'JPEG', R - lgW, 38, lgW, lgH)
+      } catch {
+        /* logo optional */
+      }
+    }
+    p.setFont(false, 10, VAL)
+    doc.text(`Page ${pg}/${pages}`, R, PAGE_H - 42, { align: 'right' })
   }
 
   return doc.output('datauristring').split(',')[1]
