@@ -46,7 +46,7 @@ export function toCefr(p: LanguageProficiency): Cefr {
 export const isMotherTongue = (p: LanguageProficiency) => p === 'native_bilingual'
 
 /** A minimal painter over a jsPDF doc: fonts, page-break-aware text, bullets. */
-export function painter(doc: jsPDF, family: 'helvetica' | 'times' = 'helvetica', newPageTop: number = MARGIN) {
+export function painter(doc: jsPDF, family: string = 'helvetica', newPageTop: number = MARGIN) {
   const setFont = (bold: boolean, size: number, color: string = INK) => {
     doc.setFont(family, bold ? 'bold' : 'normal')
     doc.setFontSize(size)

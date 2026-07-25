@@ -9,6 +9,7 @@ import { Profile, TailoredResume, WorkEntry, EducationEntry } from '../../lib/ty
 import { ResumeTemplate } from '../templates'
 import { Cursor, MARGIN, PAGE_H, PAGE_W, painter } from './shared'
 import { EUROPASS_LOGO_NEW } from './europassLogoNew'
+import { addDmSans } from '../fonts/dmSans'
 
 const INK = '#2b2b2b'
 const META = '#6a6a6a' // dates / secondary
@@ -180,6 +181,8 @@ export function renderEuropassEditor(profile: Profile, variant: TailoredResume, 
       return modern(profile, variant, tpl)
     case 'europass-timeline':
       return timeline(profile, variant, tpl)
+    case 'europass-progress':
+      return progress(profile, variant, tpl)
     case 'europass-classic':
     default:
       return classic(profile, variant, tpl)
@@ -452,273 +455,290 @@ function classic(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate)
 
 // Filled dark section glyphs (jsPDF standard fonts lack icon glyphs), matching
 // the solid silhouettes the Europass editor uses. Drawn in a ~12pt box at (x,y).
-function fillPoly(doc: jsPDF, pts: [number, number][]) {
-  const deltas = pts.slice(1).map((pt, i) => [pt[0] - pts[i][0], pt[1] - pts[i][1]]) as [number, number][]
-  doc.lines(deltas, pts[0][0], pts[0][1], [1, 1], 'F', true)
-}
-// Each icon is a light-gray DISC with a dark glyph centred on it (the real
-// Europass section markers). Drawn in a ~15pt box: (x,y) is the box's top-left,
-// the disc centre is (x+7, y+7). `c` = glyph colour, `bg` = disc colour.
-const ICON_R = 6.3 // disc radius (smaller, matches the official markers)
-function sectionIcons(doc: jsPDF) {
-  const disc = (cx: number, cy: number, bg: string) => {
-    doc.setFillColor(bg)
-    doc.circle(cx, cy, ICON_R, 'F')
-  }
-  const glyph = (c: string) => {
-    doc.setFillColor(c)
-    doc.setDrawColor(c)
-  }
-  const C = ICON_R // box centre offset
-  return {
-    star: (x: number, y: number, c: string, bg: string) => {
-      const cx = x + C
-      const cy = y + C
-      disc(cx, cy, bg)
-      glyph(c)
-      const pts: [number, number][] = []
-      for (let i = 0; i < 10; i++) {
-        const rr = i % 2 === 0 ? 3.8 : 1.55
-        const a = -Math.PI / 2 + (i * Math.PI) / 5
-        pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr])
-      }
-      fillPoly(doc, pts)
-    },
-    chat: (x: number, y: number, c: string, bg: string) => {
-      const cx = x + C
-      const cy = y + C
-      disc(cx, cy, bg)
-      glyph(c)
-      doc.roundedRect(cx - 3.5, cy - 2.7, 7, 5, 1.3, 1.3, 'F')
-      fillPoly(doc, [
-        [cx - 1.2, cy + 1.7],
-        [cx - 1.2, cy + 3.7],
-        [cx + 1.2, cy + 2],
-      ])
-    },
-    person: (x: number, y: number, c: string, bg: string) => {
-      const cx = x + C
-      const cy = y + C
-      disc(cx, cy, bg)
-      glyph(c)
-      doc.circle(cx, cy - 1.5, 1.7, 'F')
-      doc.ellipse(cx, cy + 2.8, 2.9, 2.2, 'F')
-    },
-    cap: (x: number, y: number, c: string, bg: string) => {
-      const cx = x + C
-      const cy = y + C
-      disc(cx, cy, bg)
-      glyph(c)
-      fillPoly(doc, [
-        [cx, cy - 2.8],
-        [cx + 3.8, cy - 0.7],
-        [cx, cy + 1.3],
-        [cx - 3.8, cy - 0.7],
-      ])
-      fillPoly(doc, [
-        [cx - 2.4, cy - 0.2],
-        [cx + 2.4, cy - 0.2],
-        [cx + 1.9, cy + 2.3],
-        [cx - 1.9, cy + 2.3],
-      ])
-      doc.setLineWidth(0.45)
-      doc.line(cx + 3.4, cy - 0.5, cx + 3.4, cy + 2.1)
-      doc.circle(cx + 3.4, cy + 2.4, 0.5, 'F')
-    },
-    briefcase: (x: number, y: number, c: string, bg: string) => {
-      const cx = x + C
-      const cy = y + C
-      disc(cx, cy, bg)
-      glyph(c)
-      doc.roundedRect(cx - 3.6, cy - 1.3, 7.2, 5, 0.8, 0.8, 'F')
-      doc.setLineWidth(0.9)
-      doc.line(cx - 1.6, cy - 1.3, cx - 1.6, cy - 2.6)
-      doc.line(cx - 1.6, cy - 2.6, cx + 1.6, cy - 2.6)
-      doc.line(cx + 1.6, cy - 2.6, cx + 1.6, cy - 1.3)
-      doc.setDrawColor(bg)
-      doc.setLineWidth(0.6)
-      doc.line(cx - 3.6, cy + 0.9, cx + 3.6, cy + 0.9)
-    },
+// The exact glyph paths lifted from the official editor SVG (each drawn in a
+// 14×14 box). Rendered via jsPDF's canvas context so the section markers are
+// pixel-identical, not approximations.
+const ICON_STAR = [
+  'M9.15633 10.5002C9.10371 10.5004 9.05236 10.484 9.00961 10.4534L7.00008 8.99649L4.99054 10.4534C4.94761 10.4845 4.89589 10.5012 4.84285 10.501C4.78982 10.5008 4.73822 10.4837 4.69551 10.4523C4.65281 10.4208 4.62121 10.3766 4.60529 10.326C4.58937 10.2754 4.58995 10.2211 4.60695 10.1709L5.3907 7.84946L3.35945 6.45649C3.31545 6.42635 3.28224 6.38293 3.26468 6.33258C3.24712 6.28222 3.24611 6.22757 3.26182 6.1766C3.27753 6.12564 3.30913 6.08103 3.35199 6.0493C3.39486 6.01757 3.44674 6.00038 3.50008 6.00024H6.00601L6.76226 3.67289C6.77855 3.62265 6.81034 3.57885 6.85307 3.54779C6.89579 3.51673 6.94725 3.5 7.00008 3.5C7.0529 3.5 7.10436 3.51673 7.14709 3.54779C7.18981 3.57885 7.2216 3.62265 7.23789 3.67289L7.99414 6.00102H10.5001C10.5535 6.00099 10.6055 6.01807 10.6485 6.04973C10.6915 6.0814 10.7232 6.12601 10.739 6.17701C10.7548 6.22801 10.7539 6.28274 10.7363 6.33317C10.7188 6.3836 10.6855 6.42709 10.6415 6.45727L8.60945 7.84946L9.39273 10.1702C9.40542 10.2078 9.40899 10.2479 9.40315 10.2871C9.3973 10.3263 9.38221 10.3636 9.35911 10.3958C9.33601 10.4281 9.30558 10.4544 9.27032 10.4725C9.23506 10.4907 9.19599 10.5002 9.15633 10.5002Z',
+]
+const ICON_LANG = [
+  'M10.4739 9.77507L9.06765 6.36882C9.04168 6.30591 8.99762 6.25213 8.94106 6.21429C8.88449 6.17645 8.81797 6.15625 8.74991 6.15625C8.68186 6.15625 8.61534 6.17645 8.55877 6.21429C8.50221 6.25213 8.45815 6.30591 8.43218 6.36882L7.02593 9.77507C7.00844 9.81684 6.99938 9.86165 6.99927 9.90694C6.99915 9.95222 7.00799 9.99708 7.02526 10.0389C7.04254 10.0808 7.06792 10.1188 7.09994 10.1509C7.13196 10.1829 7.16999 10.2083 7.21184 10.2255C7.2537 10.2428 7.29856 10.2517 7.34385 10.2516C7.38913 10.2514 7.43395 10.2424 7.47572 10.2249C7.51749 10.2074 7.5554 10.1819 7.58727 10.1497C7.61913 10.1175 7.64432 10.0794 7.6614 10.0374L7.9478 9.34382H9.55202L9.83843 10.0374C9.86439 10.1003 9.90846 10.1542 9.96504 10.192C10.0216 10.2299 10.0882 10.2501 10.1562 10.2501C10.2127 10.25 10.2683 10.2361 10.3181 10.2094C10.368 10.1828 10.4104 10.1443 10.4418 10.0973C10.4732 10.0504 10.4925 9.99641 10.4981 9.9402C10.5037 9.88399 10.4953 9.82727 10.4737 9.77507H10.4739ZM8.23171 8.65632L8.74999 7.40085L9.26827 8.65632H8.23171Z',
+  'M7.185 8.35813C7.2384 8.28436 7.26035 8.19241 7.24603 8.10248C7.2317 8.01254 7.18227 7.93196 7.10859 7.87844C7.10547 7.87609 6.87422 7.70453 6.53844 7.33578C7.15797 6.49703 7.50891 5.54281 7.65203 5.09375H8.15625C8.24742 5.09375 8.33485 5.05753 8.39932 4.99307C8.46378 4.9286 8.5 4.84117 8.5 4.75C8.5 4.65883 8.46378 4.5714 8.39932 4.50693C8.33485 4.44247 8.24742 4.40625 8.15625 4.40625H6.34375V4.09375C6.34375 4.00258 6.30753 3.91515 6.24307 3.85068C6.1786 3.78622 6.09117 3.75 6 3.75C5.90883 3.75 5.8214 3.78622 5.75693 3.85068C5.69247 3.91515 5.65625 4.00258 5.65625 4.09375V4.40625H3.84375C3.75258 4.40625 3.66515 4.44247 3.60068 4.50693C3.53622 4.5714 3.5 4.65883 3.5 4.75C3.5 4.84117 3.53622 4.9286 3.60068 4.99307C3.66515 5.05753 3.75258 5.09375 3.84375 5.09375H6.92578C6.77703 5.51484 6.50313 6.17969 6.08531 6.78688C5.59453 6.13562 5.41219 5.71422 5.41078 5.71078C5.37485 5.62775 5.30764 5.56223 5.22371 5.52843C5.13979 5.49463 5.04593 5.49528 4.96248 5.53024C4.87903 5.5652 4.81273 5.63165 4.77796 5.71517C4.74318 5.79869 4.74274 5.89256 4.77672 5.97641C4.78578 5.99797 5.00406 6.51125 5.60266 7.28781C5.61703 7.30641 5.63125 7.32453 5.64547 7.34266C5.03234 8.03562 4.43078 8.46547 4.17906 8.60422C4.09902 8.64788 4.0396 8.72154 4.01387 8.80901C3.98815 8.89648 3.99822 8.99058 4.04188 9.07062C4.08553 9.15067 4.1592 9.21009 4.24667 9.23581C4.33413 9.26154 4.42824 9.25147 4.50828 9.20781C4.54203 9.18937 5.26766 8.78766 6.09625 7.87047C6.44813 8.24672 6.69 8.42422 6.70453 8.43453C6.74109 8.46109 6.78253 8.48018 6.82648 8.4907C6.87042 8.50123 6.91601 8.50298 6.96064 8.49587C7.00527 8.48876 7.04805 8.47292 7.08655 8.44926C7.12505 8.4256 7.1585 8.39457 7.185 8.35797V8.35813Z',
+]
+const ICON_PERSON = [
+  'M8.49689 3.26133C8.11682 2.85098 7.58596 2.625 7.00002 2.625C6.41096 2.625 5.87834 2.84961 5.50002 3.25742C5.1176 3.66973 4.93127 4.23008 4.97502 4.83516C5.06174 6.02891 5.97014 7 7.00002 7C8.0299 7 8.93674 6.0291 9.02482 4.83555C9.06916 4.23594 8.88166 3.67676 8.49689 3.26133Z',
+  'M10.4376 11.375H3.56261C3.47262 11.3762 3.38351 11.3573 3.30175 11.3197C3.21998 11.2821 3.14763 11.2267 3.08996 11.1576C2.963 11.0059 2.91183 10.7986 2.94972 10.5891C3.11456 9.67461 3.62902 8.90645 4.43761 8.36719C5.15597 7.88848 6.06593 7.625 7.00011 7.625C7.93429 7.625 8.84425 7.88867 9.56261 8.36719C10.3712 8.90625 10.8857 9.67441 11.0505 10.5889C11.0884 10.7984 11.0372 11.0057 10.9103 11.1574C10.8526 11.2265 10.7803 11.2819 10.6985 11.3196C10.6167 11.3572 10.5276 11.3761 10.4376 11.375Z',
+]
+const ICON_CAP = [
+  'M7 8.7502C6.95648 8.7502 6.91372 8.73884 6.87594 8.71724L4.6875 7.46645C4.66848 7.45548 4.64691 7.4497 4.62495 7.44971C4.603 7.44972 4.58143 7.45551 4.56242 7.4665C4.54341 7.47749 4.52764 7.4933 4.51668 7.51233C4.50572 7.53136 4.49997 7.55293 4.5 7.57489V8.7502C4.49996 8.79482 4.51187 8.83864 4.53448 8.87711C4.55709 8.91557 4.58959 8.94729 4.62859 8.96895L6.87859 10.219C6.91573 10.2396 6.95752 10.2504 7 10.2504C7.04248 10.2504 7.08427 10.2396 7.12141 10.219L9.37141 8.96895C9.41041 8.94729 9.44291 8.91557 9.46552 8.87711C9.48813 8.83864 9.50004 8.79482 9.5 8.7502V7.57489C9.50003 7.55293 9.49428 7.53136 9.48332 7.51233C9.47236 7.4933 9.45659 7.47749 9.43758 7.4665C9.41857 7.45551 9.397 7.44972 9.37505 7.44971C9.35309 7.4497 9.33152 7.45548 9.3125 7.46645L7.12406 8.71724C7.08628 8.73884 7.04352 8.7502 7 8.7502Z',
+  'M10.7488 5.97655C10.7488 5.97655 10.7488 5.9753 10.7488 5.97483C10.7448 5.9352 10.7313 5.89711 10.7096 5.86374C10.6878 5.83036 10.6584 5.80267 10.6238 5.78296L7.12379 3.78296C7.08601 3.76136 7.04325 3.75 6.99973 3.75C6.95621 3.75 6.91345 3.76136 6.87567 3.78296L3.37567 5.78296C3.33742 5.80483 3.30563 5.83642 3.28351 5.87453C3.2614 5.91264 3.24976 5.95592 3.24976 5.99999C3.24976 6.04405 3.2614 6.08733 3.28351 6.12544C3.30563 6.16356 3.33742 6.19515 3.37567 6.21702L6.87567 8.21702C6.91345 8.23861 6.95621 8.24997 6.99973 8.24997C7.04325 8.24997 7.08601 8.23861 7.12379 8.21702L10.2032 6.45749C10.2079 6.45474 10.2133 6.45329 10.2188 6.4533C10.2243 6.45331 10.2297 6.45476 10.2345 6.45752C10.2392 6.46028 10.2432 6.46424 10.2459 6.46901C10.2486 6.47377 10.2501 6.47918 10.25 6.48467V8.74296C10.25 8.87749 10.3535 8.99296 10.488 8.99967C10.5218 9.0013 10.5556 8.99605 10.5873 8.98424C10.619 8.97243 10.648 8.9543 10.6725 8.93095C10.697 8.90761 10.7165 8.87953 10.7298 8.84842C10.7432 8.81732 10.75 8.78383 10.75 8.74999V5.99999C10.75 5.99216 10.7496 5.98434 10.7488 5.97655Z',
+]
+const ICON_WORK = [
+  'M10.75 5.75C10.7497 5.48487 10.6443 5.23069 10.4568 5.04321C10.2693 4.85574 10.0151 4.75029 9.75 4.75H9V4.5C8.99979 4.30115 8.92071 4.11051 8.7801 3.9699C8.63949 3.82929 8.44885 3.75021 8.25 3.75H5.75C5.55115 3.75021 5.36051 3.82929 5.2199 3.9699C5.07929 4.11051 5.00021 4.30115 5 4.5V4.75H4.25C3.98487 4.75029 3.73069 4.85574 3.54321 5.04321C3.35574 5.23069 3.25029 5.48487 3.25 5.75V6.5H10.75V5.75ZM8.5 4.75H5.5V4.5C5.5 4.4337 5.52634 4.37011 5.57322 4.32322C5.62011 4.27634 5.6837 4.25 5.75 4.25H8.25C8.3163 4.25 8.37989 4.27634 8.42678 4.32322C8.47366 4.37011 8.5 4.4337 8.5 4.5V4.75Z',
+  'M8.25 7.125C8.25 7.22446 8.21049 7.31984 8.14016 7.39016C8.06984 7.46049 7.97446 7.5 7.875 7.5H6.125C6.02554 7.5 5.93016 7.46049 5.85983 7.39016C5.78951 7.31984 5.75 7.22446 5.75 7.125V7.0625C5.75 7.04592 5.74342 7.03003 5.73169 7.01831C5.71997 7.00658 5.70408 7 5.6875 7H3.25V9.25C3.25 9.51522 3.35536 9.76957 3.54289 9.95711C3.73043 10.1446 3.98478 10.25 4.25 10.25H9.75C10.0152 10.25 10.2696 10.1446 10.4571 9.95711C10.6446 9.76957 10.75 9.51522 10.75 9.25V7H8.3125C8.29592 7 8.28003 7.00658 8.26831 7.01831C8.25658 7.03003 8.25 7.04592 8.25 7.0625V7.125Z',
+]
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// Parse an SVG path 'd' string, emitting canvas ops onto `ctx` (no beginPath/fill).
+function drawSvgPath(ctx: any, d: string) {
+  const toks = d.match(/[MmLlHhVvCcSsQqTtZz]|-?\d*\.?\d+(?:[eE][-+]?\d+)?/g)
+  if (!toks) return
+  let i = 0
+  let x = 0
+  let y = 0
+  let sx = 0
+  let sy = 0
+  let pcx = 0
+  let pcy = 0
+  let cmd = ''
+  let prev = ''
+  const num = () => parseFloat(toks[i++])
+  while (i < toks.length) {
+    if (/[A-Za-z]/.test(toks[i])) cmd = toks[i++]
+    else if (cmd === 'M') cmd = 'L'
+    else if (cmd === 'm') cmd = 'l'
+    const rel = cmd >= 'a'
+    const C = cmd.toUpperCase()
+    if (C === 'M') {
+      let nx = num()
+      let ny = num()
+      if (rel) { nx += x; ny += y }
+      x = nx; y = ny; sx = x; sy = y
+      ctx.moveTo(x, y)
+    } else if (C === 'L') {
+      let nx = num()
+      let ny = num()
+      if (rel) { nx += x; ny += y }
+      x = nx; y = ny
+      ctx.lineTo(x, y)
+    } else if (C === 'H') {
+      let nx = num()
+      if (rel) nx += x
+      x = nx
+      ctx.lineTo(x, y)
+    } else if (C === 'V') {
+      let ny = num()
+      if (rel) ny += y
+      y = ny
+      ctx.lineTo(x, y)
+    } else if (C === 'C') {
+      let a = num(), b = num(), c2 = num(), d2 = num(), nx = num(), ny = num()
+      if (rel) { a += x; b += y; c2 += x; d2 += y; nx += x; ny += y }
+      ctx.bezierCurveTo(a, b, c2, d2, nx, ny)
+      pcx = c2; pcy = d2; x = nx; y = ny
+    } else if (C === 'S') {
+      let c2 = num(), d2 = num(), nx = num(), ny = num()
+      if (rel) { c2 += x; d2 += y; nx += x; ny += y }
+      const smooth = prev.toUpperCase() === 'C' || prev.toUpperCase() === 'S'
+      ctx.bezierCurveTo(smooth ? 2 * x - pcx : x, smooth ? 2 * y - pcy : y, c2, d2, nx, ny)
+      pcx = c2; pcy = d2; x = nx; y = ny
+    } else if (C === 'Q') {
+      let a = num(), b = num(), nx = num(), ny = num()
+      if (rel) { a += x; b += y; nx += x; ny += y }
+      ctx.quadraticCurveTo(a, b, nx, ny)
+      pcx = a; pcy = b; x = nx; y = ny
+    } else if (C === 'Z') {
+      ctx.closePath()
+      x = sx; y = sy
+    }
+    prev = cmd
   }
 }
 
+// Section markers: a #F5F5F5 disc + the exact SVG glyph, scaled to a 12pt box.
+// (x,y) = box top-left; `c` = glyph colour, `bg` = disc colour.
+function sectionIcons(doc: jsPDF) {
+  const ctx = (doc as any).context2d as any
+  const draw = (paths: string[], x: number, y: number, glyph: string, bg: string) => {
+    doc.setFillColor(bg)
+    doc.circle(x + 6, y + 6, 6, 'F')
+    if (!ctx) return
+    ctx.save()
+    ctx.fillStyle = glyph
+    ctx.translate(x, y)
+    ctx.scale(12 / 14, 12 / 14)
+    ctx.beginPath()
+    for (const d of paths) drawSvgPath(ctx, d)
+    ctx.fill()
+    ctx.restore()
+  }
+  return {
+    star: (x: number, y: number, c: string, bg: string) => draw(ICON_STAR, x, y, c, bg),
+    chat: (x: number, y: number, c: string, bg: string) => draw(ICON_LANG, x, y, c, bg),
+    person: (x: number, y: number, c: string, bg: string) => draw(ICON_PERSON, x, y, c, bg),
+    cap: (x: number, y: number, c: string, bg: string) => draw(ICON_CAP, x, y, c, bg),
+    briefcase: (x: number, y: number, c: string, bg: string) => draw(ICON_WORK, x, y, c, bg),
+  }
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 // ------------------------------------------------------------------- MODERN --
-// Two columns. LEFT: circular photo, Skills (bulleted), Language Skills (per
-// language with CEFR sub-bullets). RIGHT: europass logo, name, detail flow, and
-// About me / Education / Work sections — each an icon + bold title (no rule),
-// with the date range right-aligned on the entry's first line.
+// Pixel-matched to the official editor's "Modern" SVG: a LEFT sidebar (a #F5F5F5
+// blob behind a round photo, Skills, Language Skills with CEFR sub-bullets) and
+// a RIGHT column (europass logo top-right, name, gray detail flow with
+// underlined links, then About me / Education / Work — each a #F5F5F5 disc +
+// dark glyph + gray title, with the date right-aligned). All text #5A5959 except
+// the black name. Official font is DM Sans (Helvetica stands in until embedded).
 function modern(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate): string {
-  const NAME = '#1a1a1a' // name / entry titles (near-black)
-  const TITLE = '#333333' // section headings (dark gray)
-  const BODY = '#5f6368' // body + detail text (gray, like the official)
-  const ICON = '#4a4a4a' // section glyphs
-  const ICONBG = '#eceef1' // light disc behind each glyph
-  const DOT = '#8a8d91' // bullet dots
+  void tpl
+  const BLACK = '#000000'
+  const GRAY = '#5A5959'
+  const SEP = '#4F4F4F'
+  const LINK = '#004494'
+  const DISC = '#F5F5F5'
+  const GLYPH = '#2B2B2B'
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
-  const RIGHT_TOP = MARGIN + 4
-  const p = painter(doc, 'helvetica', RIGHT_TOP)
+  const fam = addDmSans(doc) // the official editor's font
+  const p = painter(doc, fam, 44)
   const icons = sectionIcons(doc)
   const id = profile.identity
   const name = `${id.firstName} ${id.lastName}`.trim()
+  const LX = 32 // sidebar icon x
+  const SBX = 47 // sidebar text x
+  const RX = 197 // right column x
+  const RIGHT = 549
+  const rw = RIGHT - RX
 
-  const railW = 132
-  const lx = MARGIN
-  const rx = MARGIN + railW + 18 // tighter gutter → wider body column
-  const right = PAGE_W - MARGIN
-  const rw = right - rx
+  // ---- Photo: #F5F5F5 blob behind a round photo (r=35) at (92,94), no ring ----
+  doc.setFillColor(DISC)
+  doc.ellipse(95, 92, 50, 48, 'F')
+  if (id.photo) circleImage(doc, id.photo, 92, 94, 35, DISC)
 
-  // ---- LEFT rail (drawn first; short enough to fit page 1) ----
-  const rail: Cursor = { x: lx, w: railW, y: MARGIN }
-  // Photo left-aligned to the column, no ring/circle behind it.
-  const r = 44
-  const pcx = lx + r
-  const pcy = MARGIN + r
-  if (id.photo) circleImage(doc, id.photo, pcx, pcy, r, '#ffffff')
-  rail.y = pcy + r + 26
-
-  const railHeading = (label: string, icon: (x: number, y: number, c: string, bg: string) => void) => {
-    rail.y += 14 // gap before the heading (separates sections)
-    icon(lx, rail.y - 10, ICON, ICONBG)
-    p.setFont(true, 11.5, TITLE)
-    doc.text(label, lx + 17, rail.y)
-    rail.y += 19 // breathing room after the heading
+  // ---- LEFT sidebar ----
+  let sy = 168 // Skills heading baseline
+  const sbHeading = (label: string, icon: (x: number, y: number, c: string, bg: string) => void) => {
+    icon(LX, sy - 10, GLYPH, DISC)
+    p.setFont(true, 12, GRAY)
+    doc.text(label, LX + 16, sy)
+    sy += 18
   }
-  const railBullet = (txt: string, size: number, bold: boolean, indent = 0) => {
-    p.setFont(bold, size, BODY)
-    doc.setFillColor(DOT)
-    doc.circle(lx + 3 + indent, rail.y - 2.6, 1.1, 'F')
-    let yy = rail.y
-    for (const ln of doc.splitTextToSize(txt, railW - 12 - indent) as string[]) {
-      doc.text(ln, lx + 10 + indent, yy)
-      yy += size * 1.32
+  const sbLine = (pieces: { t: string; bold?: boolean }[], x = SBX) => {
+    let cx = x
+    for (const s of pieces) {
+      p.setFont(s.bold ?? false, 10, GRAY)
+      doc.text(s.t, cx, sy)
+      cx += doc.getTextWidth(s.t)
     }
-    rail.y = yy + 3.5 // space between list items
+    sy += 16
   }
-
   if (variant.skills.length) {
-    railHeading('Skills', icons.star)
-    for (const s of variant.skills) railBullet(s, 10, false)
-    rail.y += 10
+    sbHeading('Skills', icons.star)
+    for (const s of variant.skills) sbLine([{ t: '• ' + s }])
+    sy += 8
   }
   if (profile.languages.length) {
-    railHeading('Language Skills', icons.chat)
+    sbHeading('Language Skills', icons.chat)
     const mother = profile.languages.filter((l) => l.proficiency === 'native_bilingual')
-    const others = profile.languages.filter((l) => l.proficiency !== 'native_bilingual')
-    for (const m of mother) {
-      doc.setFillColor(DOT)
-      doc.circle(lx + 3, rail.y - 2.6, 1.1, 'F')
-      p.setFont(true, 10, NAME)
-      doc.text(m.name, lx + 10, rail.y)
-      const w0 = doc.getTextWidth(m.name)
-      p.setFont(false, 10, BODY)
-      doc.text(': Mother tongue', lx + 10 + w0, rail.y)
-      rail.y += 15
-    }
+    const others = profile.languages.filter((l) => l.cefr && l.proficiency !== 'native_bilingual')
+    for (const m of mother) sbLine([{ t: '• ' + m.name, bold: true }, { t: ': Mother tongue' }])
     for (const l of others) {
-      doc.setFillColor(DOT)
-      doc.circle(lx + 3, rail.y - 2.6, 1.1, 'F')
-      p.setFont(true, 10, NAME)
-      doc.text(l.name, lx + 10, rail.y)
-      rail.y += 14
-      const c = l.cefr
-      if (c) {
-        const pairs: [string, string][] = [
-          ['Listening', c.listening], ['Reading', c.reading], ['Spoken production', c.spokenProduction], ['Spoken interaction', c.spokenInteraction], ['Writing', c.writing],
-        ]
-        for (const [k, v] of pairs) railBullet(`${k}: ${v}`, 9.5, false, 10)
-      }
-      rail.y += 6
+      sbLine([{ t: '• ' + l.name, bold: true }])
+      const c = l.cefr!
+      const pairs: [string, string][] = [
+        ['Listening', c.listening], ['Reading', c.reading], ['Spoken production', c.spokenProduction], ['Spoken interaction', c.spokenInteraction], ['Writing', c.writing],
+      ]
+      for (const [k, v] of pairs) sbLine([{ t: `• ${k}: ${v}` }], 62)
     }
   }
 
   // ---- RIGHT column ----
-  const col: Cursor = { x: rx, w: rw, y: RIGHT_TOP }
-  // Logo bigger, at the very top-right ABOVE the name.
-  const logoW = 104
+  const logoW = 112
   const logoH = logoW * (92 / 360)
   try {
-    doc.addImage(EUROPASS_LOGO_NEW, 'JPEG', right - logoW, MARGIN - 2, logoW, logoH)
+    doc.addImage(EUROPASS_LOGO_NEW, 'JPEG', RIGHT - logoW, 36, logoW, logoH)
   } catch {
     /* logo optional */
   }
-  col.y = MARGIN + logoH + 18
-  p.setFont(true, 20, NAME)
-  for (const ln of doc.splitTextToSize(name || ' ', rw) as string[]) {
-    doc.text(ln, rx, col.y)
-    col.y += 23
-  }
-  col.y += 3
-  col.y = flowSegments(doc, p, detailSegs(profile, 'modern'), rx, col.y, rw, 13.5, 9, BODY) + 15
+  const col: Cursor = { x: RX, w: rw, y: 92.4 }
+  p.setFont(true, 18, BLACK)
+  const nameLines = doc.splitTextToSize(name || ' ', rw) as string[]
+  nameLines.forEach((ln, i) => {
+    doc.text(ln, RX, col.y)
+    if (i < nameLines.length - 1) col.y += 22
+  })
+  col.y += 18 // to first detail baseline
+  // Detail flow — regular labels, gray underlined links (matches the SVG).
+  const detail: Piece[][] = []
+  if (id.dateOfBirth) detail.push([{ t: `Date of birth: ${id.dateOfBirth}`, color: GRAY }])
+  if (id.sex) detail.push([{ t: `Gender: ${id.sex}`, color: GRAY }])
+  if (id.nationality) detail.push([{ t: `Nationality: ${id.nationality}`, color: GRAY }])
+  if (id.phone) detail.push([{ t: `Mobile phone:  ${id.phone}`, color: GRAY }])
+  if (id.email) detail.push([{ t: 'Email address: ', color: GRAY }, { t: id.email, color: GRAY, underline: true }])
+  if (profile.links.website) detail.push([{ t: 'Website: ', color: GRAY }, { t: profile.links.website, color: GRAY, underline: true }])
+  if (profile.links.linkedin) detail.push([{ t: 'LinkedIn: ', color: GRAY }, { t: profile.links.linkedin, color: GRAY, underline: true }])
+  if (id.location) detail.push([{ t: `Home address: ${id.location}`, color: GRAY }])
+  col.y = inlineGroups(doc, p, detail, RX, col.y, rw, 17, 10, SEP, GRAY)
+  col.y += 12 // extra breathing room before the first section
 
   const section = (label: string, icon: (x: number, y: number, c: string, bg: string) => void) => {
-    col.y += 22 // gap BEFORE the heading — separates sections
-    p.ensure(col, 28)
-    icon(rx, col.y - 10, ICON, ICONBG)
-    p.setFont(true, 11.5, TITLE)
-    doc.text(label, rx + 17, col.y)
-    col.y += 21 // breathing room AFTER the heading
+    col.y += 20
+    p.ensure(col, 30)
+    icon(RX, col.y, GLYPH, DISC)
+    p.setFont(true, 12, GRAY)
+    doc.text(label, RX + 16, col.y + 10)
+    col.y += 28
   }
-  // Entry with a right-aligned date range on the title line.
-  const META2 = '#77797d'
   const titleWithDate = (title: string, date: string) => {
-    p.ensure(col, 17)
+    p.ensure(col, 16)
     if (date) {
-      p.setFont(false, 9.5, META2)
-      doc.text(date, right, col.y, { align: 'right' })
+      p.setFont(false, 10, GRAY)
+      doc.text(date, RIGHT, col.y, { align: 'right' })
     }
-    p.setFont(true, 12.5, NAME)
-    const dateW = date ? doc.getTextWidth(date) + 12 : 0
-    for (const ln of doc.splitTextToSize(title, rw - dateW) as string[]) {
-      doc.text(ln, rx, col.y)
-      col.y += 14.5
+    p.setFont(true, 12, GRAY)
+    const dw = date ? doc.getTextWidth(date) + 12 : 0
+    for (const ln of doc.splitTextToSize(title, rw - dw) as string[]) {
+      doc.text(ln, RX, col.y)
+      col.y += 15.5
     }
   }
-  // Gray bullet (the shared painter bullet forces black text).
-  const grayBullet = (txt: string) => {
-    p.ensure(col, 13)
-    doc.setFillColor(DOT)
-    doc.circle(rx + 2.6, col.y - 2.6, 1.1, 'F')
-    p.setFont(false, 9.5, BODY)
-    let yy = col.y
-    for (const ln of doc.splitTextToSize(txt, rw - 12) as string[]) {
-      doc.text(ln, rx + 10, yy)
-      yy += 12.6
+  const paraGray = (t: string) => {
+    p.setFont(false, 10, GRAY)
+    for (const ln of doc.splitTextToSize(t, rw) as string[]) {
+      doc.text(ln, RX, col.y)
+      col.y += 13
     }
-    col.y = yy + 4 // space between list items
+  }
+  const bullet = (b: string) => {
+    p.setFont(false, 10, GRAY)
+    const lines = doc.splitTextToSize(b, rw - 18) as string[]
+    lines.forEach((ln, j) => {
+      if (j > 0) col.y += 13
+      doc.text((j === 0 ? '•  ' : '') + ln, j === 0 ? RX + 15 : RX + 25, col.y)
+    })
+    col.y += 13
   }
 
   if (variant.summary) {
     section('About me', icons.person)
-    p.text(col, variant.summary, 9.5, { color: BODY, gap: 2 })
+    paraGray(variant.summary)
   }
-
   const edus = resolveEdu(profile, variant)
   if (edus.length) {
     section('Education & Training', icons.cap)
-    for (const e of edus) {
+    edus.forEach((e, i) => {
+      if (i > 0) col.y += 14
       titleWithDate(e.degree, eduRange(e))
-      p.text(col, [e.school, e.description].filter(Boolean).join('   ·   '), 9.5, { color: META2, gap: 3 })
-      col.y += 8
-    }
+      paraGray([e.school, e.description].filter(Boolean).join('  |  '))
+    })
   }
-
   const works = resolveWork(profile, variant)
   if (works.length) {
     section('Work experience', icons.briefcase)
-    for (const { w } of works) {
+    works.forEach(({ w }, i) => {
+      if (i > 0) col.y += 20
       titleWithDate(w.title, workRange(w))
-      p.text(col, [w.company, w.location].filter(Boolean).join('   ·   '), 9.5, { color: META2, gap: 3 })
-      for (const b of w.highlights) grayBullet(b)
-      col.y += 11
-    }
+      paraGray([w.company, w.location].filter(Boolean).join('  |  '))
+      col.y += 3
+      for (const b of w.highlights) bullet(b)
+    })
   }
 
-  // ---- Footer: page number (logo already lives in the header) ----
+  // ---- Footer: page number bottom-left, matching the SVG ----
   const pages = doc.getNumberOfPages()
   for (let pg = 1; pg <= pages; pg++) {
     doc.setPage(pg)
-    p.setFont(false, 8, DOT)
-    doc.text(`Page ${pg} / ${pages}`, right, PAGE_H - 22, { align: 'right' })
+    p.setFont(false, 10, GRAY)
+    doc.text(`Page ${pg}/${pages}`, LX, PAGE_H - 39)
   }
 
   return doc.output('datauristring').split(',')[1]
@@ -770,96 +790,83 @@ function contactIcons(doc: jsPDF) {
 }
 
 // ----------------------------------------------------------------- TIMELINE --
-// Gray left sidebar (photo, name, personal details, Contact with icons). Right
-// column runs a vertical timeline: a hairline with a dot at each section and
-// each entry, blue date ranges, bold titles, org, bullets.
+// Pixel-matched to the official editor's "Timeline" SVG: a page-1 LEFT sidebar
+// (#F5F5F5 band, round photo with a light-gray ring, centred name, bold-label
+// personal details, a Contact block with blue icons) and a RIGHT column that
+// runs a blue vertical spine with a filled dot at every entry. Section titles
+// are 14pt gray uppercase; education leads with a blue bold date then the
+// degree; work leads with the bold company (dot here) then title, blue date,
+// bullets. Languages list each language's CEFR skills in two columns.
 function timeline(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate): string {
-  const accent = tpl.accent ?? '#004494'
-  const NAME = '#1a1a1a'
-  const BODY = '#333333'
-  const HEAD = '#6a6a6a' // gray uppercase section titles
-  const DOT = '#5f5f5f'
-  const SIDEBG = '#eef0f2'
-  const LINEC = '#cdd4dc'
+  void tpl
+  const BAND = '#F5F5F5'
+  const RING = '#C6C6C6'
+  const SIDE = '#4F4F4F' // name + sidebar labels
+  const BLUE = '#214493' // spine, dots, dates, icons
+  const LINKC = '#004494' // hyperlinks
+  const HEAD = '#565656' // section titles + body
+  const TITLE = '#616161' // entry titles / company
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+  const p = painter(doc, 'helvetica', 40)
+  const ci = contactIcons(doc)
   const id = profile.identity
   const name = `${id.firstName} ${id.lastName}`.trim()
 
-  const railW = 138
-  const bgW = MARGIN + railW + 12
-  // Sidebar background band, full height.
-  doc.setFillColor(SIDEBG)
-  doc.rect(0, 0, bgW, PAGE_H, 'F')
+  const bandW = 188
+  const RX = 216 // right-column content x
+  const LINEX = 202 // spine x
+  const RIGHT = PAGE_W - 39
+  const rw = RIGHT - RX
 
-  const rx = bgW + 24
-  const right = PAGE_W - MARGIN
-  const tlx = rx // timeline line x
-  const cx0 = rx + 20 // content x (right of the dots)
-  const cw = right - cx0
-  const RIGHT_TOP = MARGIN + 6
-  const p = painter(doc, 'helvetica', RIGHT_TOP)
-  const ci = contactIcons(doc)
+  // ---- Page-1 sidebar band + round photo (light-gray ring) ----
+  doc.setFillColor(BAND)
+  doc.rect(0, 0, bandW, PAGE_H, 'F')
+  const pcx = 94
+  const pcy = 78
+  const r = 48
+  if (id.photo) circleImage(doc, id.photo, pcx, pcy, r, BAND)
+  doc.setDrawColor(RING)
+  doc.setLineWidth(2)
+  doc.circle(pcx, pcy, r + 1, 'S')
 
-  // ---- europass logo, top-right of the content column ----
-  const logoW = 100
-  const logoH = logoW * (92 / 360)
-  try {
-    doc.addImage(EUROPASS_LOGO_NEW, 'JPEG', right - logoW, MARGIN - 2, logoW, logoH)
-  } catch {
-    /* logo optional */
+  let sy = 148.8
+  p.setFont(true, 16, SIDE)
+  for (const ln of doc.splitTextToSize(name || ' ', bandW - 20) as string[]) {
+    doc.text(ln, bandW / 2, sy, { align: 'center' })
+    sy += 20.8
   }
-
-  // ---- LEFT sidebar ----
-  const lx = MARGIN
-  const r = 40
-  const pcx = bgW / 2
-  const pcy = MARGIN + r
-  if (id.photo) circleImage(doc, id.photo, pcx, pcy, r, SIDEBG)
-  doc.setDrawColor('#ffffff')
-  doc.setLineWidth(1)
-  doc.circle(pcx, pcy, r, 'S')
-  let sy = pcy + r + 22
-  // Name centred
-  p.setFont(true, 15, NAME)
-  for (const ln of doc.splitTextToSize(name || ' ', railW) as string[]) {
-    doc.text(ln, pcx, sy, { align: 'center' })
-    sy += 19
-  }
-  sy += 10
+  sy += 24
   const sideDetail = (label: string, val: string) => {
     if (!val) return
-    p.setFont(true, 9.5, NAME)
-    doc.text(label, lx, sy)
+    p.setFont(true, 10, SIDE)
+    doc.text(label, 14, sy)
     const w0 = doc.getTextWidth(label)
-    p.setFont(false, 9.5, BODY)
-    for (const ln of doc.splitTextToSize(val, railW - w0) as string[]) {
-      doc.text(ln, lx + w0, sy)
-      sy += 13
-    }
-    sy += 3
+    p.setFont(false, 10, SIDE)
+    doc.text(val, 14 + w0, sy)
+    sy += 22
   }
   sideDetail('Date of birth: ', id.dateOfBirth || '')
   sideDetail('Nationality: ', id.nationality || '')
   sideDetail('Gender: ', id.sex || '')
-  sy += 8
-  p.setFont(true, 13, NAME)
-  doc.text('Contact', lx, sy)
-  sy += 16
+
+  sy += 18
+  p.setFont(true, 16, SIDE)
+  doc.text('Contact', 14, sy)
+  sy += 22
   const contactRow = (icon: (x: number, y: number, c: string) => void, text: string, link = false) => {
     if (!text) return
-    icon(lx, sy - 8, accent)
-    p.setFont(false, 9.5, link ? LINK : BODY)
-    let yy = sy
-    for (const ln of doc.splitTextToSize(text, railW - 16) as string[]) {
-      doc.text(ln, lx + 16, yy)
+    icon(14, sy - 8, BLUE)
+    p.setFont(false, 10, link ? LINKC : SIDE)
+    for (const ln of doc.splitTextToSize(text, bandW - 34) as string[]) {
+      doc.text(ln, 34, sy)
       if (link) {
-        doc.setDrawColor(LINK)
+        doc.setDrawColor(LINKC)
         doc.setLineWidth(0.4)
-        doc.line(lx + 16, yy + 1.3, lx + 16 + doc.getTextWidth(ln), yy + 1.3)
+        doc.line(34, sy + 1.3, 34 + doc.getTextWidth(ln), sy + 1.3)
       }
-      yy += 13
+      sy += 14
     }
-    sy = yy + 5
+    sy += 6
   }
   contactRow(ci.pin, id.location || '')
   contactRow(ci.mail, id.email || '', true)
@@ -867,68 +874,434 @@ function timeline(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate
   if (profile.links.website) contactRow(ci.globe, profile.links.website, true)
   if (profile.links.linkedin) contactRow(ci.linkedin, profile.links.linkedin, true)
 
-  // ---- RIGHT timeline column (starts below the logo on page 1) ----
-  const col: Cursor = { x: cx0, w: cw, y: MARGIN + logoH + 16 }
-  // Draw the connecting hairline segment-by-segment (skips across page breaks),
-  // then the dot on top.
+  // ---- RIGHT timeline column ----
+  const col: Cursor = { x: RX, w: rw, y: 85.2 }
   let prevDotY = -1
-  const dot = (yy: number, color: string, rr = 3) => {
+  const dot = (yy: number) => {
     if (prevDotY >= 0 && yy > prevDotY) {
-      doc.setDrawColor(LINEC)
+      doc.setDrawColor(BLUE)
       doc.setLineWidth(1)
-      doc.line(tlx, prevDotY, tlx, yy)
+      doc.line(LINEX, prevDotY, LINEX, yy)
     }
-    doc.setFillColor(color)
-    doc.circle(tlx, yy, rr, 'F')
+    doc.setFillColor(BLUE)
+    doc.circle(LINEX, yy, 3.5, 'F')
     prevDotY = yy
   }
   const section = (label: string) => {
-    col.y += 16
-    p.ensure(col, 24)
-    dot(col.y - 3.5, HEAD, 3.4)
-    p.setFont(true, 12, HEAD)
-    doc.text(label.toUpperCase(), cx0, col.y, { charSpace: 0.4 })
-    col.y += 17
-  }
-  const entry = (title: string, date: string, meta: string, bullets: string[], desc?: string) => {
+    col.y += 22
     p.ensure(col, 26)
-    dot(col.y - 3.5, accent, 2.6)
-    if (date) {
-      p.setFont(false, 9.5, accent)
-      doc.text(date, cx0, col.y)
+    p.setFont(false, 14, HEAD)
+    doc.text(label.toUpperCase(), RX, col.y)
+    col.y += 23
+  }
+  const para = (t: string, x = RX) => {
+    p.setFont(false, 10, HEAD)
+    for (const ln of doc.splitTextToSize(t, RIGHT - x) as string[]) {
+      p.ensure(col, 13)
+      doc.text(ln, x, col.y)
       col.y += 13
     }
-    p.setFont(true, 12, NAME)
-    for (const ln of doc.splitTextToSize(title, cw) as string[]) {
-      doc.text(ln, cx0, col.y)
-      col.y += 14
+  }
+  const bullet = (b: string) => {
+    p.setFont(false, 10, HEAD)
+    const lines = doc.splitTextToSize(b, RIGHT - 241) as string[]
+    lines.forEach((ln, j) => {
+      if (j > 0) col.y += 13
+      p.ensure(col, 13)
+      doc.text((j === 0 ? '•  ' : '') + ln, j === 0 ? 231 : 241, col.y)
+    })
+    col.y += 13
+  }
+  // A bold segment followed by a normal segment on one baseline.
+  const boldThenNormal = (a: string, aColor: string, aSize: number, b: string, bColor: string, bSize: number) => {
+    p.ensure(col, 16)
+    p.setFont(true, aSize, aColor)
+    doc.text(a, RX, col.y)
+    if (b) {
+      const w0 = doc.getTextWidth(a)
+      p.setFont(false, bSize, bColor)
+      doc.text(b, RX + w0, col.y)
     }
-    if (meta) p.text(col, meta, 9.5, { color: DOT, gap: 2 })
-    if (desc) p.text(col, desc, 10, { color: BODY, gap: 2 })
-    for (const b of bullets) p.bullet(col, b, 10, DOT)
-    col.y += 10
   }
 
   if (variant.summary) {
     section('About me')
-    p.text(col, variant.summary, 10, { color: BODY, gap: 2 })
+    para(variant.summary)
   }
   const edus = resolveEdu(profile, variant)
   if (edus.length) {
     section('Education & Training')
-    for (const e of edus) entry(e.degree, eduRange(e), [e.school, e.description].filter(Boolean).join('   ·   '), [])
+    edus.forEach((e, i) => {
+      if (i > 0) col.y += 14
+      const dl = eduRange(e)
+      if (dl) {
+        boldThenNormal(dl + ' ', BLUE, 11, '', BLUE, 11)
+        col.y += 17
+      }
+      dot(col.y - 3.5)
+      boldThenNormal(e.degree + ' ', TITLE, 11, e.school, TITLE, 11)
+      col.y += 15
+      if (e.description) para(e.description)
+    })
   }
   const works = resolveWork(profile, variant)
   if (works.length) {
     section('Work experience')
-    for (const { w } of works) entry(w.title, workRange(w), [w.company, w.location].filter(Boolean).join('   ·   '), w.highlights)
+    works.forEach(({ w }, i) => {
+      if (i > 0) col.y += 14
+      dot(col.y - 3.5)
+      boldThenNormal(w.company + ' ', TITLE, 11, w.location || '', '#4F4F4F', 9)
+      col.y += 17
+      p.setFont(true, 11, TITLE)
+      p.ensure(col, 15)
+      doc.text(w.title, RX, col.y)
+      col.y += 14
+      const dl = workRange(w)
+      if (dl) {
+        p.setFont(false, 9, BLUE)
+        p.ensure(col, 13)
+        doc.text(dl, RX, col.y)
+        col.y += 14
+      }
+      for (const b of w.highlights) bullet(b)
+    })
   }
 
+  if (variant.skills.length) {
+    section('Skills')
+    col.y = inlineGroups(
+      doc,
+      p,
+      variant.skills.map((s) => [{ t: s, color: HEAD }]),
+      RX,
+      col.y,
+      RIGHT - RX,
+      13,
+      9,
+      '#4F4F4F',
+      HEAD,
+    )
+  }
+
+  const mother = profile.languages.filter((l) => l.proficiency === 'native_bilingual')
+  const graded = profile.languages.filter((l) => l.cefr && l.proficiency !== 'native_bilingual')
+  if (profile.languages.length) {
+    section('Language Skills')
+    if (mother.length) {
+      boldThenNormal('Mother tongue(s): ', HEAD, 10, mother.map((l) => l.name).join(', '), HEAD, 10)
+      col.y += 16
+    }
+    if (graded.length) {
+      p.setFont(true, 10, HEAD)
+      doc.text('Other language(s):', RX, col.y)
+      col.y += 16
+      const pair = (label: string, lvl: string, x: number, yy: number) => {
+        p.setFont(true, 10, HEAD)
+        doc.text(label + ' ', x, yy)
+        const w0 = doc.getTextWidth(label + ' ')
+        p.setFont(false, 10, HEAD)
+        doc.text(lvl, x + w0, yy)
+      }
+      for (const l of graded) {
+        p.ensure(col, 66)
+        p.setFont(true, 10, HEAD)
+        doc.text(l.name, RX, col.y)
+        col.y += 16
+        const c = l.cefr!
+        const left: [string, string][] = [
+          ['Listening', c.listening],
+          ['Reading', c.reading],
+          ['Writing', c.writing],
+        ]
+        const rightC: [string, string][] = [
+          ['Spoken production', c.spokenProduction],
+          ['Spoken interaction', c.spokenInteraction],
+        ]
+        const rowY = col.y
+        for (let k = 0; k < 3; k++) {
+          const yy = rowY + k * 16
+          pair(left[k][0], left[k][1], RX + 10, yy)
+          if (rightC[k]) pair(rightC[k][0], rightC[k][1], RX + 100, yy)
+        }
+        col.y = rowY + 3 * 16 + 4
+        doc.setDrawColor('#9D9D9D')
+        doc.setLineWidth(0.5)
+        doc.line(RX, col.y, RIGHT, col.y)
+        col.y += 14
+      }
+    }
+  }
+
+  // ---- Footer: europass mark top-right on page 1, page number bottom-right ----
   const pages = doc.getNumberOfPages()
+  const lgW = 140
+  const lgH = lgW * (92 / 360)
   for (let pg = 1; pg <= pages; pg++) {
     doc.setPage(pg)
-    p.setFont(false, 8, DOT)
-    doc.text(`Page ${pg} / ${pages}`, right, PAGE_H - 22, { align: 'right' })
+    if (pg === 1) {
+      try {
+        doc.addImage(EUROPASS_LOGO_NEW, 'JPEG', RIGHT - lgW, 30, lgW, lgH)
+      } catch {
+        /* logo optional */
+      }
+    }
+    p.setFont(false, 10, HEAD)
+    doc.text(`Page ${pg}/${pages}`, RIGHT, PAGE_H - 30, { align: 'right' })
+  }
+
+  return doc.output('datauristring').split(',')[1]
+}
+
+// ----------------------------------------------------------------- PROGRESS --
+// Pixel-matched to the official editor's "Progress" SVG. Single column: a 194pt
+// #F5F5F5 header band (photo top-left with a thin black ring, 16pt gray name,
+// bold-label detail flow), the europass mark top-right on page 1, then sections
+// each marked by a small filled dot in the left margin + an UPPERCASE bold title
+// over a full-width rule. Entries carry an uppercase date/location line, an
+// uppercase bold title + org over a short underline, gray body/bullets. Languages
+// use the CEFR grid with alternating shaded rows and full horizontal borders.
+
+/** Progress header detail groups — bold black labels, blue underlined links. */
+function progressDetail(profile: Profile, link: string): Piece[][] {
+  const id = profile.identity
+  const g: Piece[][] = []
+  const lbl = (t: string): Piece => ({ t, bold: true })
+  if (id.dateOfBirth) g.push([lbl('Date of birth: '), { t: id.dateOfBirth }])
+  if (id.nationality) g.push([lbl('Nationality: '), { t: id.nationality }])
+  if (id.sex) g.push([lbl('Gender: '), { t: id.sex }])
+  if (id.phone) g.push([lbl('Phone: '), { t: id.phone }])
+  if (id.email) g.push([lbl('Email address: '), { t: id.email, color: link, underline: true }])
+  if (profile.links.website) g.push([lbl('Website: '), { t: profile.links.website, color: link, underline: true }])
+  if (profile.links.linkedin) g.push([lbl('LinkedIn: '), { t: profile.links.linkedin, color: link, underline: true }])
+  if (id.location) g.push([lbl('Address: '), { t: id.location }])
+  return g
+}
+
+/** The Progress CEFR table: name + five 86pt columns, UNDERSTANDING/SPEAKING over
+ *  their two skills and WRITING over its own, uppercase bold headers, alternating
+ *  #F6F6F6 data rows, and a full horizontal rule at every row boundary. */
+function progressLangTable(doc: jsPDF, p: ReturnType<typeof painter>, c: Cursor, langs: { name: string; l: string[] }[], L: number, R: number) {
+  const BLACK = '#000000'
+  const SHADE = '#F6F6F6' // #d3d3d3 @ 0.2 over white
+  const BORDER = '#A7A7A7' // #4F4F4F @ 0.5 over white
+  const cellW = (R - L) / 6
+  const xs = [0, 1, 2, 3, 4, 5, 6].map((k) => L + k * cellW)
+  const GH = 30 // group-header row
+  const SH = 30 // sub-header row
+  const RH = 30 // data rows
+  p.ensure(c, GH + SH + langs.length * RH + 6)
+  const top = c.y
+  const ctr = (t: string, x0: number, x1: number, yy: number, size: number, bold: boolean) => {
+    p.setFont(bold, size, BLACK)
+    doc.text(t, (x0 + x1) / 2, yy, { align: 'center' })
+  }
+  const rule = (yy: number) => {
+    doc.setDrawColor(BORDER)
+    doc.setLineWidth(0.5)
+    doc.line(L, yy, R, yy)
+  }
+  rule(top)
+  ctr('UNDERSTANDING', xs[1], xs[3], top + 17.25, 10, true)
+  ctr('SPEAKING', xs[3], xs[5], top + 17.25, 10, true)
+  ctr('WRITING', xs[5], xs[6], top + 17.25, 10, true)
+  rule(top + GH)
+  ;(
+    [
+      ['Listening', xs[1], xs[2]],
+      ['Reading', xs[2], xs[3]],
+      ['Spoken production', xs[3], xs[4]],
+      ['Spoken interaction', xs[4], xs[5]],
+    ] as [string, number, number][]
+  ).forEach(([s, a, b]) => ctr(s, a, b, top + GH + 18.3, 9, false))
+  rule(top + GH + SH)
+  let ry = top + GH + SH
+  langs.forEach((lang, idx) => {
+    if (idx % 2 === 0) {
+      doc.setFillColor(SHADE)
+      doc.rect(L, ry, R - L, RH, 'F')
+    }
+    ctr(lang.name.toUpperCase(), xs[0], xs[1], ry + 17.25, 10, true)
+    for (let i = 0; i < 5; i++) ctr(lang.l[i] ?? '', xs[i + 1], xs[i + 2] ?? R, ry + 17.25, 10, false)
+    rule(ry)
+    ry += RH
+  })
+  rule(ry)
+  c.y = ry + 6
+}
+
+function progress(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate): string {
+  void tpl
+  const BLACK = '#000000'
+  const GRAY = '#4F4F4F' // name, entry titles, separators
+  const SOFT = '#5A5959' // body, bullets
+  const LINKC = '#004494'
+  const BANDC = '#F5F5F5'
+  const RULE1 = '#A7A7A7' // section rule (#4F4F4F @ 0.5 over white)
+  const DOTC = '#B9B9B9' // progress dot (#4F4F4F @ 0.4 over white)
+  const LH = 13
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+  const p = painter(doc, 'helvetica', 46)
+  const id = profile.identity
+  const L = 39
+  const R = PAGE_W - 39
+  const name = `${id.firstName} ${id.lastName}`.trim()
+
+  // ---- Header band (194pt): photo centred at (74,98) with a thin black ring ----
+  doc.setFillColor(BANDC)
+  doc.rect(0, 0, PAGE_W, 194, 'F')
+  if (id.photo) circleImage(doc, id.photo, 74, 98, 35, BANDC)
+  doc.setFillColor('#ffffff')
+  doc.rect(0, 194, PAGE_W, PAGE_H - 194, 'F')
+  doc.setDrawColor(BLACK)
+  doc.setLineWidth(1)
+  doc.circle(74, 98, 36, 'S')
+  // europass mark, top-right (page 1 only — added in the footer pass)
+  p.setFont(true, 16, GRAY)
+  doc.text(name || ' ', 127, 79)
+  doc.setDrawColor(GRAY)
+  doc.setLineWidth(0.8)
+  doc.line(127, 92, R, 92)
+  inlineGroups(doc, p, progressDetail(profile, LINKC), 127, 111, R - 127, 20, 10, GRAY, BLACK)
+
+  const col: Cursor = { x: L, w: R - L, y: 194 }
+
+  const para = (t: string, size: number, color: string) => {
+    p.setFont(false, size, color)
+    doc.splitTextToSize(t, R - L).forEach((ln: string, i: number) => {
+      if (i > 0) col.y += LH
+      p.ensure(col, LH)
+      doc.text(ln, L, col.y)
+    })
+  }
+  const bullet = (b: string) => {
+    p.setFont(false, 10, SOFT)
+    const lines = doc.splitTextToSize(b, R - 64) as string[]
+    lines.forEach((ln, j) => {
+      if (j > 0) col.y += LH
+      p.ensure(col, LH)
+      if (j === 0) doc.text('•  ' + ln, 54, col.y)
+      else doc.text(ln, 64, col.y)
+    })
+  }
+  const section = (label: string) => {
+    col.y += 26
+    p.ensure(col, 34)
+    doc.setFillColor(DOTC)
+    doc.circle(29, col.y - 3, 2.5, 'F')
+    p.setFont(true, 11, BLACK)
+    doc.text(label.toUpperCase(), L, col.y)
+    doc.setDrawColor(RULE1)
+    doc.setLineWidth(1.4)
+    doc.line(L, col.y + 4.3, R, col.y + 4.3)
+    col.y += 27
+  }
+  // Uppercase date/location line + bold title with normal org, over a short rule.
+  const entryHead = (dateLoc: string, title: string, org: string) => {
+    p.ensure(col, 40)
+    if (dateLoc) {
+      p.setFont(false, 9, GRAY)
+      doc.text(dateLoc.toUpperCase(), L, col.y)
+      col.y += 17
+    }
+    p.setFont(true, 11, GRAY)
+    const tw = doc.getTextWidth(title.toUpperCase())
+    doc.text(title.toUpperCase(), L, col.y)
+    let ow = 0
+    if (org) {
+      p.setFont(false, 11, GRAY)
+      const ot = ' ' + org.toUpperCase()
+      doc.text(ot, L + tw, col.y)
+      ow = doc.getTextWidth(ot)
+    }
+    doc.setDrawColor(GRAY)
+    doc.setLineWidth(0.4)
+    doc.line(L, col.y + 6, Math.min(L + tw + ow, R), col.y + 6)
+    col.y += 20
+  }
+
+  if (variant.summary) {
+    section('About me')
+    para(variant.summary, 10, SOFT)
+  }
+
+  const edus = resolveEdu(profile, variant)
+  if (edus.length) {
+    section('Education & Training')
+    edus.forEach((e, i) => {
+      if (i > 0) col.y += 16
+      entryHead(eduRange(e), e.degree, e.school)
+      if (e.description) para(e.description, 10, SOFT)
+    })
+  }
+
+  const works = resolveWork(profile, variant)
+  if (works.length) {
+    section('Work experience')
+    works.forEach(({ w }, i) => {
+      if (i > 0) col.y += 18
+      entryHead([workRange(w), w.location].filter(Boolean).join('  -  '), w.title, w.company)
+      for (const b of w.highlights) {
+        col.y += LH
+        bullet(b)
+      }
+    })
+  }
+
+  if (variant.skills.length) {
+    section('Skills')
+    col.y = inlineGroups(
+      doc,
+      p,
+      variant.skills.map((s) => [{ t: s, color: SOFT }]),
+      L,
+      col.y,
+      R - L,
+      LH,
+      9,
+      GRAY,
+      SOFT,
+    )
+  }
+
+  const mother = profile.languages.filter((l) => l.proficiency === 'native_bilingual')
+  const graded = profile.languages.filter((l) => l.cefr && l.proficiency !== 'native_bilingual')
+  if (profile.languages.length) {
+    section('Language Skills')
+    if (mother.length) {
+      p.setFont(false, 10, SOFT)
+      doc.text('Mother tongue(s): ', L, col.y)
+      const w0 = doc.getTextWidth('Mother tongue(s): ')
+      p.setFont(true, 11, GRAY)
+      doc.text(mother.map((l) => l.name.toUpperCase()).join(', '), L + w0, col.y)
+    }
+    if (graded.length) {
+      col.y += mother.length ? 16 : 0
+      progressLangTable(
+        doc,
+        p,
+        col,
+        graded.map((l) => ({ name: l.name, l: [l.cefr!.listening, l.cefr!.reading, l.cefr!.spokenProduction, l.cefr!.spokenInteraction, l.cefr!.writing] })),
+        L,
+        R,
+      )
+    }
+  }
+
+  // ---- Footer: europass mark top-right on page 1, page number bottom-right ----
+  const pages = doc.getNumberOfPages()
+  const lgW = 112
+  const lgH = lgW * (92 / 360)
+  for (let pg = 1; pg <= pages; pg++) {
+    doc.setPage(pg)
+    if (pg === 1) {
+      try {
+        doc.addImage(EUROPASS_LOGO_NEW, 'JPEG', R - lgW, 33, lgW, lgH)
+      } catch {
+        /* logo optional */
+      }
+    }
+    p.setFont(false, 10, SOFT)
+    doc.text(`Page ${pg}/${pages}`, R, PAGE_H - 33, { align: 'right' })
   }
 
   return doc.output('datauristring').split(',')[1]
