@@ -817,10 +817,17 @@ function timeline(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate
   const name = `${id.firstName} ${id.lastName}`.trim()
 
   const bandW = 188
-  const RX = 216 // right-column content x
-  const LINEX = 202 // spine x
+  const RX = 216 // page-1 right-column content x
+  const LINEX = 202 // page-1 spine x
   const RIGHT = PAGE_W - 39
-  const rw = RIGHT - RX
+  const STRIP = 34 // page-2+ decorative left strip
+  const REST_X = 54 // page-2+ content x (reflowed left for full width)
+  const REST_LINE = 40 // page-2+ spine x
+  // Live geometry: page 1 sits right of the sidebar; page 2+ reflows left where
+  // the sidebar shrinks to a thin strip. `E()` shifts these on a page break.
+  let gx = RX
+  let gLine = LINEX
+  let curPage = 1
 
   // ---- Page-1 sidebar band + round photo (light-gray ring) ----
   doc.setFillColor(BAND)
@@ -879,52 +886,65 @@ function timeline(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate
   if (profile.links.linkedin) contactRow(ci.linkedin, profile.links.linkedin, true)
 
   // ---- RIGHT timeline column ----
-  const col: Cursor = { x: RX, w: rw, y: 85.2 }
+  const col: Cursor = { x: RX, w: RIGHT - RX, y: 85.2 }
   let prevDotY = -1
+  // Page-break wrapper: when the break lands on a fresh page, reflow the column
+  // left (thin strip) and drop the spine so no line crosses the page break.
+  const E = (need: number) => {
+    p.ensure(col, need)
+    if (doc.getNumberOfPages() !== curPage) {
+      curPage = doc.getNumberOfPages()
+      gx = REST_X
+      gLine = REST_LINE
+      col.x = gx
+      col.w = RIGHT - gx
+      prevDotY = -1
+    }
+  }
   const dot = (yy: number) => {
     if (prevDotY >= 0 && yy > prevDotY) {
       doc.setDrawColor(BLUE)
       doc.setLineWidth(1)
-      doc.line(LINEX, prevDotY, LINEX, yy)
+      doc.line(gLine, prevDotY, gLine, yy)
     }
     doc.setFillColor(BLUE)
-    doc.circle(LINEX, yy, 3.5, 'F')
+    doc.circle(gLine, yy, 3.5, 'F')
     prevDotY = yy
   }
   const section = (label: string) => {
     col.y += 22
-    p.ensure(col, 26)
+    E(26)
     p.setFont(false, 14, HEAD)
-    doc.text(label.toUpperCase(), RX, col.y)
+    doc.text(label.toUpperCase(), gx, col.y)
     col.y += 23
   }
-  const para = (t: string, x = RX) => {
+  const para = (t: string) => {
     p.setFont(false, 10, HEAD)
-    for (const ln of doc.splitTextToSize(t, RIGHT - x) as string[]) {
-      p.ensure(col, 13)
-      doc.text(ln, x, col.y)
+    for (const ln of doc.splitTextToSize(t, RIGHT - gx) as string[]) {
+      E(13)
+      doc.text(ln, gx, col.y)
       col.y += 13
     }
   }
   const bullet = (b: string) => {
     p.setFont(false, 10, HEAD)
-    const lines = doc.splitTextToSize(b, RIGHT - 241) as string[]
+    const lines = doc.splitTextToSize(b, RIGHT - (gx + 25)) as string[]
     lines.forEach((ln, j) => {
       if (j > 0) col.y += 13
-      p.ensure(col, 13)
-      doc.text((j === 0 ? '•  ' : '') + ln, j === 0 ? 231 : 241, col.y)
+      E(13)
+      doc.text((j === 0 ? '•  ' : '') + ln, j === 0 ? gx + 15 : gx + 25, col.y)
     })
     col.y += 13
   }
   // A bold segment followed by a normal segment on one baseline.
   const boldThenNormal = (a: string, aColor: string, aSize: number, b: string, bColor: string, bSize: number) => {
-    p.ensure(col, 16)
+    E(16)
     p.setFont(true, aSize, aColor)
-    doc.text(a, RX, col.y)
+    doc.text(a, gx, col.y)
     if (b) {
       const w0 = doc.getTextWidth(a)
       p.setFont(false, bSize, bColor)
-      doc.text(b, RX + w0, col.y)
+      doc.text(b, gx + w0, col.y)
     }
   }
 
@@ -937,7 +957,7 @@ function timeline(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate
     section('Education & Training')
     edus.forEach((e, i) => {
       if (i > 0) col.y += 14
-      p.ensure(col, 60) // keep the date, dot and title on one page (no orphan dot)
+      E(60) // keep the date, dot and title on one page (no orphan dot)
       const dl = eduRange(e)
       if (dl) {
         boldThenNormal(dl + ' ', BLUE, 11, '', BLUE, 11)
@@ -954,19 +974,19 @@ function timeline(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate
     section('Work experience')
     works.forEach(({ w }, i) => {
       if (i > 0) col.y += 14
-      p.ensure(col, 60) // keep the dot, company and title on one page (no orphan dot)
+      E(60) // keep the dot, company and title on one page (no orphan dot)
       dot(col.y - 3.5)
       boldThenNormal(w.company + ' ', TITLE, 11, w.location || '', '#4F4F4F', 9)
       col.y += 17
       p.setFont(true, 11, TITLE)
-      p.ensure(col, 15)
-      doc.text(w.title, RX, col.y)
+      E(15)
+      doc.text(w.title, gx, col.y)
       col.y += 14
       const dl = workRange(w)
       if (dl) {
         p.setFont(false, 9, BLUE)
-        p.ensure(col, 13)
-        doc.text(dl, RX, col.y)
+        E(13)
+        doc.text(dl, gx, col.y)
         col.y += 14
       }
       for (const b of w.highlights) bullet(b)
@@ -979,9 +999,9 @@ function timeline(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate
       doc,
       p,
       variant.skills.map((s) => [{ t: s, color: HEAD }]),
-      RX,
+      gx,
       col.y,
-      RIGHT - RX,
+      RIGHT - gx,
       13,
       9,
       '#4F4F4F',
@@ -999,7 +1019,7 @@ function timeline(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate
     }
     if (graded.length) {
       p.setFont(true, 10, HEAD)
-      doc.text('Other language(s):', RX, col.y)
+      doc.text('Other language(s):', gx, col.y)
       col.y += 16
       const pair = (label: string, lvl: string, x: number, yy: number) => {
         p.setFont(true, 10, HEAD)
@@ -1009,9 +1029,9 @@ function timeline(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate
         doc.text(lvl, x + w0, yy)
       }
       for (const l of graded) {
-        p.ensure(col, 66)
+        E(66)
         p.setFont(true, 10, HEAD)
-        doc.text(l.name, RX, col.y)
+        doc.text(l.name, gx, col.y)
         col.y += 16
         const c = l.cefr!
         const left: [string, string][] = [
@@ -1026,13 +1046,13 @@ function timeline(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate
         const rowY = col.y
         for (let k = 0; k < 3; k++) {
           const yy = rowY + k * 16
-          pair(left[k][0], left[k][1], RX + 10, yy)
-          if (rightC[k]) pair(rightC[k][0], rightC[k][1], RX + 100, yy)
+          pair(left[k][0], left[k][1], gx + 10, yy)
+          if (rightC[k]) pair(rightC[k][0], rightC[k][1], gx + 100, yy)
         }
         col.y = rowY + 3 * 16 + 4
         doc.setDrawColor('#9D9D9D')
         doc.setLineWidth(0.5)
-        doc.line(RX, col.y, RIGHT, col.y)
+        doc.line(gx, col.y, RIGHT, col.y)
         col.y += 14
       }
     }
@@ -1050,6 +1070,10 @@ function timeline(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate
       } catch {
         /* logo optional */
       }
+    } else {
+      // page 2+ keeps only a thin strip where the page-1 sidebar was
+      doc.setFillColor(BAND)
+      doc.rect(0, 0, STRIP, PAGE_H, 'F')
     }
     p.setFont(false, 10, HEAD)
     doc.text(`Page ${pg}/${pages}`, RIGHT, PAGE_H - 30, { align: 'right' })
