@@ -41,5 +41,10 @@ export const common = {
   dateOfBirth: "Date of birth",
   nationality: "Nationality",
   tplEuropass: "Europass",
+  tplEuropassClassic: "Europass Classic",
+  tplEuropassModern: "Europass Modern",
+  tplEuropassTimeline: "Europass Timeline",
+  tplEuropassProgress: "Europass Progress",
+  tplEuropassAccent: "Europass Accent",
   tplLebenslauf: "Lebenslauf",
 }

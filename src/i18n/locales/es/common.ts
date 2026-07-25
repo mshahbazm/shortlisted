@@ -40,5 +40,10 @@ export const common: tLocale['common'] = {
   dateOfBirth: "Fecha de nacimiento",
   nationality: "Nacionalidad",
   tplEuropass: "Europass",
+  tplEuropassClassic: "Europass Clásico",
+  tplEuropassModern: "Europass Moderno",
+  tplEuropassTimeline: "Europass Cronología",
+  tplEuropassProgress: "Europass Progreso",
+  tplEuropassAccent: "Europass Acento",
   tplLebenslauf: "Lebenslauf",
 }

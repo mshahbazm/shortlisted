@@ -29,6 +29,9 @@ function styleName(t: tMerged<'resumes'>, id: string): string {
     meridian: t.tplMeridian, regent: t.tplRegent, pivot: t.tplPivot, coral: t.tplCoral,
     ivory: t.tplIvory, slate: t.tplSlate, amber: t.tplAmber, mint: t.tplMint,
     europass: t.tplEuropass, lebenslauf: t.tplLebenslauf,
+    'europass-classic': t.tplEuropassClassic, 'europass-modern': t.tplEuropassModern,
+    'europass-timeline': t.tplEuropassTimeline, 'europass-progress': t.tplEuropassProgress,
+    'europass-accent': t.tplEuropassAccent,
   }
   return names[id] ?? id
 }
