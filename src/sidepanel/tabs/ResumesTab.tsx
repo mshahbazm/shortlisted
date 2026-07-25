@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { cn } from '../../lib/cn'
-import { BigChoice, Body, Button, Checkbox, Chip, Cost, FIELD, Icon, Label, Pill, ScreenHead, Sheet, Textarea, TopBar, useStack } from '../ui'
+import { BigChoice, Body, Button, Checkbox, Chip, ChipInput, Cost, FIELD, Icon, Label, Pill, ScreenHead, Sheet, Textarea, TopBar, useStack } from '../ui'
 import { Profile, ResumeVariant, base64ToBytes, bytesToBase64, roleCompanyLabel, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
@@ -74,6 +74,9 @@ export function ResumesTab() {
     void store.update('resumes', (list) => list.map((x) => (x.id === id ? { ...x, status: 'learning' } : x)))
     void sendMsg({ type: 'intakeResume', resumeId: id })
   }
+  // Tags are auto-suggested by intake, but the user owns them — edit, add, remove.
+  const setTags = (id: string, tags: string[]) =>
+    void store.update('resumes', (list) => list.map((x) => (x.id === id ? { ...x, tags } : x)))
 
   // Same shape as generateMaster and runTailor: busy state up front, errors
   // surfaced, busy cleared in finally. This one used to do none of it, so a
@@ -175,6 +178,7 @@ export function ResumesTab() {
   }
 
   const [editingCv, setEditingCv] = useState<string | null>(null)
+  const [editingTags, setEditingTags] = useState<string | null>(null)
   const [preview, setPreview] = useState<{ label: string; pages: string[] } | null>(null)
   const openPreview = async (r: ResumeVariant) => {
     setPreview({ label: r.label, pages: [] })
@@ -313,6 +317,7 @@ export function ResumesTab() {
                 <div className="flex flex-wrap gap-[13px] pt-0.5">
                   <Button variant="link" onClick={() => void openPreview(r)}>{t.previewLabel}</Button>
                   <Button variant="link" onClick={() => download(r)}>{t.pdf}</Button>
+                  <Button variant="link" onClick={() => setEditingTags(r.id)}>{t.editTags}</Button>
                   {r.content && <Button variant="link" onClick={() => setEditingCv(r.id)}>{t.contentsLabel}</Button>}
                   {!r.isDefault && <Button variant="link" onClick={() => makeDefault(r.id)}>{t.makeDefault}</Button>}
                   <Button variant="link" className="text-faint" onClick={() => setDeleting(r.id)}>{t.deleteLabel}</Button>
@@ -373,6 +378,21 @@ export function ResumesTab() {
 
       {hiddenFileInput}
       {picking && <TemplatePicker profile={profile} onPick={onPickTemplate} onCancel={() => setPicking(null)} />}
+
+      {editingTags && (() => {
+        const r = resumes.find((x) => x.id === editingTags)
+        if (!r) return null
+        return (
+          <Sheet title={t.editTags} sub={t.editTagsHint} closeLabel={t.done} onClose={() => setEditingTags(null)}>
+            <ChipInput
+              items={r.tags}
+              placeholder={t.addTagPlaceholder}
+              removeLabel={t.remove}
+              onChange={(tags) => setTags(r.id, tags)}
+            />
+          </Sheet>
+        )
+      })()}
 
       {editingCv && (() => {
         const r = resumes.find((x) => x.id === editingCv)
