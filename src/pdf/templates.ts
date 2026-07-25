@@ -227,7 +227,7 @@ export const TEMPLATES: ResumeTemplate[] = [
   // The post-2020 europa.eu editor designs — one shared renderer
   // (src/pdf/formats/europassEditor.ts), selected by id. All under the europass
   // format; the plain `europass` above stays the legacy 2002–2017 layout.
-  ...(['classic', 'modern', 'timeline', 'progress'] as const).map(
+  ...(['classic', 'modern', 'timeline', 'progress', 'accent'] as const).map(
     (d): ResumeTemplate => ({
       id: `europass-${d}`,
       format: 'europass',

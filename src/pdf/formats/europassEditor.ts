@@ -183,6 +183,8 @@ export function renderEuropassEditor(profile: Profile, variant: TailoredResume, 
       return timeline(profile, variant, tpl)
     case 'europass-progress':
       return progress(profile, variant, tpl)
+    case 'europass-accent':
+      return accent(profile, variant, tpl)
     case 'europass-classic':
     default:
       return classic(profile, variant, tpl)
@@ -1302,6 +1304,239 @@ function progress(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate
     }
     p.setFont(false, 10, SOFT)
     doc.text(`Page ${pg}/${pages}`, R, PAGE_H - 33, { align: 'right' })
+  }
+
+  return doc.output('datauristring').split(',')[1]
+}
+
+// ------------------------------------------------------------------- ACCENT --
+// Pixel-matched to the official editor's "Accent" SVG. Single column framed by
+// light-blue corner brackets (#82ACD9). Blue name, blue UPPERCASE section titles
+// over gray hairline rules, italic-bold org names with bracketed date ranges,
+// blue entry titles, and a two-column language block (bold UPPERCASE skill
+// labels). Photo top-left with a blue ring; europass mark top-right on page 1.
+
+/** Accent header details as one contiguous run (bold labels, blue links). */
+function accentDetail(profile: Profile, label: string, val: string, link: string): Piece[] {
+  const id = profile.identity
+  const pc: Piece[] = []
+  const lbl = (t: string): Piece => ({ t, bold: true, color: label })
+  const v = (t: string): Piece => ({ t: t + '  ', color: val })
+  const lnk = (t: string): Piece[] => [{ t, color: link, underline: true }, { t: '  ' }]
+  if (id.nationality) pc.push(lbl('Nationality: '), v(id.nationality))
+  if (id.dateOfBirth) pc.push(lbl('Date of birth: '), v(id.dateOfBirth))
+  if (id.sex) pc.push(lbl('Gender: '), v(id.sex))
+  if (id.phone) pc.push(lbl('Phone: '), v(id.phone))
+  if (id.email) pc.push(lbl('Email address: '), ...lnk(id.email))
+  if (profile.links.linkedin) pc.push(lbl('LinkedIn: '), ...lnk(profile.links.linkedin))
+  if (profile.links.website) pc.push(lbl('Website: '), ...lnk(profile.links.website))
+  if (id.location) pc.push(lbl('Address: '), v(id.location))
+  return pc
+}
+
+function accent(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate): string {
+  void tpl
+  const FRAME = '#82ACD9'
+  const ACCENT = '#0C56A5' // name, section + entry titles
+  const ACCENT2 = '#214493' // language names
+  const RULEG = '#CBCBCB' // section hairline
+  const LABEL = '#404040'
+  const VAL = '#565656'
+  const ORG = '#000000'
+  const DATE = '#6B6B6B'
+  const LINKC = '#004494'
+  const LH = 13
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+  const p = painter(doc, 'helvetica', 44)
+  const id = profile.identity
+  const L = 38
+  const R = PAGE_W - 38
+  const name = `${id.firstName} ${id.lastName}`.trim()
+
+  // ---- Header: photo top-left (blue ring), blue name, contact run ----
+  const pcx = 86
+  const pcy = 120
+  const r = 48
+  if (id.photo) circleImage(doc, id.photo, pcx, pcy, r, '#ffffff')
+  doc.setDrawColor(ACCENT2)
+  doc.setLineWidth(2)
+  doc.circle(pcx, pcy, r + 1, 'S')
+  p.setFont(true, 16, ACCENT)
+  doc.text(name || ' ', 152, 88)
+
+  const col: Cursor = { x: L, w: R - L, y: 110 }
+  const cy = inlineGroups(doc, p, [accentDetail(profile, LABEL, VAL, LINKC)], 152, 110, R - 152, 20, 10, VAL, VAL)
+  col.y = Math.max(cy, 194)
+
+  const section = (labelT: string) => {
+    col.y += 26
+    p.ensure(col, 30)
+    p.setFont(true, 11, ACCENT)
+    doc.text(labelT.toUpperCase(), L, col.y)
+    doc.setDrawColor(RULEG)
+    doc.setLineWidth(0.5)
+    doc.line(L, col.y + 6.5, R, col.y + 6.5)
+    col.y += 23
+  }
+  const para = (t: string) => {
+    p.setFont(false, 10, VAL)
+    for (const ln of doc.splitTextToSize(t, R - L) as string[]) {
+      p.ensure(col, LH)
+      doc.text(ln, L, col.y)
+      col.y += LH
+    }
+  }
+  const bullet = (b: string) => {
+    p.setFont(false, 10, VAL)
+    const lines = doc.splitTextToSize(b, R - 63) as string[]
+    lines.forEach((ln, j) => {
+      if (j > 0) col.y += LH
+      p.ensure(col, LH)
+      doc.text((j === 0 ? '•  ' : '') + ln, j === 0 ? 53 : 63, col.y)
+    })
+    col.y += LH
+  }
+  // italic-bold org name followed by a normal run on one baseline
+  const orgLine = (nameT: string, tail: string) => {
+    p.ensure(col, 15)
+    doc.setFont('helvetica', 'bolditalic')
+    doc.setFontSize(11)
+    doc.setTextColor(ORG)
+    doc.text(nameT, L, col.y)
+    if (tail) {
+      const w0 = doc.getTextWidth(nameT + ' ')
+      p.setFont(false, 11, ORG)
+      doc.text(tail, L + w0, col.y)
+    }
+    col.y += 17
+  }
+
+  if (variant.summary) {
+    section('About me')
+    para(variant.summary)
+  }
+
+  const edus = resolveEdu(profile, variant)
+  if (edus.length) {
+    section('Education & Training')
+    edus.forEach((e, i) => {
+      if (i > 0) col.y += 10
+      p.setFont(true, 11, ACCENT)
+      p.ensure(col, 15)
+      doc.text(e.degree, L, col.y)
+      col.y += 17
+      orgLine(e.school, eduRange(e) ? `[ ${eduRange(e)} ]` : '')
+      if (e.description) para(e.description)
+    })
+  }
+
+  const works = resolveWork(profile, variant)
+  if (works.length) {
+    section('Work experience')
+    works.forEach(({ w }, i) => {
+      if (i > 0) col.y += 12
+      orgLine(w.company, w.location ? `- ${w.location}` : '')
+      p.setFont(true, 11, ACCENT)
+      p.ensure(col, 15)
+      doc.text(w.title, L, col.y)
+      col.y += 17
+      if (workRange(w)) {
+        p.setFont(false, 10, DATE)
+        doc.text(`[ ${workRange(w)} ]`, L, col.y)
+        col.y += 15
+      }
+      for (const b of w.highlights) {
+        col.y += 1
+        bullet(b)
+      }
+    })
+  }
+
+  if (variant.skills.length) {
+    section('Skills')
+    col.y = inlineGroups(
+      doc,
+      p,
+      variant.skills.map((s) => [{ t: s, color: VAL }]),
+      L,
+      col.y,
+      R - L,
+      LH,
+      9,
+      VAL,
+      VAL,
+    )
+  }
+
+  const mother = profile.languages.filter((l) => l.proficiency === 'native_bilingual')
+  const graded = profile.languages.filter((l) => l.cefr && l.proficiency !== 'native_bilingual')
+  if (profile.languages.length) {
+    section('Language Skills')
+    if (mother.length) {
+      p.setFont(true, 11, ACCENT)
+      doc.text('Mother tongue(s): ', L, col.y)
+      const w0 = doc.getTextWidth('Mother tongue(s): ')
+      p.setFont(false, 11, ORG)
+      doc.text(mother.map((l) => l.name).join(', '), L + w0, col.y)
+      col.y += 22
+    }
+    if (graded.length) {
+      const drawPairs = (x: number, yy: number, pairs: [string, string][]) => {
+        let cx = x
+        for (const [lab, lv] of pairs) {
+          p.setFont(true, 10, LABEL)
+          doc.text(lab + ': ', cx, yy)
+          cx += doc.getTextWidth(lab + ': ')
+          p.setFont(false, 10, VAL)
+          doc.text(lv + '  ', cx, yy)
+          cx += doc.getTextWidth(lv + '  ')
+        }
+      }
+      const block = (l: (typeof graded)[number], x: number, y0: number) => {
+        const c = l.cefr!
+        p.setFont(true, 10, ACCENT2)
+        doc.text(l.name, x, y0)
+        drawPairs(x, y0 + 16, [
+          ['LISTENING', c.listening],
+          ['READING', c.reading],
+          ['WRITING', c.writing],
+        ])
+        drawPairs(x, y0 + 32, [['SPOKEN PRODUCTION', c.spokenProduction]])
+        drawPairs(x, y0 + 48, [['SPOKEN INTERACTION', c.spokenInteraction]])
+      }
+      const colW = 259
+      for (let i = 0; i < graded.length; i += 2) {
+        p.ensure(col, 64)
+        const y0 = col.y
+        block(graded[i], L, y0)
+        if (graded[i + 1]) block(graded[i + 1], L + colW, y0)
+        col.y = y0 + 64
+      }
+    }
+  }
+
+  // ---- Frame (every page) + europass mark (page 1) + page number ----
+  const pages = doc.getNumberOfPages()
+  const lgW = 122
+  const lgH = lgW * (92 / 360)
+  for (let pg = 1; pg <= pages; pg++) {
+    doc.setPage(pg)
+    doc.setFillColor(FRAME)
+    doc.rect(0, 0, PAGE_W, 25, 'F')
+    doc.rect(0, PAGE_H - 25, PAGE_W, 25, 'F')
+    doc.rect(0, 0, 25, 68, 'F')
+    doc.rect(PAGE_W - 25, 0, 25, 68, 'F')
+    doc.rect(0, PAGE_H - 68, 25, 68, 'F')
+    doc.rect(PAGE_W - 25, PAGE_H - 68, 25, 68, 'F')
+    if (pg === 1) {
+      try {
+        doc.addImage(EUROPASS_LOGO_NEW, 'JPEG', R - lgW, 40, lgW, lgH)
+      } catch {
+        /* logo optional */
+      }
+    }
+    p.setFont(false, 10, VAL)
+    doc.text(`Page ${pg}/${pages}`, R - 12, PAGE_H - 42, { align: 'right' })
   }
 
   return doc.output('datauristring').split(',')[1]
