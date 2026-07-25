@@ -186,144 +186,265 @@ export function renderEuropassEditor(profile: Profile, variant: TailoredResume, 
   }
 }
 
-// ------------------------------------------------------------------ CLASSIC --
-// Single column. Gray photo-header band (circular photo + name + wrapped detail
-// flow), sections as a bold label followed by a hairline rule to the right
-// margin, entries as a mixed-style meta line + bullets, europass logo in the
-// footer.
-function classic(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate): string {
-  const accent = tpl.accent ?? '#004494'
-  const doc = new jsPDF({ unit: 'pt', format: 'a4' })
-  const p = painter(doc, 'helvetica', MARGIN + 8)
+// A mixed-SIZE inline flow: groups separated by " | " (at sepSize/sepColor);
+// pieces within a group render contiguously. Word-wraps to maxW. Returns the y
+// of the last baseline. Used to match the official Classic's per-run type.
+type Piece = { t: string; size?: number; bold?: boolean; color?: string; underline?: boolean }
+function inlineGroups(
+  doc: jsPDF,
+  p: ReturnType<typeof painter>,
+  groups: Piece[][],
+  x: number,
+  y: number,
+  maxW: number,
+  lh: number,
+  sepSize: number,
+  sepColor: string,
+  defColor = '#000000',
+): number {
+  let cx = x
+  let cy = y
+  const put = (t: string, size: number, bold: boolean, color: string, underline?: boolean) => {
+    for (const tok of t.split(/(\s+)/).filter((s) => s.length)) {
+      p.setFont(bold, size, color)
+      const w = doc.getTextWidth(tok)
+      if (tok.trim() && cx + w > x + maxW) {
+        cx = x
+        cy += lh
+      }
+      if (tok.trim()) {
+        doc.text(tok, cx, cy)
+        if (underline) {
+          doc.setDrawColor(color)
+          doc.setLineWidth(0.5)
+          doc.line(cx, cy + 1.6, cx + w, cy + 1.6)
+        }
+      }
+      cx += w
+    }
+  }
+  groups.forEach((g, i) => {
+    if (i > 0) {
+      p.setFont(false, sepSize, sepColor)
+      const sw = doc.getTextWidth(' | ')
+      if (cx + sw > x + maxW) {
+        cx = x
+        cy += lh
+      }
+      doc.text(' | ', cx, cy)
+      cx += sw
+    }
+    for (const pc of g) put(pc.t, pc.size ?? 10, pc.bold ?? false, pc.color ?? defColor, pc.underline)
+  })
+  return cy
+}
+
+/** Header personal-detail groups for Classic (labels regular black, links blue
+ *  underlined), matching the official SVG. */
+function detailGroups(profile: Profile, link: string): Piece[][] {
   const id = profile.identity
-  const left = MARGIN
-  const right = PAGE_W - MARGIN
+  const g: Piece[][] = []
+  if (id.dateOfBirth) g.push([{ t: `Date of birth: ${id.dateOfBirth}` }])
+  if (id.sex) g.push([{ t: `Gender: ${id.sex}` }])
+  if (id.nationality) g.push([{ t: `Nationality: ${id.nationality}` }])
+  if (id.phone) g.push([{ t: `Phone: ${id.phone}` }])
+  if (id.email) g.push([{ t: 'Email address: ' }, { t: id.email, color: link, underline: true }])
+  if (profile.links.website) g.push([{ t: 'Website: ' }, { t: profile.links.website, color: link, underline: true }])
+  if (profile.links.linkedin) g.push([{ t: 'LinkedIn: ' }, { t: profile.links.linkedin, color: link, underline: true }])
+  if (id.location) g.push([{ t: `Address: ${id.location}` }])
+  return g
+}
+
+/** The official Classic CEFR table: name + five 86pt columns, un-filled header
+ *  (Understanding/Speaking/Writing over the five skills), #F5F5F5 data rows,
+ *  three thin 0.2pt group dividers. */
+function classicLangTable(doc: jsPDF, p: ReturnType<typeof painter>, c: Cursor, langs: { name: string; l: string[] }[], L: number, R: number) {
+  const GRAY = '#5A5959'
+  const cellW = (R - L) / 6
+  const xs = [0, 1, 2, 3, 4, 5, 6].map((k) => L + k * cellW)
+  const GH = 25
+  const SH = 19
+  const RH = 30
+  p.ensure(c, GH + SH + langs.length * RH + 6)
+  const top = c.y
+  const ctr = (t: string, x0: number, x1: number, yy: number, size: number, bold: boolean, color: string) => {
+    p.setFont(bold, size, color)
+    doc.text(t, (x0 + x1) / 2, yy, { align: 'center' })
+  }
+  ctr('Understanding', xs[1], xs[3], top + 11, 10, true, GRAY)
+  ctr('Speaking', xs[3], xs[5], top + 11, 10, true, GRAY)
+  ctr('Writing', xs[5], xs[6], top + 11, 10, true, GRAY)
+  ;[
+    ['Listening', xs[1], xs[2]],
+    ['Reading', xs[2], xs[3]],
+    ['Spoken production', xs[3], xs[4]],
+    ['Spoken interaction', xs[4], xs[5]],
+  ].forEach(([s, a, b]) => ctr(s as string, a as number, b as number, top + GH + 12, 8, false, GRAY))
+  let ry = top + GH + SH
+  for (const lang of langs) {
+    doc.setFillColor('#F5F5F5')
+    doc.rect(L, ry, R - L, 24, 'F')
+    p.setFont(true, 10, '#000000')
+    doc.text(lang.name, L, ry + 15.5)
+    for (let i = 0; i < 5; i++) ctr(lang.l[i] ?? '', xs[i + 1], xs[i + 2] ?? R, ry + 15.5, 10, false, '#000000')
+    ry += RH
+  }
+  doc.setDrawColor('#000000')
+  doc.setLineWidth(0.2)
+  for (const bx of [xs[1], xs[3], xs[5]]) doc.line(bx, top, bx, ry - (RH - 24))
+  c.y = ry
+}
+
+// ------------------------------------------------------------------ CLASSIC --
+// Pixel-matched to the official europa.eu editor's "Classic" SVG export: 39pt
+// margins, a 148pt #F5F5F5 header band (circular photo + 18pt gray name +
+// wrapped detail flow), 8pt bold section labels over a hairline rule, entry
+// lines as mixed-size inline runs, tight bullets, and the CEFR table. Arial ≈
+// Helvetica so the type matches too.
+function classic(profile: Profile, variant: TailoredResume, tpl: ResumeTemplate): string {
+  void tpl
+  const BLACK = '#000000'
+  const GRAY = '#4F4F4F' // name, entry titles, separators
+  const SOFT2 = '#5A5959' // body, bullets, sub-labels
+  const LINKC = '#004494'
+  const BANDC = '#F5F5F5'
+  const LH = 13
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+  const p = painter(doc, 'helvetica', 46)
+  const id = profile.identity
+  const L = 39
+  const R = PAGE_W - 39
   const name = `${id.firstName} ${id.lastName}`.trim()
 
-  // ---- Header band ----
-  // Taller band → more top/bottom padding (matches the official); the photo +
-  // its corner-mask sit fully inside it, so nothing bulges below the band.
-  const bandH = 154
-  doc.setFillColor(BAND)
-  doc.rect(0, 0, PAGE_W, bandH, 'F')
-  const r = 47
-  const cx = left + r
-  const cy = bandH / 2
-  if (id.photo) circleImage(doc, id.photo, cx, cy, r, BAND)
-  const tx = left + r * 2 + 24
-  const tw = right - tx
-  p.setFont(true, 19, INK)
-  doc.text(name || ' ', tx, cy - 12)
-  flowSegments(doc, p, detailSegs(profile), tx, cy + 6, tw, 13)
+  // ---- Header band (148pt), photo centred at (89,83) with a thin black ring ----
+  doc.setFillColor(BANDC)
+  doc.rect(0, 0, PAGE_W, 148, 'F')
+  if (id.photo) circleImage(doc, id.photo, 89, 83, 50, BANDC)
+  // erase any mask overspill below the band, then draw the ring
+  doc.setFillColor('#ffffff')
+  doc.rect(0, 148, PAGE_W, PAGE_H - 148, 'F')
+  doc.setDrawColor(BLACK)
+  doc.setLineWidth(1)
+  doc.circle(89, 83, 51, 'S')
+  p.setFont(true, 18, GRAY)
+  doc.text(name || ' ', 157, 56.4)
+  inlineGroups(doc, p, detailGroups(profile, LINKC), 157, 74.4, R - 157, LH, 10, GRAY, BLACK)
 
-  const col: Cursor = { x: left, w: right - left, y: bandH + 26 }
+  const col: Cursor = { x: L, w: R - L, y: 148 }
 
-  // ---- Section: bold label + hairline rule to the right margin ----
+  const para = (t: string, size: number, color: string, x = L, w = R - L) => {
+    p.setFont(false, size, color)
+    const lines = doc.splitTextToSize(t, w) as string[]
+    lines.forEach((ln, i) => {
+      if (i > 0) col.y += LH
+      doc.text(ln, x, col.y)
+    })
+  }
+  const bullet = (b: string) => {
+    p.setFont(false, 10, SOFT2)
+    const lines = doc.splitTextToSize(b, R - 64) as string[]
+    lines.forEach((ln, j) => {
+      if (j > 0) col.y += LH
+      if (j === 0) doc.text('•  ' + ln, 54, col.y)
+      else doc.text(ln, 64, col.y)
+    })
+  }
   const section = (label: string) => {
-    col.y += 14
-    p.ensure(col, 24)
-    p.setFont(true, 10, INK)
-    doc.text(label, left, col.y, { charSpace: 0.2 })
-    const lw = doc.getTextWidth(label) + 0.2 * label.length
-    doc.setDrawColor(RULE)
-    doc.setLineWidth(0.6)
-    doc.line(left + lw + 8, col.y - 3, right, col.y - 3)
-    col.y += 16
+    col.y += 24
+    p.ensure(col, 22)
+    p.setFont(true, 8, BLACK)
+    doc.text(label, L, col.y)
+    const lw = doc.getTextWidth(label)
+    doc.setDrawColor(BLACK)
+    doc.setLineWidth(0.5)
+    doc.line(L + lw + 4, col.y - 1, R, col.y - 1)
+    col.y += 18
   }
 
-  // ---- About me ----
   if (variant.summary) {
     section('About me')
-    p.text(col, variant.summary, 9.5, { color: INK, gap: 2 })
+    para(variant.summary, 10, SOFT2)
   }
 
-  // ---- Education & Training ----
   const edus = resolveEdu(profile, variant)
   if (edus.length) {
     section('Education & Training')
-    for (const e of edus) {
-      p.ensure(col, 20)
-      flowSegments(
+    edus.forEach((e, i) => {
+      if (i > 0) col.y += LH + 5
+      col.y = inlineGroups(
         doc,
         p,
-        [{ t: e.degree, bold: true }, { t: e.school }, ...(eduRange(e) ? [{ t: eduRange(e), color: META }] : []), ...(e.description ? [{ t: e.description }] : [])],
-        left,
+        [[{ t: e.degree, bold: true, color: GRAY }], [{ t: e.school, color: GRAY }], ...(eduRange(e) ? [[{ t: eduRange(e), color: GRAY }]] : []), ...(e.description ? [[{ t: e.description, color: GRAY }]] : [])],
+        L,
         col.y,
-        col.w,
-        13,
+        R - L,
+        LH,
+        12,
+        GRAY,
+        GRAY,
       )
-      col.y += 18
-    }
+    })
   }
 
-  // ---- Work experience ----
   const works = resolveWork(profile, variant)
   if (works.length) {
     section('Work experience')
-    for (const { w } of works) {
-      p.ensure(col, 28)
-      flowSegments(
+    works.forEach(({ w }, i) => {
+      if (i > 0) col.y += LH + 6
+      col.y = inlineGroups(
         doc,
         p,
-        [{ t: w.title, bold: true }, ...(w.company ? [{ t: w.company }] : []), ...(workRange(w) ? [{ t: workRange(w), color: META }] : []), ...(w.location ? [{ t: w.location }] : [])],
-        left,
+        [[{ t: w.title, bold: true, color: GRAY }], [{ t: w.company, color: GRAY }], ...(workRange(w) ? [[{ t: workRange(w), size: 8, color: SOFT2 }]] : []), ...(w.location ? [[{ t: w.location, size: 8, color: SOFT2 }]] : [])],
+        L,
         col.y,
-        col.w,
-        13,
+        R - L,
+        LH,
+        12,
+        GRAY,
+        GRAY,
       )
-      col.y += 16
-      for (const b of w.highlights) p.bullet(col, b, 9.5, accent)
-      col.y += 10
-    }
+      for (const b of w.highlights) {
+        col.y += LH
+        bullet(b)
+      }
+    })
   }
 
-  // ---- Skills ----
   if (variant.skills.length) {
     section('Skills')
-    p.text(col, variant.skills.join('   |   '), 9.5, { color: INK, gap: 2 })
+    col.y = inlineGroups(doc, p, variant.skills.map((s) => [{ t: s, color: GRAY }]), L, col.y, R - L, LH, 12, GRAY, GRAY)
   }
 
-  // ---- Language Skills ----
   const mother = profile.languages.filter((l) => l.proficiency === 'native_bilingual')
-  const others = profile.languages.filter((l) => l.proficiency !== 'native_bilingual')
+  const graded = profile.languages.filter((l) => l.cefr && l.proficiency !== 'native_bilingual')
   if (profile.languages.length) {
     section('Language Skills')
     if (mother.length) {
-      p.setFont(true, 9.5, INK)
-      doc.text('Mother tongue(s): ', left, col.y)
+      p.setFont(false, 10, GRAY)
+      doc.text('Mother tongue(s): ', L, col.y)
       const w0 = doc.getTextWidth('Mother tongue(s): ')
-      p.setFont(false, 9.5, INK)
-      doc.text(mother.map((l) => l.name).join(', '), left + w0, col.y)
-      col.y += 18
+      p.setFont(true, 10, GRAY)
+      doc.text(mother.map((l) => l.name).join(', '), L + w0, col.y)
     }
-    const graded = others.filter((l) => l.cefr)
     if (graded.length) {
-      drawLangTable(
-        doc,
-        p,
-        col,
-        graded.map((l) => ({ name: l.name, l: [l.cefr!.listening, l.cefr!.reading, l.cefr!.spokenProduction, l.cefr!.spokenInteraction, l.cefr!.writing] })),
-      )
-      p.setFont(false, 7.5, META)
-      col.y += 12 // breathing room between the table and the levels legend
-      doc.text('Levels: A1 and A2: Basic user - B1 and B2: Independent user - C1 and C2: Proficient user', left, col.y)
-      col.y += 10
+      col.y += 22
+      classicLangTable(doc, p, col, graded.map((l) => ({ name: l.name, l: [l.cefr!.listening, l.cefr!.reading, l.cefr!.spokenProduction, l.cefr!.spokenInteraction, l.cefr!.writing] })), L, R)
     }
   }
 
-  // ---- Footer: europass logo (bottom-right, bigger) + page number ----
+  // ---- Footer: page number + europass brand mark, on every page ----
   const pages = doc.getNumberOfPages()
-  const lw = 86
-  const lh = lw * (92 / 360)
+  const lgW = 61
+  const lgH = lgW * (92 / 360)
   for (let pg = 1; pg <= pages; pg++) {
     doc.setPage(pg)
     try {
-      doc.addImage(EUROPASS_LOGO_NEW, 'JPEG', right - lw - 52, PAGE_H - 34, lw, lh)
+      doc.addImage(EUROPASS_LOGO_NEW, 'JPEG', R - 46 - lgW, PAGE_H - 42, lgW, lgH)
     } catch {
       /* logo optional */
     }
-    p.setFont(false, 8, META)
-    doc.text(`Page ${pg} / ${pages}`, right, PAGE_H - 24, { align: 'right' })
+    p.setFont(false, 10, SOFT2)
+    doc.text(`Page ${pg}/${pages}`, R, PAGE_H - 31, { align: 'right' })
   }
 
   return doc.output('datauristring').split(',')[1]
