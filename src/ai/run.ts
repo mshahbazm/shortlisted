@@ -33,14 +33,21 @@ export type { QuickScoreResult, ScoreFitResult }
 export type { AssistField, AssistResultItem, CorrectionItem, VerifyField }
 
 /**
- * Uploaded-CV intake: role/field tags for the CV plus profile facts it
- * contains that the account is missing (additive only). Free micro-call.
+ * Uploaded-CV intake: the SAME deep extract+diff as the profile "learn more"
+ * flow, run silently in the background — returns the additive delta to fold into
+ * the profile plus role/field tags for the resume. Free (completing a profile
+ * shouldn't cost a credit).
  */
-export async function cloudEnrichFromCv(settings: Settings, pdfBase64: string): Promise<ProfileEnrichment> {
-  return cloudCall<ProfileEnrichment>(settings, '/v1/enrich-profile', { pdfBase64 })
+export async function cloudIntakeResume(
+  settings: Settings,
+  pdfBase64: string,
+): Promise<{ delta: ProfileDelta; tags: string[] }> {
+  return cloudCall(settings, '/v1/intake-resume', { pdfBase64 })
 }
 
-/** Free-form profile note ("I worked with Webflow at X") → additive facts. */
+/** Free-form profile note ("I worked with Webflow at X") → additive facts. The
+ *  one remaining caller of enrich-profile: a typed fragment is too small for the
+ *  full extractor (its is-this-a-resume gate would reject it). */
 export async function cloudProfileNote(settings: Settings, text: string): Promise<ProfileEnrichment> {
   return cloudCall<ProfileEnrichment>(settings, '/v1/enrich-profile', { text })
 }

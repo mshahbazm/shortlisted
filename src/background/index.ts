@@ -4,9 +4,9 @@
 import { Msg, PageContext } from '../lib/messaging'
 import * as store from '../lib/store'
 import { BankAnswer, PendingQuestion, ResumeVariant, jobUrlKey, roleCompanyLabel, uid } from '../lib/types'
-import { applyEnrichment } from '../lib/profileMerge'
+import { applyEnrichment, applyProfileDelta } from '../lib/profileMerge'
 import { normalizeQuestion, similarity } from '../lib/questions'
-import { cloudFillAssist, cloudEnrichFromCv, polishAnswer, runQuickScore, runTailorCv } from '../ai/run'
+import { cloudFillAssist, cloudIntakeResume, polishAnswer, runQuickScore, runTailorCv } from '../ai/run'
 import { renderResumePdf } from '../pdf/resumePdf'
 import { pullFromCloud, startCloudMirror } from './cloudMirror'
 // CRXJS: gives us the emitted content-script path for scripting.executeScript.
@@ -344,9 +344,11 @@ async function handle(msg: Msg): Promise<unknown> {
  * options/booleans are never polished (their value must match the form).
  */
 /**
- * Uploaded-CV intake: ask the cloud what roles the CV targets (tags) and what
- * facts it holds that the profile lacks. Merging is strictly additive — the
- * profile is never overwritten, only filled in. Fire and forget.
+ * Uploaded-CV intake: the cloud deep-parses the CV (same extractor as the
+ * profile "learn more" flow) and returns the additive delta of everything new
+ * plus role/field tags for the resume. Merging is strictly additive — the
+ * profile is never overwritten, only filled in. Silent and fire-and-forget;
+ * `status` drives the card's spinner/retry so a failure isn't invisible.
  */
 async function intakeResume(resumeId: string): Promise<void> {
   const [settings, resumes] = await Promise.all([store.get('settings'), store.get('resumes')])
@@ -362,17 +364,18 @@ async function intakeResume(resumeId: string): Promise<void> {
   }
   await setStatus('learning')
   try {
-    const facts = await cloudEnrichFromCv(settings, r.dataBase64)
-    // Tags + status in ONE write so the card doesn't flash "done" then re-tag.
-    // Tags are set only when still empty, so a retry never clobbers edits.
+    // Deep extract+diff (same depth as the profile "learn more" flow), applied
+    // silently. Tags + status in ONE write so the card doesn't flash "done" then
+    // re-tag. Tags are set only when still empty, so a retry never clobbers edits.
+    const { delta, tags } = await cloudIntakeResume(settings, r.dataBase64)
     await store.update('resumes', (list) =>
       list.map((x) =>
         x.id === resumeId
-          ? { ...x, status: 'done', tags: x.tags.length === 0 && facts.tags.length ? facts.tags : x.tags }
+          ? { ...x, status: 'done', tags: x.tags.length === 0 && tags.length ? tags : x.tags }
           : x,
       ),
     )
-    await store.update('profile', (p) => applyEnrichment(p, facts))
+    await store.update('profile', (p) => applyProfileDelta(p, delta))
   } catch (e) {
     console.warn('[shortlisted] resume intake failed:', e)
     await setStatus('failed')
