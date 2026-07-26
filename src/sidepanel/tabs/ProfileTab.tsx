@@ -11,7 +11,7 @@ import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { cn } from '../../lib/cn'
 import { KV } from '../components'
-import { Bar, BigChoice, Body, Button, Card, Chip, ChipInput, Composer, Cost, Count, Icon, IconButton, Input, Label, ListEditor, RemoveButton, Row, ScreenHead, Segments, Select, Sheet, Textarea, TopBar, useStack } from '../ui'
+import { Bar, Body, Button, Card, Chip, ChipInput, Composer, Cost, Count, Icon, IconButton, Input, Label, ListEditor, RemoveButton, Row, ScreenHead, Segments, Select, Sheet, Textarea, TopBar, useStack } from '../ui'
 import { QuestionsTab } from './QuestionsTab'
 import {
   EducationEntry,
@@ -26,7 +26,7 @@ import {
   ymString,
   workPeriodLabel,
 } from '../../lib/types'
-import { cloudImportResume, cloudLearnFromResume, cloudProfileNote, cloudUploadPicture } from '../../ai/run'
+import { cloudLearnFromResume, cloudProfileNote, cloudUploadPicture } from '../../ai/run'
 import { fileToDataUrl, fileToProfilePhoto } from '../../lib/image'
 import * as store from '../../lib/store'
 import { Gap, GapKey, profileStrength } from '../../lib/profileStrength'
@@ -47,14 +47,11 @@ export function ProfileTab({
   const [seg, setSeg] = useState<'profile' | 'bank' | 'pending'>('profile')
   /** Band to scroll back to once we're on the root screen again. */
   const [restore, setRestore] = useState('')
-  /** Re-import flow: chosen door, and the parsed/merged profile awaiting the
-   *  user's confirm on the review screen (nothing is saved until they accept). */
-  const [importMode, setImportMode] = useState<'replace' | 'merge'>('merge')
-  const [importResult, setImportResult] = useState<Profile | null>(null)
-  /** "Learn more about me": only the NEW items a re-imported CV adds, itemized
-   *  and individually removable. Held here (mutable) until the user confirms. */
+  /** A newer CV only ever ADDS: these are the new items it brings over the
+   *  current profile, itemized and individually removable. Held here (mutable)
+   *  until the user confirms — nothing is saved before that. */
   const [mergeDelta, setMergeDelta] = useState<ProfileDelta | null>(null)
-  const [profile, saveProfileRaw, loaded] = useStore('profile')
+  const [profile, , loaded] = useStore('profile')
   const [settings] = useStore('settings')
   const [bank] = useStore('answerBank')
   const [pending] = useStore('pendingQuestions')
@@ -95,12 +92,6 @@ export function ProfileTab({
     void store.update('profile', (cur) => ({ ...cur, ...patch }))
     showToast(t.savedToast)
   }
-  // Full replace — only the re-import flow, where replacing IS the intent.
-  const save = (v: Profile) => {
-    saveProfileRaw(v)
-    showToast(t.savedToast)
-  }
-
   const name = [p.identity.firstName, p.identity.lastName].filter(Boolean).join(' ')
   const { percent, gaps } = profileStrength(p)
   const factsFilled = Object.values(p.facts).filter((v) => v && String(v).trim()).length
@@ -308,104 +299,33 @@ export function ProfileTab({
     )
   }
 
-  // Re-import, step 1 — the two doors. Replace uses the CV as the whole profile;
-  // Learn-more merges it in without losing anything.
-  if (nav.screen === 'reimport') {
-    return (
-      <Pushed title={t.reimportTitle} nav={nav} t={t}>
-        <p className="m-0 text-[12.5px] leading-normal text-muted">{t.reimportChooseBody}</p>
-        <div className="flex flex-col gap-2.5">
-          <BigChoice
-            title={t.reimportMergeTitle}
-            sub={t.reimportMergeSub}
-            right={<Cost>{t.oneCredit}</Cost>}
-            onClick={() => { setImportMode('merge'); nav.push('reimport-upload') }}
-          />
-          <BigChoice
-            title={t.reimportReplaceTitle}
-            sub={t.reimportReplaceSub}
-            right={<Cost>{t.oneCredit}</Cost>}
-            onClick={() => { setImportMode('replace'); nav.push('reimport-upload') }}
-          />
-        </div>
-      </Pushed>
-    )
-  }
-
-  // Step 2 — upload/paste. On success we stash the result and go to review;
-  // nothing is saved yet.
+  // Step 1 — upload/paste. A newer CV never replaces anything, so there's no
+  // door to pick: the server parses it and diffs it against the current profile.
+  // Nothing is saved yet — the review screen decides that.
   if (nav.screen === 'reimport-upload') {
     return (
-      <Pushed title={importMode === 'merge' ? t.reimportMergeTitle : t.reimportReplaceTitle} nav={nav} t={t}>
+      <Pushed title={t.reimportTitle} nav={nav} t={t}>
         <ImportBox
-          submitLabel={importMode === 'merge' ? t.reimportMergeButton : t.rebuildProfile}
+          submitLabel={t.reimportMergeButton}
           cloudPdf={async (file) => {
-            // Merge learns only what's new (the server parses + diffs, identity
-            // stays as the user set it); replace rebuilds the whole profile.
-            if (importMode === 'merge') {
-              const { delta } = await cloudLearnFromResume(settings, { pdf: await file.arrayBuffer() })
-              setMergeDelta(delta)
-              nav.push('reimport-merge-review')
-              return
-            }
-            const { profile: result } = await cloudImportResume(settings, { mode: 'replace', pdf: await file.arrayBuffer() })
-            setImportResult(result)
-            nav.push('reimport-review')
+            const { delta } = await cloudLearnFromResume(settings, { pdf: await file.arrayBuffer() })
+            setMergeDelta(delta)
+            nav.push('reimport-merge-review')
           }}
           onImport={async (text) => {
-            if (importMode === 'merge') {
-              const { delta } = await cloudLearnFromResume(settings, { cvText: text })
-              setMergeDelta(delta)
-              nav.push('reimport-merge-review')
-              return
-            }
-            const { profile: result } = await cloudImportResume(settings, { mode: 'replace', cvText: text })
-            setImportResult(result)
-            nav.push('reimport-review')
+            const { delta } = await cloudLearnFromResume(settings, { cvText: text })
+            setMergeDelta(delta)
+            nav.push('reimport-merge-review')
           }}
         />
       </Pushed>
     )
   }
 
-  // Step 3 — review before anything overwrites the profile. Identity is editable
-  // (fix a misparse here); Save applies, Cancel discards and the profile is
-  // untouched.
-  if (nav.screen === 'reimport-review') {
-    const r = importResult
-    if (!r) return <Pushed title={t.reimportReviewTitle} nav={nav} t={t}><div className="px-3 py-[26px] text-center text-[13px] text-faint">{t.nothingYet}</div></Pushed>
-    const setId = (k: keyof Profile['identity'], v: string) => setImportResult({ ...r, identity: { ...r.identity, [k]: v } })
-    const done = () => { setImportResult(null); nav.reset() }
-    return (
-      <Pushed title={t.reimportReviewTitle} nav={nav} t={t}>
-        <p className="m-0 text-[12.5px] leading-normal text-muted">{t.reimportReviewBody(r.work.length, skillNames(r).length)}</p>
-        {r.work.length > 0 && (
-          <div className="flex flex-col gap-1 rounded-card border border-line bg-bg p-2.5">
-            {r.work.map((w) => (
-              <div key={w.id} className="truncate text-[12.5px]">
-                <span className="font-medium">{w.title || t.untitled}</span>
-                {w.company && <span className="text-muted"> · {w.company}</span>}
-              </div>
-            ))}
-          </div>
-        )}
-        <div className="flex gap-2.5 [&>*]:flex-1">
-          <Label>{t.firstName}<Input type="text" value={r.identity.firstName ?? ''} onChange={(e) => setId('firstName', e.target.value)} /></Label>
-          <Label>{t.lastName}<Input type="text" value={r.identity.lastName ?? ''} onChange={(e) => setId('lastName', e.target.value)} /></Label>
-        </div>
-        <Label>{t.email}<Input type="text" value={r.identity.email ?? ''} onChange={(e) => setId('email', e.target.value)} /></Label>
-        <div className="mt-2 flex flex-col gap-2">
-          <Button wide onClick={() => { save({ ...p, ...r, facts: p.facts }); done() }}>{t.reimportConfirm}</Button>
-          <Button variant="ghost" wide onClick={done}>{t.cancel}</Button>
-        </div>
-      </Pushed>
-    )
-  }
-
-  // "Learn more about me" review — only what the CV ADDS, grouped by category,
-  // each item removable. No identity here: this door never re-confirms who you
-  // are, it just files in things you didn't have. Save folds the kept items into
-  // the live profile (store.update, so a background sync can't clobber it).
+  // Step 2 — the review: only what the CV ADDS, grouped by category, each item
+  // removable. No identity here — this never re-confirms who you are, it just
+  // files in things you didn't have. Save folds the kept items into the live
+  // profile (store.update, so a background sync can't clobber it).
   if (nav.screen === 'reimport-merge-review') {
     const d = mergeDelta
     const done = () => { setMergeDelta(null); nav.reset() }
@@ -798,11 +718,11 @@ export function ProfileTab({
           </>
         ) : null}
 
-        {/* 5. Re-import last: a destructive rebuild belongs at the bottom */}
+        {/* 5. Topping the profile up from a newer CV — last, it's the least used */}
         <Card className="mt-1.5 gap-[9px] bg-[#fafaf8]">
           <div className="text-[13px] font-[650]">{t.reimportTitle}</div>
           <div className="-mt-1.5 text-[11.5px] leading-[1.45] text-muted">{t.reimportBody}</div>
-          <Button variant="ghost" size="sm" wide onClick={() => nav.push('reimport')}>
+          <Button variant="ghost" size="sm" wide onClick={() => nav.push('reimport-upload')}>
             <Icon name="up" /> {t.reimportTitle}
           </Button>
           <div className="flex items-center gap-[7px] text-[11.5px] text-faint">

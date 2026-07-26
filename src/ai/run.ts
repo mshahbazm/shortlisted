@@ -170,19 +170,6 @@ export async function cloudPdfText(
   return cloudCall(settings, '/v1/pdf-text', { pdfBase64: bytesToBase64(pdf) })
 }
 
-// Re-import into an existing account: `replace` the profile with this resume, or
-// `merge` it into the current profile without losing anything (the server loads
-// the existing profile itself). Accepts a PDF (OCR fallback) or pasted text.
-export async function cloudImportResume(
-  settings: Settings,
-  args: { mode: 'replace' | 'merge'; pdf?: ArrayBuffer; cvText?: string },
-): Promise<{ profile: Profile; method?: 'text' | 'ocr'; quality?: string }> {
-  const body: Record<string, unknown> = { mode: args.mode }
-  if (args.pdf) body.pdfBase64 = bytesToBase64(args.pdf)
-  if (args.cvText) body.cvText = args.cvText
-  return cloudCall(settings, '/v1/import-resume', body)
-}
-
 export interface CloudUsage {
   plan: 'free' | 'pro'
   creditsUsed: number
