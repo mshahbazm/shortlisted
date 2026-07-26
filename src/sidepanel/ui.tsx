@@ -88,7 +88,7 @@ export function Icon({ name, className }: { name: IconName; className?: string }
 /** Tab bar glyph. Drawn here rather than pulled from an icon pack: four shapes
  *  is not worth a dependency, and these match the stroke weight of Icon above.
  *  24-unit grid so they stay crisp at the 21px the tab bar renders them at. */
-export function TabIcon({ name }: { name: 'home' | 'jobs' | 'profile' | 'cvs' }) {
+export function TabIcon({ name }: { name: 'home' | 'jobs' | 'answers' | 'cvs' }) {
   const common = {
     fill: 'none',
     stroke: 'currentColor',
@@ -108,10 +108,12 @@ export function TabIcon({ name }: { name: 'home' | 'jobs' | 'profile' | 'cvs' })
           <path d="M3 12.5h18" {...common} />
         </>
       )}
-      {name === 'profile' && (
+      {/* A speech bubble, not a person: this tab is what you have SAID, not
+          who you are — that lives on the web now. */}
+      {name === 'answers' && (
         <>
-          <circle cx="12" cy="8.2" r="3.6" {...common} />
-          <path d="M4.8 20.4a7.4 7.4 0 0 1 14.4 0" {...common} />
+          <path d="M4 6.5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9.5L5.5 20v-3.5H6a2 2 0 0 1-2-2z" {...common} />
+          <path d="M9 9.5h6M9 12.5h3.5" {...common} />
         </>
       )}
       {name === 'cvs' && (

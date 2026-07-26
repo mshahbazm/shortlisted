@@ -17,6 +17,7 @@ import { cloudProfileNote, cloudUsage, runScoreFit, ScoreFitResult } from '../..
 import { mergeEnrichment } from '../../lib/profileMerge'
 import { showToast } from '../toast'
 import { fitBand } from '../../lib/fitBands'
+import { cloudBaseUrl } from '../../lib/config'
 
 type FillErrorCode = 'noTab' | 'cannotFill' | 'noForm'
 const FILL_ERRORS = { noTab: 'fillNoTab', cannotFill: 'fillCannotFill', noForm: 'fillNoForm' } as const
@@ -137,17 +138,15 @@ function useCreditsLeft(): number | undefined {
 }
 
 export function HomeTab({
-  onGoProfile,
+  onGoAnswers,
   onGoJobs,
   onGoCvs,
   onOpenSettings,
-  onBuildProfile,
 }: {
-  onGoProfile: () => void
+  onGoAnswers: () => void
   onGoJobs: () => void
   onGoCvs: () => void
   onOpenSettings: () => void
-  onBuildProfile: () => void
 }) {
   const t = useContent('home')
   const nav = useStack()
@@ -236,7 +235,7 @@ export function HomeTab({
             onResult={setFit}
             disabled={profile.work.length === 0}
             run={(jobText, onStep) => runScoreFit(settings, profile, jobText, onStep)}
-            onUpdateProfile={onGoProfile}
+            onUpdateProfile={() => window.open(`${cloudBaseUrl()}/dashboard/profile`, '_blank')}
             onSaveJob={saveCurrentJob}
           />
         </Body>
@@ -260,16 +259,16 @@ export function HomeTab({
         }
       />
       <Body screen={nav.screen}>
-        {/* This account asked for help building a profile (the "no CV" door or
-            a brand-new sign-in) and hasn't finished yet — the one thing that
-            unlocks everything else. A whole CTA up top, like the "fill this
-            page" one, that opens the builder. Gated by the explicit help flag
-            (set at sign-in), not by whether a stray field is filled. */}
+        {/* Profile building moved to the web, where there is room for it. This
+            account has not finished one yet, so the nudge points there rather
+            than opening a builder the panel no longer has. */}
         {resumeHelpWanted(profile) && (
           <div className="flex w-full flex-col gap-[3px] rounded-xl border border-line bg-gradient-to-b from-[#faf9ff] to-bg p-3.5">
             <span className="text-base leading-[1.25] font-[650] tracking-[-0.01em]">{t.buildProfileTitle}</span>
             <span className="mb-3 text-[12.5px] leading-normal text-muted">{t.buildProfileSub}</span>
-            <Button size="lg" onClick={onBuildProfile}>{t.buildProfileCta}</Button>
+            <Button size="lg" onClick={() => window.open(`${cloudBaseUrl()}/dashboard/onboarding`, '_blank')}>
+              {t.buildProfileCta}
+            </Button>
           </div>
         )}
         <ContextSlot page={page} t={t} onFill={fillCurrent} onFit={() => nav.push('fit')} onSave={saveCurrentJob} />

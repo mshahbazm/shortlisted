@@ -2,7 +2,7 @@ import type { tLocale } from '../en'
 
 export const nav: tLocale['nav'] = {
   home: 'Home',
-  profile: 'Profilo',
+  answers: 'Risposte',
   cvs: 'CV',
   jobs: 'Offerte',
 }
