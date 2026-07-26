@@ -196,9 +196,18 @@ export interface ProfileDelta {
   certifications: CertificationEntry[]
   links: Partial<ProfileLinks>
   industries: string[]
-  /** Personal-detail EXTRAS the CV adds and the profile lacks (never the core
-   *  name/email/phone the user set) — fill-if-empty. */
-  identity: Partial<Pick<Profile['identity'], 'dateOfBirth' | 'nationality' | 'sex' | 'drivingLicence'>>
+  /** Identity fields the CV states and the profile has EMPTY — fill-if-empty,
+   *  never overwriting anything the user set. Extras (dateOfBirth, nationality,
+   *  sex, drivingLicence) always ride here; the CORE fields (name, email,
+   *  phone, location) join ONLY when the profile's slot is blank — which makes
+   *  importing a CV into an empty account produce a complete profile instead
+   *  of a nameless one, while a filled profile keeps its identity untouched. */
+  identity: Partial<Profile['identity']>
+  /** Headline/summary from the CV, present ONLY when the profile has none —
+   *  fill-if-empty like identity, so an empty account gets a real page hero.
+   *  Absent on deltas from servers that predate the field. */
+  headline?: string
+  summary?: string
   /** New "additional information" blocks (Publications, Awards…) not on file. */
   additionalInfo: { label: string; value: string }[]
   /** Europass "personal skills" the CV adds — bullets not on file / a digital-
@@ -212,6 +221,9 @@ export interface ProfileDelta {
 
 const LINK_SLOTS = ['website', 'github', 'linkedin', 'portfolio', 'other'] as const
 const IDENTITY_EXTRA_KEYS = ['dateOfBirth', 'nationality', 'sex', 'drivingLicence'] as const
+// Core identity: offered by the delta ONLY into an empty slot (fill-if-empty),
+// so a CV import can complete a bare profile but never rewrite who you are.
+const IDENTITY_CORE_KEYS = ['firstName', 'lastName', 'email', 'phone', 'location', 'city', 'country'] as const
 
 /** Total new items across every category — the true count for the review header
  *  (0 means the CV held nothing the profile didn't already have). */
@@ -226,6 +238,8 @@ export function deltaCount(d: ProfileDelta): number {
     Object.keys(d.links).length +
     d.industries.length +
     Object.keys(d.identity).length +
+    (d.headline ? 1 : 0) +
+    (d.summary ? 1 : 0) +
     d.additionalInfo.length +
     d.communicationSkills.length +
     d.organisationalSkills.length +
@@ -323,13 +337,20 @@ export function diffProfile(existing: Profile, extracted: Profile): ProfileDelta
     if (val && !existing.links[slot]) links[slot] = val
   }
 
-  // Personal-detail extras: fill-if-empty. NEVER the core name/email/phone —
-  // those are the identity the user set; only the extras a CV can add.
+  // Identity: fill-if-empty. Extras (dateOfBirth …) whenever the slot is blank;
+  // CORE fields (name, email, phone, location) too — but ONLY into a blank slot,
+  // so an empty account gets its name back from the CV while a profile the user
+  // filled in is never rewritten.
   const identity: ProfileDelta['identity'] = {}
-  for (const k of IDENTITY_EXTRA_KEYS) {
+  for (const k of [...IDENTITY_EXTRA_KEYS, ...IDENTITY_CORE_KEYS]) {
     const val = extracted.identity[k]?.trim()
     if (val && !existing.identity[k]) identity[k] = val
   }
+
+  // Headline/summary: same fill-if-empty rule — offered only when the profile
+  // has none, so the page hero exists after a CV import into a bare account.
+  const headline = !existing.headline.trim() && extracted.headline.trim() ? extracted.headline.trim() : undefined
+  const summary = !existing.summary.trim() && extracted.summary.trim() ? extracted.summary.trim() : undefined
 
   // "Additional information" blocks (Publications, Awards…) not already on file,
   // matched by label case-insensitively.
@@ -354,8 +375,8 @@ export function diffProfile(existing: Profile, extracted: Profile): ProfileDelta
   }
 
   return {
-    work, workHighlights, education, skills, languages, certifications, links, industries, identity, additionalInfo,
-    communicationSkills, organisationalSkills, digitalSkills, facts,
+    work, workHighlights, education, skills, languages, certifications, links, industries, identity, headline, summary,
+    additionalInfo, communicationSkills, organisationalSkills, digitalSkills, facts,
   }
 }
 
@@ -372,8 +393,9 @@ function dedupStrings(incoming: string[] | undefined, have: string[] | undefined
   return out
 }
 
-/** Fold a (user-trimmed) delta into the profile, additively. Never touches
- *  identity, facts, or the curated scalar fields. Pure — the caller persists. */
+/** Fold a (user-trimmed) delta into the profile, additively. Identity, facts,
+ *  headline and summary fill ONLY slots that are still empty — nothing the user
+ *  set is ever rewritten. Pure — the caller persists. */
 export function applyProfileDelta(p: Profile, d: ProfileDelta): Profile {
   const hlByWork = new Map<string, string[]>()
   for (const h of d.workHighlights) hlByWork.set(h.workId, [...(hlByWork.get(h.workId) ?? []), ...h.highlights])
@@ -402,7 +424,7 @@ export function applyProfileDelta(p: Profile, d: ProfileDelta): Profile {
     return fresh.length ? { ...w, highlights: [...w.highlights, ...fresh] } : w
   })
 
-  // Personal-detail extras: fill only slots still empty on the current profile.
+  // Identity (core + extras): fill only slots still empty on the current profile.
   const identity: Profile['identity'] = { ...p.identity }
   for (const k of Object.keys(d.identity) as (keyof ProfileDelta['identity'])[]) {
     const v = d.identity[k]
@@ -438,6 +460,11 @@ export function applyProfileDelta(p: Profile, d: ProfileDelta): Profile {
   return {
     ...p,
     identity,
+    // Headline/summary land only when the profile's own slot is still empty —
+    // the delta offers them solely for bare profiles, but re-check at apply
+    // time in case the user typed one between diff and save.
+    headline: p.headline.trim() ? p.headline : (d.headline ?? p.headline),
+    summary: p.summary.trim() ? p.summary : (d.summary ?? p.summary),
     europass,
     facts,
     skills: [...p.skills, ...d.skills],

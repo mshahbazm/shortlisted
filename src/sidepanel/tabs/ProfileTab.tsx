@@ -424,6 +424,19 @@ export function ProfileTab({
           </DeltaSection>
         )}
 
+        {(d.headline || d.summary) && (
+          <DeltaSection title={t.aboutYou}>
+            {d.headline ? (
+              <DeltaRow label={t.headline} sub={d.headline} removeLabel={t.removeItem}
+                onRemove={() => upd({ headline: undefined })} />
+            ) : null}
+            {d.summary ? (
+              <DeltaRow label={t.summary} sub={d.summary} removeLabel={t.removeItem}
+                onRemove={() => upd({ summary: undefined })} />
+            ) : null}
+          </DeltaSection>
+        )}
+
         {d.additionalInfo.length > 0 && (
           <DeltaSection title={t.additionalInfo}>
             {d.additionalInfo.map((a, i) => (
@@ -896,6 +909,16 @@ function identityExtraLabel(key: keyof ProfileDelta['identity'], t: T): string {
     case 'nationality': return t.nationality
     case 'sex': return t.sex
     case 'drivingLicence': return t.drivingLicence
+    // Core fields — offered by the delta only when the profile slot is empty
+    // (a CV import into a bare account restores the name/contact/location).
+    case 'firstName': return t.firstName
+    case 'lastName': return t.lastName
+    case 'email': return t.email
+    case 'phone': return t.phone
+    case 'location': return t.location
+    case 'city': return t.city
+    case 'country': return t.countryIso
+    default: return key
   }
 }
 
