@@ -175,8 +175,23 @@ export interface Profile {
    */
   onboarding?: {
     resume?: { wanted?: boolean }
+    /**
+     * Which half of the product this account is here for, picked on the first
+     * screen after sign-in on the web. `hired` = job hunting. `found` = a
+     * professional who wants a page to send people to, not a résumé. The
+     * extension does not read this today — it is declared here so a sync
+     * round-trip never drops it. Unset = treat as `hired`.
+     */
+    intent?: ProfileIntent
+    /** What they do, as a stable key (`doctor`, `lawyer`, …) or free text when
+     *  they picked "something else". Set by the web builder; carried, not read,
+     *  on this side. */
+    profession?: string
   }
 }
+
+/** See `Profile.onboarding.intent`. */
+export type ProfileIntent = 'hired' | 'found'
 
 export const emptyProfile = (): Profile => ({
   identity: { firstName: '', lastName: '', email: '', phone: '', location: '' },
