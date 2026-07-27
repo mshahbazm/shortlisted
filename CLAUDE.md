@@ -4,10 +4,14 @@ A Manifest V3 Chrome extension: fills job applications from the user's profile,
 learns every new question, and tailors truthful CV versions. **The user always
 reviews and clicks submit.**
 
+**Self-contained and offline.** There is no Shortlisted server. Every byte of
+user data lives in `chrome.storage.local` on the user's machine, and every AI
+call goes straight from this extension to an OpenAI-compatible endpoint the user
+configures and pays for. No accounts, no sync, no telemetry, nothing of ours in
+the middle.
+
 Public repo (AGPL). **Never commit business/strategy/pricing/personal content**,
-and keep commit messages technical. The full product spec is in `SPEC.md` — a
-gitignored symlink into a private repo, present only if that repo is checked out
-alongside this one.
+and keep commit messages technical.
 
 Several agents work this repo — you'll see changes you didn't make. Track what
 *you* edited; stage files explicitly, never `git add -A`.
@@ -23,7 +27,7 @@ Several agents work this repo — you'll see changes you didn't make. Track what
 ## Three surfaces (Vite + `@crxjs/vite-plugin`; typed manifest in `manifest.config.ts`)
 - **Background** service worker (`src/background/`) — the message hub. Opens the
   side panel **synchronously** (the user-gesture token dies at the first
-  `await`) and mirrors local data to the cloud (`cloudMirror.ts`).
+  `await`), and runs the background jobs: resume intake and answer polishing.
 - **Content script** (`src/content/`, entry `index.ts`) — runs on every page and
   frame at `document_idle`. Scores a page locally (`detect.ts`) and mounts the
   on-page overlay ONLY on a confident score. Nothing leaves the browser unless
@@ -40,19 +44,22 @@ Several agents work this repo — you'll see changes you didn't make. Track what
 - **Cross-context messages → the typed `Msg` union in `lib/messaging.ts`.** Send
   with `sendMsg`; receive only in the background/content entry points. No ad-hoc
   message shapes.
-- **AI / network → `ai/run.ts`** (`cloud*` fns hitting the cloud `/v1` API). No
-  raw `fetch` anywhere else. The extension holds **no provider keys or models**
-  and **no capability logic** — all AI runs on the cloud. This repo keeps only
-  the result types the UI renders (`ai/contract.ts`) and the wire data model
-  (`lib/types.ts`); the cloud has its own copies.
-- **Sync rule:** a wire type here (`lib/types.ts`, `ai/contract.ts`) must be
-  updated in BOTH repos — cloud repo at `/Users/Shared/www/shahbaz/shortlisted-cloud`.
+- **AI → `ai/run.ts`.** The one entry point the UI calls; it owns every
+  capability call and every error message. **`ai/client.ts` is the only place
+  that fetches a model** — one OpenAI-compatible `/chat/completions` client, so
+  OpenAI, OpenRouter, Groq, Gemini's compat endpoint, LM Studio, llama.cpp,
+  vLLM and Ollama are all one code path. Don't add a second wire protocol.
+- **Capabilities → `ai/capabilities/*`, on `ai/systemAgent.ts`.** Structured
+  output is a JSON Schema appended to the system prompt plus a repair-parse —
+  **no tool calling anywhere**, which is what keeps small local models usable.
+  Capabilities take an injected `LlmClient` and import nothing but `lib/types`;
+  keep it that way, it is why they are testable and portable.
+- **Multi-step AI work → `src/workflow/` + `ai/workflows/*`.** Ordered steps,
+  each returning a state patch, run with `runWorkflow`. LLM-optional: a step
+  uses the client only if it needs one (learn-resume's `diff` is pure code).
 - **Data model → `lib/types.ts`.** Stored data is versioned and migrated on
-  read — extend the normalizer, never write a destructive migration.
-- **Cloud sync → `background/cloudMirror.ts`.** Outbox + `knownIds` persist in
-  `storage.sync` and retry via `chrome.alarms`, so an evicted worker loses
-  nothing; deletes are sent explicitly (diffed vs `knownIds`) — the server never
-  delete-by-absence, so a second device can't wipe rows it hasn't seen.
+  read — extend the normalizer, never write a destructive migration. Settings
+  keys from removed features are stripped there (`LEGACY_SETTINGS_KEYS`).
 
 ## Content engine (`src/content/`)
 Small pieces over one shared engine — keep them small:
@@ -95,11 +102,17 @@ Small pieces over one shared engine — keep them small:
 ## Manifest & permissions
 - Every permission costs a line in the install dialog — don't add one nothing
   uses. The manifest is typed (`manifest.config.ts`); dev and prod builds carry
-  different names so you can tell which server the loaded build talks to.
+  different names so you can tell which build is loaded.
+- `<all_urls>` is load-bearing twice: the worker injects the content script into
+  already-open tabs, **and** it is what lets a fetch reach the user's AI
+  endpoint without CORS — a stranger's API server has no reason to allow us.
 
 ## Hard rules
 - **The user always clicks submit.** No auto-submit, no CAPTCHA solving, no
   mass-apply.
 - CV tailoring **never invents** — truth is enforced inside the capability.
+- **Nothing phones home.** No analytics, no crash reporting, no update pings, no
+  default endpoint that happens to be ours. The only host this extension ever
+  talks to is the one the user typed into Settings.
 - Plain spoken English in anything user-facing.
 - Prefer the simplest thing that works; cut what isn't needed.

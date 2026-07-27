@@ -7,7 +7,7 @@ questions, fifteen minutes at a time, dozens of times a week. Shortlisted turns
 that into about two minutes per application — and every application you send
 makes the next one faster.
 
-🌐 [shortlist.id](https://shortlist.id) · 🧩 Chrome Web Store (coming soon) · ⚖️ AGPL-3.0
+🧩 Chrome Web Store (coming soon) · ⚖️ AGPL-3.0 · 🔌 Bring your own AI key
 
 ---
 
@@ -36,11 +36,12 @@ makes the next one faster.
   about. Built to be honest, not encouraging — unrelated experience is capped,
   and generic claims count for nothing.
 
-- **Free where it counts.** Filling and the answer bank are free and work
-  without signing up for anything. A free account unlocks the online side
-  (like your public profile page). AI features — CV import, tailoring, fit
-  scores — run on [Shortlisted Cloud](https://shortlist.id): zero setup,
-  free trial, then Pro.
+- **Runs entirely on your machine.** There is no Shortlisted account, no
+  Shortlisted server, and no Shortlisted subscription. Your profile, CVs,
+  applications and answers live in your browser's storage and go nowhere else.
+  For the AI features you plug in your own key — any OpenAI-compatible endpoint,
+  including a model running locally — and you pay that provider directly, at
+  their prices. Filling forms and the answer bank need no AI at all.
 
 ## Why it works when auto-apply tools don't
 
@@ -60,6 +61,12 @@ makes the next one faster.
   extension does is something you couldn't do yourself — it's just 10× faster.
   That's also why it sails past the bot-detection that breaks auto-appliers:
   there's no bot to detect. A human is right there, clicking submit.
+
+- **Nothing to trust us about.** The one hard question with a tool that reads
+  your CV and your job history is where that data goes. Here it doesn't go
+  anywhere: the only host the extension ever contacts is the AI endpoint you
+  typed in yourself. That's not a promise in a privacy policy — it's the whole
+  architecture, and it's in this repo.
 
 All of this is open source, so you don't have to take our word for any of it —
 read the code, build it yourself.
@@ -85,16 +92,34 @@ Then open `chrome://extensions`, enable **Developer mode**, click
 
 Click the Shortlisted icon and the setup wizard walks you through it:
 
-1. **Upload your CV** (PDF) — AI turns it into a structured
-   profile you can edit any time.
-2. **Answer the three questions every job asks** — salary, notice period,
+1. **Connect your AI** — paste an API address and a model. Anything
+   OpenAI-compatible works; the wizard tests it before moving on.
+2. **Upload your CV** (PDF) — it's turned into a structured profile you can
+   edit any time.
+3. **Answer the three questions every job asks** — salary, notice period,
    work authorization. Once, forever.
-3. **Open any job posting** and hit **Fill this application** in the panel
+4. **Open any job posting** and hit **Fill this application** in the panel
    that appears. Review, answer anything new, submit.
 
-AI runs on Shortlisted Cloud (Settings → AI): nothing to configure — 10 free
-credits, then Pro. Filling and the answer bank work with **no AI at all** —
-AI powers CV import, tailoring, and fit scores.
+Filling forms and the answer bank work with **no AI at all**, so you can skip
+step 1 and come back to it. AI powers CV import, tailoring, and fit scores.
+
+### Which AI to use
+
+Any endpoint that speaks OpenAI's `/chat/completions`:
+
+| | |
+|---|---|
+| **Hosted** | OpenAI, OpenRouter, Groq, Together, Google Gemini (compat endpoint) |
+| **On your own machine** | LM Studio, Ollama, llama.cpp, vLLM — no key needed, nothing leaves your computer |
+
+Set a cheaper second model for the bulk work (reading CVs, scoring jobs) and
+keep the good one for writing — that's most of the cost, and it's one field.
+
+Nothing here needs tool calling or function calling: structured output is a
+JSON schema in the prompt plus a forgiving parser, which is why modest local
+models work. Reading **scanned** PDFs is the one thing that needs a
+vision-capable model; the setup screen tells you whether yours has it.
 
 ## Contributing
 
@@ -111,15 +136,15 @@ bun run build  # type-check + production build
 ```
 
 Rough map: `src/content/` (ATS detection, fill engine, on-page panel) ·
-`src/sidepanel/` (React UI) · `src/ai/` (capabilities: prompt + schema +
-validation per task) · `src/pdf/` (CV rendering) · `src/background/`
-(service worker).
+`src/sidepanel/` (React UI) · `src/ai/` (`run.ts` entry point, `client.ts`
+transport, `capabilities/` prompt + schema + validation per task,
+`workflows/` multi-step jobs) · `src/workflow/` (the step engine) ·
+`src/pdf/` (CV rendering) · `src/background/` (service worker).
 
 ## License
 
 [AGPL-3.0](LICENSE). Read it, verify it, fork it — if you offer a modified
 version as a service, your changes must be open too.
 
-The optional hosted tier (Shortlisted Cloud) is a separate closed-source
-service that funds this project. The extension is fully functional without it,
-forever.
+This is the whole product. There is no paid tier, no hosted service, and no
+part of it held back.
