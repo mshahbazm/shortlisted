@@ -2,6 +2,7 @@ import type { tLocale } from '../en'
 import { common } from './common'
 import { nav } from './nav'
 import { onboarding } from './onboarding'
+import { ai } from './ai'
 import { apply } from './apply'
 import { home } from './home'
 import { profile } from './profile'
@@ -10,4 +11,4 @@ import { questions } from './questions'
 import { settings } from './settings'
 import { overlay } from './overlay'
 
-export const de: tLocale = { common, nav, onboarding, apply, home, profile, resumes, questions, settings, overlay }
+export const de: tLocale = { common, nav, onboarding, ai, apply, home, profile, resumes, questions, settings, overlay }

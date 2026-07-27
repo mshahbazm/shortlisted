@@ -67,7 +67,7 @@ const persona: Step<BuildState, BuildCtx> = {
 
 // Have-a-resume door: upload a PDF or paste text, then parse straight into the
 // profile. Mirrors the Entry wizard's `paste` step, but the user is already
-// signed in here — the resume is saved immediately and it goes to `review`.
+// the resume is saved immediately and it goes to `review`.
 const upload: Step<BuildState, BuildCtx> = {
   view: ({ api, ctx }) => {
     const fileRef = useRef<HTMLInputElement>(null)
@@ -254,10 +254,9 @@ function BuildInner({ entry, init, onDone }: { entry: string; init: BuildState; 
       })
     },
     extractFromPdf: async (file) => {
-      // Already signed in: save the resume now so it belongs to the account and
-      // syncs up (resume first, so it survives even if the AI pass fails), then
+      // Save the resume first, so it survives even if the AI pass fails, then
       // structure the profile from its text.
-      const { cvText, cvBase64, cvFileName } = await readCvPdf(file, settings)
+      const { cvText, cvBase64, cvFileName } = await readCvPdf(file)
       const id = await createUploadedResume(cvBase64, cvFileName)
       void sendMsg({ type: 'intakeResume', resumeId: id })
       const extracted = await runExtractProfile(settings, cvText)

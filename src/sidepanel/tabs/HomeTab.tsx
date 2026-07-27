@@ -13,7 +13,7 @@ import { Body, Button, Card, Chip, Composer, Cost, FIELD, Feature, Icon, IconBut
 import { PageContext, sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
 import { ApplicationRecord, base64ToBytes, resumeHelpWanted, uid } from '../../lib/types'
-import { cloudProfileNote, cloudUsage, runScoreFit, ScoreFitResult } from '../../ai/run'
+import { learnFromNote, runScoreFit, ScoreFitResult } from '../../ai/run'
 import { mergeEnrichment } from '../../lib/profileMerge'
 import { showToast } from '../toast'
 import { fitBand } from '../../lib/fitBands'
@@ -115,27 +115,6 @@ function usePageContext(): { page: PageContext | null; refresh: () => void } {
   return { page: ctx, refresh: () => setTick((n) => n + 1) }
 }
 
-/** Credits left, from the free /v1/me call. Undefined until it lands — showing
- *  a placeholder "0 credits" would read as "you're out", which is worse than
- *  showing nothing for a moment. */
-function useCreditsLeft(): number | undefined {
-  const [settings] = useStore('settings')
-  const [left, setLeft] = useState<number | undefined>(undefined)
-
-  useEffect(() => {
-    if (!settings.accountEmail) return
-    let alive = true
-    void cloudUsage(settings)
-      .then((u) => alive && setLeft(Math.max(0, u.creditsLimit - u.creditsUsed)))
-      .catch(() => undefined) // offline is not worth an error here
-    return () => {
-      alive = false
-    }
-  }, [settings.accountEmail]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  return left
-}
-
 export function HomeTab({
   onGoProfile,
   onGoJobs,
@@ -157,7 +136,6 @@ export function HomeTab({
   const [profile] = useStore('profile')
   const [resumes] = useStore('resumes')
   const { page, refresh: refreshPage } = usePageContext()
-  const credits = useCreditsLeft()
 
   const [notice, setNotice] = useState('')
   const [fit, setFit] = useState<ScoreFitResult | null>(null)
@@ -251,12 +229,7 @@ export function HomeTab({
       <TopBar
         title={t.appName}
         right={
-          <>
-            {credits !== undefined && (
-              <button className="cursor-pointer rounded-full border-0 bg-accent-soft px-2.5 py-1 text-[11.5px] font-semibold text-accent hover:bg-[#e6e0ff]" onClick={onOpenSettings}>{t.credits(credits)}</button>
-            )}
-            <IconButton icon="gear" onClick={onOpenSettings} aria-label={t.settings} />
-          </>
+          <IconButton icon="gear" onClick={onOpenSettings} aria-label={t.settings} />
         }
       />
       <Body screen={nav.screen}>
@@ -281,14 +254,14 @@ export function HomeTab({
             accent
             title={t.checkMyFit}
             sub={page?.isJobPage ? t.checkMyFitSub : t.checkMyFitSubGeneric}
-            cost={t.oneCredit}
+            cost={t.usesAi}
             onClick={() => nav.push('fit')}
           />
           <Feature
             icon="doc"
             title={t.tailorACv}
             sub={page?.isJobPage ? t.tailorACvSub : t.tailorACvSubGeneric}
-            cost={t.oneCredit}
+            cost={t.usesAi}
             onClick={onGoCvs}
           />
         </div>
@@ -510,7 +483,7 @@ function TellMeComposer({ t }: { t: ReturnType<typeof useContent<'home'>> }) {
         onSubmit={(text) => {
           setBusy(true)
           setMsg('')
-          void cloudProfileNote(settings, text)
+          void learnFromNote(settings, text)
             .then(async (facts) => {
               let applied = 0
               let unplaced = 0
@@ -642,7 +615,7 @@ function FitPanel({
         }}
       >
         {step ? t.scoring : t.scoreMyFit}
-        {!step && <Cost onDark>{t.oneCredit}</Cost>}
+        {!step && <Cost onDark>{t.usesAi}</Cost>}
       </Button>
       {step && <p className="my-1 text-[13px] text-muted">{step}</p>}
       {err && <p className="my-1 text-[13px] text-bad">{err}</p>}

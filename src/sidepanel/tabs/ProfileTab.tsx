@@ -26,7 +26,7 @@ import {
   ymString,
   workPeriodLabel,
 } from '../../lib/types'
-import { cloudLearnFromResume, cloudProfileNote, cloudUploadPicture } from '../../ai/run'
+import { learnFromResume, learnFromNote } from '../../ai/run'
 import { fileToDataUrl, fileToProfilePhoto } from '../../lib/image'
 import * as store from '../../lib/store'
 import { Gap, GapKey, profileStrength } from '../../lib/profileStrength'
@@ -87,7 +87,7 @@ export function ProfileTab({
 
   // Every edit persists immediately; the toast is the receipt. Patches merge
   // into the LIVE profile via store.update so a background write (CV intake
-  // adding skills, cloud pull) landing mid-edit is never clobbered.
+  // adding skills, background intake) landing mid-edit is never clobbered.
   const set = (patch: Partial<Profile>) => {
     void store.update('profile', (cur) => ({ ...cur, ...patch }))
     showToast(t.savedToast)
@@ -300,20 +300,20 @@ export function ProfileTab({
   }
 
   // Step 1 — upload/paste. A newer CV never replaces anything, so there's no
-  // door to pick: the server parses it and diffs it against the current profile.
+  // door to pick: it is parsed and diffed against the current profile.
   // Nothing is saved yet — the review screen decides that.
   if (nav.screen === 'reimport-upload') {
     return (
       <Pushed title={t.reimportTitle} nav={nav} t={t}>
         <ImportBox
           submitLabel={t.reimportMergeButton}
-          cloudPdf={async (file) => {
-            const { delta } = await cloudLearnFromResume(settings, { pdf: await file.arrayBuffer() })
+          readPdf={async (file) => {
+            const { delta } = await learnFromResume(settings, { pdf: await file.arrayBuffer() })
             setMergeDelta(delta)
             nav.push('reimport-merge-review')
           }}
           onImport={async (text) => {
-            const { delta } = await cloudLearnFromResume(settings, { cvText: text })
+            const { delta } = await learnFromResume(settings, { cvText: text })
             setMergeDelta(delta)
             nav.push('reimport-merge-review')
           }}
@@ -739,7 +739,7 @@ export function ProfileTab({
             <Icon name="up" /> {t.reimportTitle}
           </Button>
           <div className="flex items-center gap-[7px] text-[11.5px] text-faint">
-            <Cost>{t.oneCredit}</Cost>
+            <Cost>{t.usesAi}</Cost>
           </div>
         </Card>
           </>
@@ -970,7 +970,7 @@ function factLabel(key: keyof ProfileFacts, t: T): string {
  *  actually stored, never what the model proposed: a highlight for a job that
  *  isn't on file has nowhere to go, and claiming it saved is how a fact appears
  *  to vanish. */
-function TellMe({ t, settings }: { t: T; settings: Parameters<typeof cloudProfileNote>[0] }) {
+function TellMe({ t, settings }: { t: T; settings: Parameters<typeof learnFromNote>[0] }) {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
 
@@ -985,7 +985,7 @@ function TellMe({ t, settings }: { t: T; settings: Parameters<typeof cloudProfil
         onSubmit={(text) => {
           setBusy(true)
           setMsg('')
-          void cloudProfileNote(settings, text)
+          void learnFromNote(settings, text)
             .then(async (facts) => {
               let applied = 0
               let unplaced = 0
@@ -1057,10 +1057,12 @@ function PhotoField({ photo, onChange, t }: { photo?: string; onChange: (v: stri
           setErr('')
           setBusy(true)
           try {
-            // The small JPEG derivative renders the CV and syncs in the profile…
+            // The small JPEG derivative is the photo — it renders the CV and is
+            // what gets stored. The original used to be preserved in cloud
+            // object storage as the source of truth; there is nowhere offline
+            // to put a full-size image that chrome.storage would thank us for,
+            // so the derivative is now the only copy.
             onChange(await fileToProfilePhoto(f))
-            // …and the original is preserved in cloud storage (best-effort).
-            void fileToDataUrl(f).then((orig) => cloudUploadPicture(settings, orig).catch(() => {}))
           } catch (ex) {
             setErr(ex instanceof Error ? ex.message : String(ex))
           } finally {
@@ -1305,12 +1307,12 @@ function gapTarget(gap: Gap, p: Profile): string {
 
 function ImportBox({
   onImport,
-  cloudPdf,
+  readPdf,
   submitLabel,
 }: {
   onImport: (text: string) => Promise<void>
-  // The server deep-reads the PDF (incl. OCR) and returns the profile.
-  cloudPdf: (file: File) => Promise<void>
+  // Deep-reads the PDF and folds what it adds into the profile.
+  readPdf: (file: File) => Promise<void>
   /** Submit-button label — mode-specific (replace vs. merge). */
   submitLabel: string
 }) {
@@ -1324,7 +1326,7 @@ function ImportBox({
     <>
       <Button variant="ghost" wide disabled={busy} onClick={() => fileRef.current?.click()}>
         <Icon name="up" /> {busy ? t.readingPdf : t.uploadPdf}
-        {!busy && <Cost>{t.oneCredit}</Cost>}
+        {!busy && <Cost>{t.usesAi}</Cost>}
       </Button>
       <input
         ref={fileRef} type="file" accept="application/pdf" className="hidden"
@@ -1335,7 +1337,7 @@ function ImportBox({
           setErr('')
           setBusy(true)
           try {
-            await cloudPdf(f)
+            await readPdf(f)
             setText('')
           } catch (ex) {
             setErr(ex instanceof Error ? ex.message : String(ex))
@@ -1360,7 +1362,7 @@ function ImportBox({
         }}
       >
         {busy ? t.reading : submitLabel}
-        {!busy && <Cost onDark>{t.oneCredit}</Cost>}
+        {!busy && <Cost onDark>{t.usesAi}</Cost>}
       </Button>
       {err && <p className="my-1 text-[13px] text-bad">{err}</p>}
     </>

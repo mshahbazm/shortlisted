@@ -252,8 +252,8 @@ export function totalExperienceYears(profile: Profile): number | null {
 
 export const skillNames = (p: Profile) => p.skills.map((s) => s.name)
 
-/** Whether a profile holds any real content. Used by the cloud mirror to decide
- *  push-up vs. pull-down. NOT the signal for the Home CTA — see resumeHelpDone. */
+/** Whether a profile holds any real content. NOT the signal for the Home CTA —
+ *  see resumeHelpDone. */
 export function hasProfileContent(p: Profile): boolean {
   return Boolean(p.identity.firstName || p.headline || p.work.length || p.skills.length)
 }
@@ -445,19 +445,37 @@ export interface QueueItem {
 }
 
 // ---------- Settings ----------
-// AI always runs on Shortlisted Cloud — there is no provider choice.
+// Bring your own key. Every AI call goes straight from this extension to an
+// OpenAI-compatible endpoint the user chose — there is no server in between and
+// nothing to sign in to.
+//
+// One wire format, deliberately. OpenAI's /chat/completions is the format every
+// gateway and local runner already speaks (OpenRouter, Groq, Together, LM
+// Studio, llama.cpp, vLLM, Ollama via /v1), so supporting it supports all of
+// them through ONE code path, and a provider we have never heard of works on
+// the day it ships. A second native protocol would double the client for no
+// endpoint we cannot already reach.
 
 export interface Settings {
-  cloudToken?: string // Better Auth session token (bearer credential), set on verify
-  accountEmail?: string // set once the email OTP verifies; account = data saved server-side
-  /**
-   * The account the local CACHE currently belongs to. Set on sign-in; unlike
-   * `accountEmail` it SURVIVES sign-out. That is deliberate: it lets a different
-   * account signing in — even after a logout — detect the mismatch and wipe the
-   * previous account's cached content before its data is pulled, so one account
-   * can never see or upload another's data. Device-local; never synced.
-   */
-  dataOwner?: string
+  /** Base URL of an OpenAI-compatible API, no trailing slash and INCLUDING the
+   *  version segment (…/v1). Empty = AI not set up yet. */
+  aiEndpoint?: string
+  /** API key sent as `authorization: Bearer`. Optional: a local runner on
+   *  localhost usually wants none. Stored in chrome.storage.local — see the
+   *  note on the Settings screen; it never leaves this machine except to the
+   *  endpoint above. */
+  aiKey?: string
+  /** The model that does the writing (tailoring, bios, answers). */
+  aiModel?: string
+  /** Optional cheaper/faster model for the grunt passes (extraction, scoring).
+   *  Unset = use `aiModel` for everything, which is always correct, just
+   *  costlier. This is the `tier: 'mini' | 'full'` split systemAgent already
+   *  asks for. */
+  aiMiniModel?: string
+  /** What this endpoint+model actually proved it can do, from the last probe.
+   *  Recorded rather than assumed: an OpenAI-compatible endpoint may advertise
+   *  anything, and small local models often cannot hold a JSON schema. */
+  aiProbe?: AiProbe
   onboarded?: boolean
   /** UI language (i18n/locale.ts code). Unset = follow the browser language. */
   locale?: string
@@ -470,15 +488,50 @@ export interface Settings {
   detectEverywhere?: boolean
 }
 
+/**
+ * The result of actually asking the configured model to do the two things we
+ * need, rather than trusting a capability list.
+ *
+ * `json` is the one that matters: every capability works by appending a JSON
+ * Schema to the system prompt and parsing the reply (see ai/systemAgent.ts —
+ * no tool calling anywhere), so a model that cannot return clean JSON cannot
+ * run any of them. `vision` is needed only to read a scanned CV that has no
+ * text layer, and its absence costs the user one feature, not the product.
+ */
+export interface AiProbe {
+  at: number
+  /** What was probed — a probe is void once the endpoint or model changes. */
+  endpoint: string
+  model: string
+  json: boolean
+  vision: boolean
+  /** Why it failed, when it did — shown verbatim; provider errors are the most
+   *  useful diagnostic we have (bad key, unknown model, endpoint typo). */
+  error?: string
+}
+
+/** True when `probe` still describes the endpoint+model in `s`. */
+export function probeMatches(s: Settings, probe: AiProbe | undefined = s.aiProbe): probe is AiProbe {
+  return Boolean(probe && probe.endpoint === (s.aiEndpoint ?? '') && probe.model === (s.aiModel ?? ''))
+}
+
+/** Enough to attempt an AI call: an endpoint and a model. The key is optional
+ *  (local runners) and the probe is advisory — a user who declines to probe is
+ *  allowed to just try it. */
+export function aiConfigured(s: Settings): boolean {
+  return Boolean(s.aiEndpoint?.trim() && s.aiModel?.trim())
+}
+
 export const defaultSettings = (): Settings => ({})
 
-// Settings keys from removed features — BYOK providers, provider toggle, job
-// finder, and the old user-settable cloudUrl (the endpoint is the install type
-// now, see config.ts). Stripped on read. The session token is deliberately NOT
-// invalidated here: the server is the authority on whether it's still valid, and
-// a 401 clears the account and routes to sign-in (see run.ts) — so there is no
-// reason to throw it away during a settings normalize.
+// Settings keys from removed features. The cloud account (session token, email,
+// cache owner) went with the server; `aiProvider` and the per-provider key/model
+// pairs are from the older multi-provider BYOK layer, now one OpenAI-compatible
+// endpoint; `finderUrl` and `cloudUrl` are older still. Stripped on read so a
+// profile carried across any of those versions lands clean — and so a stale
+// bearer token for a server that no longer exists does not sit in storage.
 const LEGACY_SETTINGS_KEYS = [
+  'cloudToken', 'accountEmail', 'dataOwner',
   'aiProvider', 'finderUrl', 'cloudUrl',
   'anthropicKey', 'anthropicModel', 'openaiKey', 'openaiModel',
   'ollamaEndpoint', 'ollamaModel', 'customEndpoint', 'customModel', 'customKey',
@@ -510,21 +563,6 @@ export function jobUrlKey(url: string): string {
 
 // ---------- Storage shape ----------
 
-/**
- * The cloud mirror's own bookkeeping, persisted so an evicted MV3 worker resumes
- * exactly where it left off. `outbox` = collection values still owed to the
- * server (wire key → value); `knownIds` = the row ids the server last confirmed
- * per collection, so a delete can be sent explicitly instead of inferred from a
- * missing row. Reset on sign-out / account switch alongside account content.
- */
-export interface SyncState {
-  /** accountEmail this state belongs to; guards against crossing accounts. */
-  owner?: string
-  outbox: Record<string, unknown>
-  knownIds: Record<string, string[]>
-  lastPullAt: number
-}
-
 export interface StorageShape {
   profile: Profile
   answerBank: BankAnswer[]
@@ -534,8 +572,14 @@ export interface StorageShape {
   queue: QueueItem[]
   fitScores: Record<string, FitScoreRecord>
   settings: Settings
-  /** Cloud-mirror outbox + sync bookkeeping (see SyncState). */
-  sync: SyncState
+  /**
+   * The guided builder's in-progress transcript, so the wizard resumes exactly
+   * where it was left. This used to be a server-side `intake` table, kept off
+   * the profile so raw Q&A never polluted it — that reasoning still holds, so
+   * it stays its own storage key rather than moving onto the profile.
+   * `null` = nothing in progress.
+   */
+  intake: IntakeSession | null
   /** Transient UI navigation hint ('tellme' → Profile tab, note box open). */
   pendingNav: string
 }
@@ -549,7 +593,7 @@ export const storageDefaults = (): StorageShape => ({
   queue: [],
   fitScores: {},
   settings: defaultSettings(),
-  sync: { outbox: {}, knownIds: {}, lastPullAt: 0 },
+  intake: null,
   pendingNav: '',
 })
 

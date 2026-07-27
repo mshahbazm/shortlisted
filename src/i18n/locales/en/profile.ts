@@ -116,7 +116,7 @@ export const profile = {
   reimportMergeButton: 'Add to my profile',
   moreCount: 'more',
   nothingYet: 'Nothing here yet',
-  oneCredit: '1 credit',
+  usesAi: 'uses AI',
   segProfile: 'Profile',
   segUnanswered: 'Unanswered',
   newRole: 'New role',

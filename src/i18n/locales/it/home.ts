@@ -21,7 +21,7 @@ export const home: tLocale['home'] = {
   tailorACv: 'Adatta un CV',
   tailorACvSub: 'Ricentrato su questa offerta, senza inventare nulla',
   tailorACvSubGeneric: 'Ricentrato su un’offerta, senza inventare nulla',
-  oneCredit: '1 credito',
+  usesAi: 'usa l’IA',
   jobListTitle: 'Lista offerte',
   startApplying: 'Inizia a candidarti',
   addJobsLabel: 'Aggiungi offerte',
@@ -80,7 +80,6 @@ export const home: tLocale['home'] = {
   fillCannotFill: 'Questa pagina non si può compilare.',
   fillNoForm: 'Nessun modulo di candidatura trovato in questa pagina.',
 
-  credits: (n: number) => `${n} crediti`,
   jobsTitle: 'Offerte',
   yourListSub: 'Offerte salvate o incollate',
   foundForYou: 'Trovate per te',

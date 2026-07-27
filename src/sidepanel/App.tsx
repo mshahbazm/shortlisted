@@ -41,13 +41,18 @@ export function App() {
   }, [])
 
   // ---------- routing ----------
-  // One rule: signed out -> the Entry wizard; signed in -> the app (Home). The
+  // One rule: not set up yet -> the Entry wizard; set up -> the app (Home). The
   // Build wizard is NOT a route — it's launched on demand from Home's "build
   // your profile" CTA (onBuildProfile below), which only shows when the profile
   // is empty. Simple, and the user drives it.
+  //
+  // The gate used to be "is there an account". It is now `onboarded`, set when
+  // the Entry wizard finishes. Deliberately NOT `aiConfigured`: the wizard lets
+  // you defer the AI setup, and someone who chose that should land in the app,
+  // not be shown the welcome screen again every time they open the panel.
   const [settings, , settingsLoaded] = useStore('settings')
   const [profile] = useStore('profile')
-  const loggedIn = Boolean(settings.accountEmail)
+  const onboarded = Boolean(settings.onboarded)
   const needsBuild = resumeHelpWanted(profile)
 
   // A wizard, once shown, stays until it calls onDone — so Entry survives the
@@ -56,12 +61,12 @@ export function App() {
   const [activeWizard, setActiveWizard] = useState<null | 'entry' | 'build'>(null)
   useEffect(() => {
     // Guard on settingsLoaded: before storage loads, `settings` is the default
-    // (no accountEmail), so `loggedIn` is briefly false. Effects still run even
+    // (not onboarded), so the flag is briefly false. Effects still run even
     // while the render is gated to null — without this guard the latch would pin
-    // 'entry' during that loading frame and strand a signed-in user on the
-    // welcome screen after reload.
-    if (settingsLoaded && activeWizard === null && !loggedIn) setActiveWizard('entry')
-  }, [settingsLoaded, activeWizard, loggedIn])
+    // 'entry' during that loading frame and strand a set-up user on the welcome
+    // screen after reload.
+    if (settingsLoaded && activeWizard === null && !onboarded) setActiveWizard('entry')
+  }, [settingsLoaded, activeWizard, onboarded])
 
   const closeWizard = () => {
     setActiveWizard(null)
@@ -70,11 +75,7 @@ export function App() {
   }
 
   if (!settingsLoaded) return null
-  // Signed out ALWAYS goes to Entry — even mid-Build. This is the self-heal for
-  // an expired session: any account call 401s → cloudCall clears the session →
-  // `loggedIn` flips false → here we leave the Build wizard for sign-in, instead
-  // of looping on a wizard whose calls keep 401ing.
-  if (!loggedIn) return <EntryWizard onDone={closeWizard} />
+  if (!onboarded) return <EntryWizard onDone={closeWizard} />
   if (activeWizard === 'build') return <BuildWizard onDone={closeWizard} />
   if (activeWizard === 'entry') return <EntryWizard onDone={closeWizard} />
 

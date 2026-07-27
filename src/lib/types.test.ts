@@ -1,10 +1,14 @@
 // Storage migrates on READ: normalizeSettings/normalizeProfile run on every load
 // and reshape whatever's stored. A bug in either silently damages data the
-// moment it's read — exactly how a "just strip the old server URL" change once
-// deleted the login token and logged everyone out on reload. These tests pin the
-// invariants that stop that class of regression: migration fills defaults and
-// drops known-dead keys ONLY — it never loses auth, never loses user data, and
-// running it twice changes nothing.
+// moment it's read. These tests pin the invariants: migration fills defaults and
+// drops known-dead keys ONLY — it never loses user data, and running it twice
+// changes nothing.
+//
+// The auth keys are now among the dead ones. They used to be the thing these
+// tests protected (stripping the old server URL once took the login token with
+// it and logged everyone out on reload), but there is no server to hold a
+// session with any more, so carrying a bearer token in storage is dead weight
+// pointing at nothing. That reversal is asserted below rather than left implied.
 //
 // Run: bun test
 
@@ -12,23 +16,42 @@ import { expect, test, describe } from 'bun:test'
 import { clearResumeWanted, emptyProfile, hasProfileContent, markResumeWanted, normalizeProfile, normalizeSettings, resumeHelpWanted } from './types'
 
 describe('normalizeSettings', () => {
-  test('keeps auth fields — a migration must never sign the user out', () => {
-    const raw = { cloudToken: 'sld_abc', accountEmail: 'a@b.co', onboarded: true, locale: 'de' }
+  test('keeps the settings that still mean something', () => {
+    const raw = { onboarded: true, locale: 'de', aiEndpoint: 'https://api.openai.com/v1', aiModel: 'gpt-5.2' }
     expect(normalizeSettings(raw)).toEqual(raw)
   })
 
-  test('strips the dead cloudUrl but keeps the token (the reload-logout regression)', () => {
-    const out = normalizeSettings({ cloudUrl: 'http://x', cloudToken: 'sld_abc', accountEmail: 'a@b.co' }) as Record<
-      string,
-      unknown
-    >
+  test('drops the cloud account left by an older version', () => {
+    const out = normalizeSettings({
+      cloudUrl: 'http://x',
+      cloudToken: 'sld_abc',
+      accountEmail: 'a@b.co',
+      dataOwner: 'a@b.co',
+      locale: 'de',
+    }) as Record<string, unknown>
     expect(out).not.toHaveProperty('cloudUrl')
-    expect(out.cloudToken).toBe('sld_abc')
-    expect(out.accountEmail).toBe('a@b.co')
+    expect(out).not.toHaveProperty('cloudToken')
+    expect(out).not.toHaveProperty('accountEmail')
+    expect(out).not.toHaveProperty('dataOwner')
+    // Everything that isn't part of the dead account survives.
+    expect(out.locale).toBe('de')
+  })
+
+  test('drops the per-provider keys from the older multi-provider BYOK layer', () => {
+    const out = normalizeSettings({
+      aiProvider: 'anthropic',
+      anthropicKey: 'sk-ant',
+      ollamaEndpoint: 'http://localhost:11434',
+      aiEndpoint: 'https://api.openai.com/v1',
+    }) as Record<string, unknown>
+    expect(out).not.toHaveProperty('aiProvider')
+    expect(out).not.toHaveProperty('anthropicKey')
+    expect(out).not.toHaveProperty('ollamaEndpoint')
+    expect(out.aiEndpoint).toBe('https://api.openai.com/v1')
   })
 
   test('is idempotent', () => {
-    const raw = { cloudToken: 't', accountEmail: 'e', onboarded: true, aiProvider: 'x', cloudUrl: 'y' }
+    const raw = { cloudToken: 't', accountEmail: 'e', onboarded: true, aiProvider: 'x', cloudUrl: 'y', aiModel: 'gpt-5.2' }
     const once = normalizeSettings(raw)
     expect(normalizeSettings(once)).toEqual(once)
   })

@@ -21,7 +21,7 @@ export const home: tLocale['home'] = {
   tailorACv: 'Cv op maat',
   tailorACvSub: 'Toegespitst op deze vacature, niets verzonnen',
   tailorACvSubGeneric: 'Toegespitst op één vacature, niets verzonnen',
-  oneCredit: '1 credit',
+  usesAi: 'gebruikt AI',
   jobListTitle: 'Vacaturelijst',
   startApplying: 'Beginnen met solliciteren',
   addJobsLabel: 'Vacatures toevoegen',
@@ -80,7 +80,6 @@ export const home: tLocale['home'] = {
   fillCannotFill: 'Deze pagina kan niet ingevuld worden.',
   fillNoForm: 'Geen sollicitatieformulier gevonden op deze pagina.',
 
-  credits: (n: number) => `${n} credits`,
   jobsTitle: 'Vacatures',
   yourListSub: 'Vacatures die je bewaarde of plakte',
   foundForYou: 'Voor jou gevonden',

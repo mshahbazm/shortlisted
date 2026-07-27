@@ -52,14 +52,14 @@ export function ResumesTab() {
   const [gaps, setGaps] = useState<string[]>([])
   /** Label of the CV that tailoring just produced — drives the result screen. */
   const [justMade, setJustMade] = useState('')
-  /** CV awaiting a delete confirmation. Tailored ones cost a credit to
+  /** CV awaiting a delete confirmation. Tailored ones cost an AI call to
    *  remake, and Delete sits in a row of harmless links. */
   const [deleting, setDeleting] = useState<string | null>(null)
   // Which generation is waiting on a template pick.
   const [picking, setPicking] = useState<'master' | 'tailor' | null>(null)
 
   // Every mutation runs against the LIVE list via store.update — the list in
-  // this closure may be stale (background intake, cloud pull, a second add in
+  // this closure may be stale (background intake, a second add in
   // quick succession), and read-modify-write against it loses entries.
   const addResume = (build: (list: ResumeVariant[]) => ResumeVariant) =>
     store.update('resumes', (list) => {
@@ -71,7 +71,7 @@ export function ResumesTab() {
   const removeResume = (id: string) => void store.update('resumes', (list) => list.filter((x) => x.id !== id))
   const makeDefault = (id: string) =>
     void store.update('resumes', (list) => list.map((x) => ({ ...x, isDefault: x.id === id })))
-  // Re-run background intake after a failure (e.g. the server was down).
+  // Re-run background intake after a failure (e.g. the endpoint was down).
   // Optimistically flip to learning so the spinner returns immediately.
   const retryIntake = (id: string) => {
     void store.update('resumes', (list) => list.map((x) => (x.id === id ? { ...x, status: 'learning' } : x)))
@@ -155,7 +155,7 @@ export function ResumesTab() {
       setGaps(result.gaps)
       setJobText('')
       setTailorNote('')
-      // A credit was just spent — show what came back rather than dropping the
+      // An AI call just ran — show what came back rather than dropping the
       // user on a list and hoping they spot the new row.
       setJustMade(roleCompanyLabel(result.resume.label, result.job.company))
       nav.push('done')
@@ -206,7 +206,7 @@ export function ResumesTab() {
     />
   )
 
-  // What a spent credit bought. The gaps live here rather than on the list,
+  // What the AI call bought. The gaps live here rather than on the list,
   // because this is the moment the honesty claim actually lands.
   if (nav.screen === 'done') {
     const made = resumes.find((r) => r.label === justMade)
@@ -243,7 +243,7 @@ export function ResumesTab() {
   }
 
   // Step one of tailoring: the posting. The style picker is step two, and only
-  // then does a credit get spent.
+  // then does the AI run.
   if (nav.screen === 'tailor') {
     return (
       <>
@@ -271,7 +271,7 @@ export function ResumesTab() {
             onClick={() => setPicking('tailor')}
           >
             {busyStep ? t.working : t.nextPickStyle}
-            {!busyStep && <Cost onDark>{t.oneCredit}</Cost>}
+            {!busyStep && <Cost onDark>{t.usesAi}</Cost>}
           </Button>
           {busyStep && <p className="my-1 text-[13px] text-muted">{busyStep}</p>}
           {err && <p className="my-1 text-[13px] text-bad">{err}</p>}
@@ -332,7 +332,7 @@ export function ResumesTab() {
 
       </Body>
 
-      {/* One button, then the question — so nobody spends a credit by accident. */}
+      {/* One button, then the question — so nobody burns an AI call by accident. */}
       {sheetOpen && (
         <Sheet
           title={t.newCv}
@@ -342,7 +342,7 @@ export function ResumesTab() {
         >
           <BigChoice
             title={t.fromJobTitle}
-            right={<Cost>{t.oneCredit}</Cost>}
+            right={<Cost>{t.usesAi}</Cost>}
             sub={t.fromJobSub}
             onClick={() => { setSheetOpen(false); nav.push('tailor') }}
           />

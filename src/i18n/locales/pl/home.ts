@@ -22,7 +22,7 @@ export const home: tLocale['home'] = {
   tailorACv: 'Dopasuj CV',
   tailorACvSub: 'Ustawione pod tę ofertę, nic zmyślonego',
   tailorACvSubGeneric: 'Ustawione pod jedną ofertę, nic zmyślonego',
-  oneCredit: '1 kredyt',
+  usesAi: 'używa AI',
   jobListTitle: 'Lista ofert',
   startApplying: 'Zacznij aplikować',
   addJobsLabel: 'Dodaj oferty',
@@ -81,7 +81,6 @@ export const home: tLocale['home'] = {
   fillCannotFill: 'Tej strony nie da się wypełnić.',
   fillNoForm: 'Nie znaleziono formularza aplikacyjnego na tej stronie.',
 
-  credits: (n: number) => `${n} ${plural(n, 'kredyt', 'kredyty', 'kredytów')}`,
   jobsTitle: 'Oferty',
   yourListSub: 'Oferty zapisane lub wklejone',
   foundForYou: 'Znalezione dla Ciebie',

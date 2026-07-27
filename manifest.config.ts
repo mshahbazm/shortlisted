@@ -7,11 +7,10 @@ import { defineManifest } from '@crxjs/vite-plugin'
 
 export default defineManifest(({ mode }) => ({
   manifest_version: 3,
-  // A dev build says so in its name. Both builds can be loaded unpacked side
-  // by side, and chrome://extensions, the toolbar and the side panel all show
-  // which one you are actually looking at — the thing that is invisible when
-  // the only difference is which server the code talks to.
-  name: mode === 'production' ? 'Shortlisted — job application copilot' : 'Shortlisted (dev) — local server',
+  // A dev build says so in its name, so both can be loaded unpacked side by
+  // side and chrome://extensions, the toolbar and the side panel all show which
+  // one you are actually looking at.
+  name: mode === 'production' ? 'Shortlisted — job application copilot' : 'Shortlisted (dev)',
   version: '0.1.0',
   description:
     'Fills job applications from your profile, learns every new question, and tailors truthful CV versions. You review and click submit.',
@@ -41,9 +40,13 @@ export default defineManifest(({ mode }) => ({
   // No 'notifications' — nothing uses chrome.notifications, and every
   // permission listed here costs a line in the install dialog.
   permissions: ['storage', 'unlimitedStorage', 'sidePanel', 'scripting', 'tabs', 'alarms'],
-  // Covers every page above plus the API origins we call. Needed as a
-  // permission, not just a content-script match, so the service worker can
-  // inject into a tab that was already open when the extension loaded.
+  // Two jobs. It covers every page above — needed as a permission, not just a
+  // content-script match, so the service worker can inject into a tab that was
+  // already open when the extension loaded. And it covers the AI endpoint,
+  // which cannot be enumerated here because the user chooses it: any
+  // OpenAI-compatible URL, including one on their own machine. A host
+  // permission is also what lets these fetches skip CORS, which a stranger's
+  // API server has no reason to have configured for us.
   host_permissions: ['<all_urls>'],
   icons: {
     '16': 'icons/icon16.png',

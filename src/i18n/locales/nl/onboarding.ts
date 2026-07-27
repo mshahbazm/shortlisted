@@ -28,9 +28,8 @@ export const onboarding: tLocale['onboarding'] = {
   talkCountReady: 'Hoe meer je deelt, hoe beter je cv — projecten, successen, alles.',
   back: 'Terug',
   skip: 'Overslaan',
-  welcomeLoginLink: 'Heb je al een account? Log in',
-  loginTitle: 'Welkom terug.',
-  loginLead: 'Vul je e-mailadres in — we sturen je een 6-cijferige code.',
+  nameTitle: 'Hoe mogen we je noemen?',
+  nameLead: 'Het komt op je cv, dus gebruik de naam waaronder je solliciteert.',
 
   welcomeTitle: 'Zorgen dat jij op de shortlist komt.',
   welcomeLead:
@@ -78,19 +77,5 @@ export const onboarding: tLocale['onboarding'] = {
   noticeDaysHint: '0 = meteen',
   continue: 'Doorgaan',
 
-  verifyTitle: 'Maak je account aan.',
-  verifyLead:
-    'Eén code en je bent binnen — je gegevens veilig in je account en je gratis AI-credits ontgrendeld.',
-  emailPlaceholder: 'jij@voorbeeld.nl',
-  sendCode: 'Code versturen',
-  sending: 'Versturen…',
-  inboxTitle: 'Kijk in je inbox.',
-  inboxLead: (email: string) =>
-    `We hebben een 6-cijferige code naar ${email} gestuurd. Typ hem hieronder om af te ronden — kijk in je spam- of ongewenste-map als hij niet in je inbox staat.`,
-  codeLabel: 'Code',
-  codePlaceholder: '123456',
-  verifyStart: 'Bevestigen & starten',
-  checking: 'Controleren…',
-  resendCode: 'Code opnieuw sturen',
-  changeEmail: 'E-mail wijzigen',
+  checking: 'Momentje…',
 }

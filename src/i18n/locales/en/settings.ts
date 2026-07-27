@@ -1,31 +1,20 @@
-// The Settings tab: language, account (email OTP + credits), backup, server.
+// The Settings tab: AI setup, language, where we look for forms, backup, reset.
 
 export const settings = {
   title: 'Settings',
-  hint: 'Filling works with no setup. Your account unlocks AI — CV import, tailoring, fit scores.',
+  hint: 'Filling forms works with no setup. Adding your own AI key turns on CV import, tailoring and fit scores.',
 
   languageTitle: 'Language',
   languageAuto: 'Auto (browser language)',
 
-  accountIntro:
-    'Sign in with your email to unlock AI and keep your data in your account. Free: 10 credits. Pro ($9/mo): 100 credits/month. One tailored CV ≈ 1 credit.',
-  emailPlaceholder: 'you@example.com',
-  sendCode: 'Send me a code',
-  sending: 'Sending…',
-  codeSent: 'Code sent — check your email.',
-  codeLabel: 'The 6-digit code from your email',
-  codePlaceholder: '123456',
-  signIn: 'Sign in',
-  checking: 'Checking…',
-  resendCode: 'Resend code',
-  signedIn: 'Signed in.',
-  checkCredits: 'Check my credits',
-  planFree: 'Free',
-  planPro: 'Pro',
-  signOutDevice: 'Sign out on this device',
+  aiTitle: 'AI',
+  aiNotSet: 'not set up',
+  aiUntested: 'not tested',
 
   backupTitle: 'Backup',
   backupSummary: 'export / import everything',
+  backupHint:
+    'Everything lives on this computer, so nothing restores itself if you switch browsers or clear your data. Export a copy now and again — it is the only backup there is.',
   exportJson: 'Export JSON',
   importJson: 'Import JSON',
   imported: 'Imported.',
@@ -36,28 +25,12 @@ export const settings = {
   detectHint:
     'Shortlisted watches for job application forms on every site and appears when it recognises one. Pages are checked on your computer and nothing about them is sent anywhere. Turn this off to limit it to the job boards we support directly.',
   detectToggle: 'Recognise application forms on any site',
-
-  creditsLeft: 'Credits left',
-  creditsOf: 'of',
-  proTagline: 'Everything in Free, plus your AI twin, no watermark, and lead capture.',
-  planCompare: 'What you get',
-  featCredits: 'AI credits a month',
-  featProfile: 'Public profile page',
-  featNoWatermark: 'No watermark',
-  featAiTwin: 'AI twin answers visitors',
-  featLeads: 'Capture leads',
-  planMonthlyName: 'Monthly',
-  planAnnualName: 'Annual',
-  proPerMo: '/mo',
-  proMonthlyBilled: 'billed monthly',
-  proAnnualBilled: (price: string) => `${price} billed yearly`,
-  proSave: (pct: number) => `Save ${pct}%`,
-  upgradeCta: 'Upgrade to Pro',
-  proFoot: 'Cancel anytime. Filling forms is always free.',
-  manageSub: 'Manage subscription',
-  historyTitle: 'Credit history',
-  historySummary: 'grants, spends, monthly resets',
-  historyHint: 'Every credit granted, spent, and reset — your full trail.',
-  historyEmpty: 'No credit activity yet.',
   whereILook: 'Where I look for forms',
+
+  resetTitle: 'Erase everything',
+  resetSummary: 'profile, CVs, applications, answers',
+  resetHint:
+    'Deletes your profile, CVs, applications, saved jobs and answer bank from this computer. Your AI settings and language are kept. This cannot be undone — export a backup first.',
+  resetConfirm: 'Erase it all',
+  resetDone: 'Erased.',
 }

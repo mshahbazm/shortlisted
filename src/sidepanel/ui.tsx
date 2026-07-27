@@ -755,7 +755,7 @@ export function Composer({
 
 /* ---------- sheet ---------- */
 
-/** Bottom sheet. Asks a question before an action spends a credit or deletes
+/** Bottom sheet. Asks a question before an action calls the model or deletes
  *  something.
  *
  *  Built on Base UI's Dialog rather than a div and a keydown listener, which is
@@ -899,7 +899,7 @@ export function FitChip({ score }: { score?: number }) {
 
 /* ---------- small repeated pieces ---------- */
 
-/** A filled progress bar — profile strength, credits left, an apply run.
+/** A filled progress bar — profile strength, an apply run.
  *
  *  The fill is a child element, which is exactly what the migration lost: the
  *  old CSS coloured it with `.meter-bar i`, and converting the parent to

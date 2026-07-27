@@ -3,12 +3,11 @@
 
 import { Msg, PageContext } from '../lib/messaging'
 import * as store from '../lib/store'
-import { BankAnswer, PendingQuestion, ResumeVariant, jobUrlKey, roleCompanyLabel, uid } from '../lib/types'
+import { BankAnswer, PendingQuestion, ResumeVariant, aiConfigured, jobUrlKey, roleCompanyLabel, uid } from '../lib/types'
 import { applyEnrichment, applyProfileDelta } from '../lib/profileMerge'
 import { normalizeQuestion, similarity } from '../lib/questions'
-import { cloudFillAssist, cloudIntakeResume, polishAnswer, runQuickScore, runTailorCv } from '../ai/run'
+import { assistFill, intakeResume, polishAnswer, runQuickScore, runTailorCv } from '../ai/run'
 import { renderResumePdf } from '../pdf/resumePdf'
-import { pullFromCloud, startCloudMirror } from './cloudMirror'
 // CRXJS: gives us the emitted content-script path for scripting.executeScript.
 import contentScriptPath from '../content/index.ts?script'
 
@@ -19,11 +18,6 @@ chrome.runtime.onInstalled.addListener(() => {
   // means anything. Clear any badge a previous version left behind.
   void chrome.action.setBadgeText({ text: '' })
 })
-
-// Mirror local data to the signed-in account; load the account's data
-// whenever the worker wakes.
-startCloudMirror()
-void pullFromCloud().catch((e) => console.error('[shortlisted] cloud load failed:', e))
 
 /**
  * The emitted content-script file. The build-time `?script` import is a
@@ -107,7 +101,7 @@ async function handle(msg: Msg): Promise<unknown> {
         return list
       })
       // Tag it and fold new facts into the profile in the background.
-      void intakeResume(entry.id)
+      void learnFromUploadedResume(entry.id)
       return {
         id: entry.id,
         resumes: list.map(({ id, label, fileName, isDefault, tags }) => ({ id, label, fileName, isDefault, tags })),
@@ -115,7 +109,7 @@ async function handle(msg: Msg): Promise<unknown> {
     }
 
     case 'intakeResume': {
-      void intakeResume(msg.resumeId)
+      void learnFromUploadedResume(msg.resumeId)
       return { ok: true }
     }
 
@@ -124,11 +118,11 @@ async function handle(msg: Msg): Promise<unknown> {
     // list (NOT as default), hand back the id so the panel can attach it.
     case 'tailorAttach': {
       const [settings, profile] = await Promise.all([store.get('settings'), store.get('profile')])
-      if (!settings.accountEmail) return { error: 'Sign in first.' }
+      if (!aiConfigured(settings)) return { error: 'Add an AI endpoint and model in Settings first.' }
       try {
         const result = await runTailorCv(settings, profile, msg.jobText, undefined, msg.note)
         // Facts the candidate stated in their note become permanent profile
-        // facts (additive) — the server already tailored WITH them.
+        // facts (additive) — the tailoring already ran WITH them.
         if (result.newFacts) {
           await store.update('profile', (p) => applyEnrichment(p, result.newFacts!))
         }
@@ -300,22 +294,13 @@ async function handle(msg: Msg): Promise<unknown> {
       }
     }
 
-    case 'cloudPull': {
-      try {
-        await pullFromCloud({ force: true }) // user-triggered refresh — bypass the wake throttle
-        return { ok: true }
-      } catch (e) {
-        return { error: e instanceof Error ? e.message : String(e) }
-      }
-    }
-
     case 'fillAssist': {
       const settings = await store.get('settings')
-      if (!settings.accountEmail || msg.fields.length + msg.verify.length === 0) {
+      if (!aiConfigured(settings) || msg.fields.length + msg.verify.length === 0) {
         return { results: [], corrections: [] }
       }
       try {
-        return await cloudFillAssist(settings, msg.fields, msg.verify)
+        return await assistFill(settings, msg.fields, msg.verify)
       } catch (e) {
         return { error: e instanceof Error ? e.message : String(e) }
       }
@@ -339,26 +324,26 @@ async function handle(msg: Msg): Promise<unknown> {
 }
 
 /**
- * Rewrite a just-saved answer into a clean sentence via the cloud (mini model,
- * free). Only stores the polish if the raw answer hasn't changed meanwhile;
- * options/booleans are never polished (their value must match the form).
+ * Rewrite a just-saved answer into a clean sentence (mini model). Only stores
+ * the polish if the raw answer hasn't changed meanwhile; options/booleans are
+ * never polished (their value must match the form).
  */
 /**
- * Uploaded-CV intake: the cloud deep-parses the CV (same extractor as the
- * profile "learn more" flow) and returns the additive delta of everything new
+ * Uploaded-CV intake: deep-parse the CV (same extractor as the profile
+ * "learn more" flow) and take the additive delta of everything new
  * plus role/field tags for the resume. Merging is strictly additive — the
  * profile is never overwritten, only filled in. Silent and fire-and-forget;
  * `status` drives the card's spinner/retry so a failure isn't invisible.
  */
-async function intakeResume(resumeId: string): Promise<void> {
+async function learnFromUploadedResume(resumeId: string): Promise<void> {
   const [settings, resumes] = await Promise.all([store.get('settings'), store.get('resumes')])
   const r = resumes.find((x) => x.id === resumeId)
   if (!r) return
   const setStatus = (status: ResumeVariant['status']) =>
     store.update('resumes', (list) => list.map((x) => (x.id === resumeId ? { ...x, status } : x)))
-  // No session (signed out or expired): mark it failed so the card shows Retry
-  // rather than a spinner that never resolves. Retry works once signed back in.
-  if (!settings.accountEmail) {
+  // No AI set up yet: mark it failed so the card shows Retry rather than a
+  // spinner that never resolves. Retry works once an endpoint is configured.
+  if (!aiConfigured(settings)) {
     await setStatus('failed')
     return
   }
@@ -367,7 +352,7 @@ async function intakeResume(resumeId: string): Promise<void> {
     // Deep extract+diff (same depth as the profile "learn more" flow), applied
     // silently. Tags + status in ONE write so the card doesn't flash "done" then
     // re-tag. Tags are set only when still empty, so a retry never clobbers edits.
-    const { delta, tags } = await cloudIntakeResume(settings, r.dataBase64)
+    const { delta, tags } = await intakeResume(settings, r.dataBase64)
     await store.update('resumes', (list) =>
       list.map((x) =>
         x.id === resumeId
@@ -385,7 +370,7 @@ async function intakeResume(resumeId: string): Promise<void> {
 async function polishInBackground(questionNorm: string, questionRaw: string, answer: string): Promise<void> {
   try {
     const settings = await store.get('settings')
-    if (!settings.accountEmail) return
+    if (!aiConfigured(settings)) return
     const bank = await store.get('answerBank')
     // Same match rule as saveAnswer (exact or fuzzy) — the entry's own norm
     // may differ from this phrasing's.

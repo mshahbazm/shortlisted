@@ -2,6 +2,7 @@ import type { Localized } from '../../locale'
 import { common } from './common'
 import { nav } from './nav'
 import { onboarding } from './onboarding'
+import { ai } from './ai'
 import { apply } from './apply'
 import { home } from './home'
 import { profile } from './profile'
@@ -17,6 +18,7 @@ export const en = {
   common,
   nav,
   onboarding,
+  ai,
   apply,
   home,
   profile,

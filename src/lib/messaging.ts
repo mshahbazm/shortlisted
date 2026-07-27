@@ -56,7 +56,6 @@ export type Msg =
   // Side panel -> background: what is the user looking at right now?
   | { type: 'pageContext' }
   | { type: 'scoreFitPage'; jobText: string; jobUrl: string }
-  | { type: 'cloudPull' }
   | { type: 'fillAssist'; fields: AssistField[]; verify: VerifyField[] }
   | { type: 'addPhrasing'; savedQuestion: string; phrasing: string }
   // Background -> content script: mount the overlay and fill, whatever the

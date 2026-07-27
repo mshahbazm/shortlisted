@@ -1,23 +1,36 @@
-// The one entry point the UI calls for AI work. Everything runs on
-// Shortlisted Cloud — capabilities execute server-side against the /v1 API
-// (the capability code itself lives in ./capabilities, shared with the server).
+// The one entry point the UI calls for AI work — and now the whole of it.
+//
+// This file used to be an HTTP client: every function POSTed to Shortlisted
+// Cloud, which ran the capability and sent back the result. The capabilities
+// were always runtime-agnostic (systemAgent takes an injected LlmClient), so
+// bringing them home meant deleting the transport, not rewriting the logic.
+// What each function returns is unchanged, which is why the panel above it did
+// not have to move.
+//
+// The usage accounting the server did around each call is gone with it: on the
+// user's own key there is nothing of ours to count.
 
 import {
-  ApplicationRecord,
-  BankAnswer,
-  FitScoreRecord,
   IntakeSession,
-  PendingQuestion,
   Persona,
   Profile,
-  QueueItem,
-  ResumeVariant,
   Settings,
-  bytesToBase64,
+  emptyProfile,
+  hasProfileContent,
 } from '../lib/types'
-import { cloudBaseUrl } from '../lib/config'
-import type { ProfileDelta } from '../lib/profileMerge'
+import { applyEnrichment, diffProfile, type ProfileDelta } from '../lib/profileMerge'
+import { assessTextQuality, extractPdfText } from '../lib/pdfText'
 import * as store from '../lib/store'
+import { makeLlmClient } from './client'
+import type { LlmClient } from './systemAgent'
+import { enrichProfile } from './capabilities/enrich-profile'
+import { extractProfile } from './capabilities/extract-profile'
+import { fillAssist } from './capabilities/fill-assist'
+import { quickScoreFit, scoreFit } from './capabilities/score-fit'
+import { tailorCv } from './capabilities/tailor-cv'
+import { assessSufficiency } from './workflows/build-profile/assess'
+import { runBuildProfile as runBuildProfileWorkflow } from './workflows/build-profile/workflow'
+import { deriveResumeTags, runLearnFromResume } from './workflows/learn-resume/workflow'
 import type {
   AssistField,
   AssistResultItem,
@@ -32,67 +45,121 @@ import type {
 export type { QuickScoreResult, ScoreFitResult }
 export type { AssistField, AssistResultItem, CorrectionItem, VerifyField }
 
+/** The profile every capability reads. The server loaded this from the account
+ *  precisely so it never had to trust the client; locally there is only one
+ *  copy and it is the storage. */
+const currentProfile = () => store.get('profile')
+
+const client = (settings: Settings): LlmClient => makeLlmClient(settings)
+
+// ---- resumes ----
+
 /**
- * Uploaded-CV intake: the SAME deep extract+diff as the profile "learn more"
- * flow, run silently in the background — returns the additive delta to fold into
- * the profile plus role/field tags for the resume. Free (completing a profile
- * shouldn't cost a credit).
+ * Uploaded-CV intake: the SAME deep extract+diff as the "learn more" flow, run
+ * silently in the background — returns the additive delta to fold into the
+ * profile plus role/field tags for the resume.
  */
-export async function cloudIntakeResume(
+export async function intakeResume(
   settings: Settings,
   pdfBase64: string,
 ): Promise<{ delta: ProfileDelta; tags: string[] }> {
-  return cloudCall(settings, '/v1/intake-resume', { pdfBase64 })
+  const text = await pdfTextFromBase64(pdfBase64)
+  const state = await runLearnFromResume(
+    { mkClient: () => client(settings), log: (m) => console.debug('[wf]', m) },
+    { text, existing: await currentProfile() },
+  )
+  return { delta: state.delta ?? emptyDelta(), tags: state.incoming ? deriveResumeTags(state.incoming) : [] }
 }
 
-/** Free-form profile note ("I worked with Webflow at X") → additive facts. The
- *  one remaining caller of enrich-profile: a typed fragment is too small for the
- *  full extractor (its is-this-a-resume gate would reject it). */
-export async function cloudProfileNote(settings: Settings, text: string): Promise<ProfileEnrichment> {
-  return cloudCall<ProfileEnrichment>(settings, '/v1/enrich-profile', { text })
+/**
+ * "Learn more about me": parse a CV (PDF or pasted text) and diff it against the
+ * current profile, returning ONLY the new items as a ProfileDelta — grouped by
+ * category so the review screen can drop individual items. Identity and the
+ * user's curated fields are never touched.
+ */
+export async function learnFromResume(
+  settings: Settings,
+  args: { pdf?: ArrayBuffer; cvText?: string },
+): Promise<{ delta: ProfileDelta; method?: 'text' | 'ocr'; quality?: string }> {
+  let text: string
+  let quality: string | undefined
+  if (typeof args.cvText === 'string' && args.cvText.trim().length >= 50) {
+    text = args.cvText
+  } else if (args.pdf) {
+    text = await readPdf(args.pdf)
+    quality = assessTextQuality(text)
+  } else {
+    throw new Error('Paste a bit more of your CV text, or upload a PDF.')
+  }
+  const state = await runLearnFromResume(
+    { mkClient: () => client(settings), log: (m) => console.debug('[wf]', m) },
+    { text, existing: await currentProfile() },
+  )
+  return { delta: state.delta ?? emptyDelta(), method: 'text', quality }
 }
+
+export async function runExtractProfile(settings: Settings, cvText: string): Promise<Profile> {
+  if (!cvText || cvText.trim().length < 50) throw new Error('There is not enough text there to read.')
+  return extractProfile(client(settings), cvText)
+}
+
+// ---- profile ----
+
+/** Free-form profile note ("I worked with Webflow at X") → additive facts. A
+ *  typed fragment is too small for the full extractor, whose is-this-a-resume
+ *  gate would reject it. */
+export async function learnFromNote(settings: Settings, text: string): Promise<ProfileEnrichment> {
+  const note = text.trim()
+  const empty: ProfileEnrichment = {
+    tags: [],
+    newSkills: [],
+    newLinks: {},
+    newLanguages: [],
+    newCertifications: [],
+    newWorkHighlights: [],
+    newWork: [],
+  }
+  if (note.length < 8) return empty
+  if (note.length > 2000) throw new Error('That note is too long (2000 characters max).')
+  const { usage: _usage, ...facts } = await enrichProfile(client(settings), note, await currentProfile())
+  return facts
+}
+
+// ---- form filling ----
 
 /**
  * The reasoning layer for form filling: ONE batched call covering both the
  * fields the deterministic filler couldn't handle and the uncertain fills it
- * wants double-checked. The server answers from the account's stored profile
- * + answer bank — the extension only sends the fields.
+ * wants double-checked, answered from the stored profile + answer bank.
+ *
+ * The server gated this behind a paid plan to bound its own spend. On the
+ * user's own key there is nothing of ours to bound, so it just runs.
  */
-export async function cloudFillAssist(
+export async function assistFill(
   settings: Settings,
   fields: AssistField[],
   verify: VerifyField[],
 ): Promise<{ results: AssistResultItem[]; corrections: CorrectionItem[] }> {
-  return cloudCall(settings, '/v1/fill-assist', { fields, verify })
+  if (fields.length + verify.length === 0) return { results: [], corrections: [] }
+  const profile = await currentProfile()
+  const bank = await store.get('answerBank')
+  if (!hasProfileContent(profile) && bank.length === 0) return { results: [], corrections: [] }
+  const answers = bank.map((a) => ({
+    question: a.questionRaw[0] ?? a.questionNorm,
+    answer: a.polished ?? a.answer,
+  }))
+  const result = await fillAssist(client(settings), fields, verify, profile, answers)
+  return { results: result.results, corrections: result.corrections }
 }
 
-export async function runExtractProfile(settings: Settings, cvText: string): Promise<Profile> {
-  return cloudCall<Profile>(settings, '/v1/extract-profile', { cvText })
-}
+// ---- guided builder (no CV) ----
+//
+// The transcript lives in chrome.storage under `intake` — the local stand-in
+// for the server's `intake` table, kept for the same reason: raw Q&A is working
+// material, not profile data, and keeping it separate lets the flow resume
+// exactly without ever half-writing a profile.
 
-/**
- * "Learn more about me": the server parses the CV (PDF w/ OCR fallback, or pasted
- * text) and diffs it against the account's current profile, returning ONLY the
- * new items as a ProfileDelta — grouped by category so the review screen can drop
- * individual items. Identity and the user's curated fields are never touched.
- * Accepts a PDF (ArrayBuffer) or pasted text.
- */
-export async function cloudLearnFromResume(
-  settings: Settings,
-  args: { pdf?: ArrayBuffer; cvText?: string },
-): Promise<{ delta: ProfileDelta; method?: 'text' | 'ocr'; quality?: string }> {
-  const body: Record<string, unknown> = {}
-  if (args.pdf) body.pdfBase64 = bytesToBase64(args.pdf)
-  if (args.cvText) body.cvText = args.cvText
-  return cloudCall(settings, '/v1/learn-resume', body)
-}
-
-/** Preserve the ORIGINAL profile picture in cloud object storage (source of
- *  truth). Best-effort — the small render copy still rides in the synced profile,
- *  so a failure here never blocks setting the photo. */
-export async function cloudUploadPicture(settings: Settings, dataUrl: string): Promise<void> {
-  await cloudCall<{ ok: boolean }>(settings, '/v1/picture', { dataUrl })
-}
+const MAX_INTAKE_ROUNDS = 3
 
 export interface IntakeNext {
   enough: boolean
@@ -101,32 +168,88 @@ export interface IntakeNext {
   round: number
 }
 
-/** No-CV builder — GATHER: send the intro (start, no `answers`) or a round's
- *  answers (continue). The server judges the material so far and returns the next
- *  questions, or `enough: true` when it's time to build. No credit spent. */
+/** GATHER: send the intro (start, no `answers`) or a round's answers (continue).
+ *  Judges the material so far and returns the next questions, or `enough: true`
+ *  when it's time to build. */
 export async function intakeNext(
   settings: Settings,
   body: { persona: Persona; intro: string; answers?: string[] },
 ): Promise<IntakeNext> {
-  return cloudCall<IntakeNext>(settings, '/v1/build-profile/next', body)
+  const persona: Persona = body.persona === 'starting' ? 'starting' : 'working'
+
+  if (body.answers === undefined) {
+    if (!body.intro || body.intro.trim().length < 20) throw new Error('Tell us a little more to work with.')
+    await store.set('intake', { persona, intro: body.intro.trim(), rounds: [], status: 'gathering' })
+  } else {
+    await recordAnswers(body.answers)
+  }
+
+  const session = await store.get('intake')
+  if (!session) throw new Error('Start over — tell us about yourself first.')
+  const round = session.rounds.length
+  // Hard cap: once we've run the max rounds, stop asking and let them build.
+  if (round >= MAX_INTAKE_ROUNDS) return { enough: true, theme: '', questions: [], round }
+
+  const assessment = await assessSufficiency(client(settings), {
+    transcript: intakeTranscript(session),
+    persona,
+    coveredThemes: session.rounds.map((r) => r.theme ?? '').filter((t) => t.trim().length > 0),
+    isFinalRound: round === MAX_INTAKE_ROUNDS - 1,
+  })
+  if (assessment.enough || assessment.questions.length === 0) {
+    return { enough: true, theme: '', questions: [], round }
+  }
+  await store.update('intake', (s) =>
+    s ? { ...s, rounds: [...s.rounds, { questions: assessment.questions, answers: [], theme: assessment.theme }] } : s,
+  )
+  return { enough: false, theme: assessment.theme, questions: assessment.questions, round: round + 1 }
 }
 
-/** No-CV builder — RESUME: the in-progress session (or null) so the builder can
- *  pick up exactly where the user left off. */
-export async function loadIntakeSession(settings: Settings): Promise<IntakeSession | null> {
-  const { session } = await cloudCall<{ session: IntakeSession | null }>(settings, '/v1/build-profile/intake', undefined, 'GET')
-  return session
+/** RESUME: the in-progress session (or null) so the builder can pick up exactly
+ *  where the user left off. */
+export async function loadIntakeSession(_settings: Settings): Promise<IntakeSession | null> {
+  return store.get('intake')
 }
 
-/** No-CV builder — FINALIZE: extract the structured profile from the whole
- *  gathered intake. Pass `answers` to record a final round first (used on skip).
- *  One credit per completed build. */
+/** FINALIZE: extract the structured profile from the whole gathered intake.
+ *  Pass `answers` to record a final round first (used on skip). */
 export async function runBuildProfile(settings: Settings, answers?: string[]): Promise<{ profile: Profile }> {
-  return cloudCall<{ profile: Profile }>(settings, '/v1/build-profile', { answers })
+  if (Array.isArray(answers)) await recordAnswers(answers)
+  const session = await store.get('intake')
+  if (!session) throw new Error('Nothing to build yet — tell us about yourself first.')
+  const state = await runBuildProfileWorkflow(
+    { llm: client(settings), log: (m) => console.debug('[wf]', m) },
+    intakeTranscript(session),
+  )
+  await store.update('intake', (s) => (s ? { ...s, status: 'done' } : s))
+  return { profile: state.profile ?? emptyProfile() }
 }
 
-/** TailorCvResult plus any note-stated facts the server folded in. */
-export type CloudTailorResult = TailorCvResult & { newFacts?: ProfileEnrichment }
+/** Record this round's answers into the latest round (no-op if there's none). */
+async function recordAnswers(answers: string[]): Promise<void> {
+  await store.update('intake', (s) => {
+    if (!s || !s.rounds.length) return s
+    const rounds = s.rounds.slice()
+    rounds[rounds.length - 1] = { ...rounds[rounds.length - 1], answers }
+    return { ...s, rounds }
+  })
+}
+
+/** The full transcript so far — the intro plus every answered Q&A — for the
+ *  assessor (to judge sufficiency) and the extractor (to build the profile). */
+function intakeTranscript(session: IntakeSession): string {
+  const qa = session.rounds
+    .flatMap((r) => r.questions.map((q, i) => ({ q, a: r.answers[i] ?? '' })))
+    .filter((x) => x.a.trim().length > 0)
+    .map((x) => `Q: ${x.q}\nA: ${x.a}`)
+    .join('\n\n')
+  return qa ? `${session.intro}\n\nMore detail I gave:\n${qa}` : session.intro
+}
+
+// ---- tailoring and scoring ----
+
+/** TailorCvResult plus any note-stated facts folded in along the way. */
+export type TailorResult = TailorCvResult & { newFacts?: ProfileEnrichment }
 
 export async function runTailorCv(
   settings: Settings,
@@ -134,9 +257,27 @@ export async function runTailorCv(
   jobText: string,
   onStep?: (step: string) => void,
   userNote?: string,
-): Promise<CloudTailorResult> {
-  onStep?.('Tailoring on Shortlisted Cloud…')
-  return cloudCall<CloudTailorResult>(settings, '/v1/tailor-cv', { profile, jobText, userNote: userNote || undefined })
+): Promise<TailorResult> {
+  if (!jobText || jobText.trim().length < 80) throw new Error('Paste a bit more of the job description.')
+  const llm = client(settings)
+  const note = userNote?.trim()
+
+  // The note is candidate-authored, so it's a truth source: extract its facts
+  // and enrich the profile BEFORE tailoring — the capability's truth validators
+  // then hold with no exceptions. The facts travel back so the caller persists
+  // them to the stored profile.
+  let tailorProfile = profile
+  let newFacts: ProfileEnrichment | undefined
+  if (note) {
+    onStep?.('Reading your note…')
+    const { usage: _usage, ...facts } = await enrichProfile(llm, note, profile)
+    newFacts = facts
+    tailorProfile = applyEnrichment(profile, facts)
+  }
+
+  onStep?.('Tailoring your CV…')
+  const result = await tailorCv(llm, tailorProfile, jobText, undefined, note)
+  return { ...result, newFacts }
 }
 
 export async function runScoreFit(
@@ -145,8 +286,9 @@ export async function runScoreFit(
   jobText: string,
   onStep?: (step: string) => void,
 ): Promise<ScoreFitResult> {
-  onStep?.('Scoring on Shortlisted Cloud…')
-  return cloudCall<ScoreFitResult>(settings, '/v1/score-fit', { profile, jobText })
+  if (!jobText || jobText.trim().length < 80) throw new Error('Paste a bit more of the job description.')
+  onStep?.('Scoring this job against your profile…')
+  return scoreFit(client(settings), profile, jobText)
 }
 
 export async function runQuickScore(
@@ -154,203 +296,63 @@ export async function runQuickScore(
   profile: Profile,
   jobText: string,
 ): Promise<QuickScoreResult> {
-  return cloudCall<QuickScoreResult>(settings, '/v1/score-fit', { profile, jobText, quick: true })
+  return quickScoreFit(client(settings), profile, jobText)
 }
 
+// ---- answer bank ----
 
-/**
- * PDF → plain text on the server (OCR fallback for scanned resumes). No LLM
- * runs and no credit is spent — works before sign-up. Onboarding uses this as
- * the fallback when the local text layer reads poorly.
- */
-export async function cloudPdfText(
-  settings: Settings,
-  pdf: ArrayBuffer,
-): Promise<{ text: string; method: 'text' | 'ocr'; quality: string }> {
-  return cloudCall(settings, '/v1/pdf-text', { pdfBase64: bytesToBase64(pdf) })
-}
-
-export interface CloudUsage {
-  plan: 'free' | 'pro'
-  creditsUsed: number
-  creditsLimit: number
-  verified: boolean
-  email: string | null
-}
-
-export async function cloudUsage(settings: Settings): Promise<CloudUsage> {
-  return cloudCall<CloudUsage>(settings, '/v1/me', undefined, 'GET')
-}
-
-// ---- billing (Stripe) ----
-
-/** Pro pricing (from the cloud catalogue). Amounts are in the smallest currency
- *  unit (cents). Mirrors the cloud's `/v1/billing/plans` shape. */
-export interface CloudPlans {
-  currency: string
-  monthly: { amount: number; interval: 'month' }
-  annual: { amount: number; interval: 'year' }
-  /** Monthly credit allotment per plan — drives the Free-vs-Pro comparison. */
-  credits: { free: number; pro: number }
-}
-
-/** Current Pro prices (account-gated — the settings card shows only when signed
- *  in). The UI formats these and derives the annual saving, so a price change on
- *  the server flows through untouched. */
-export async function cloudPlans(settings: Settings): Promise<CloudPlans> {
-  return cloudCall<CloudPlans>(settings, '/v1/billing/plans', undefined, 'GET')
-}
-
-/** Start a Pro subscription: returns a Stripe Checkout URL to open in a tab. */
-export async function cloudCheckout(settings: Settings, interval: 'monthly' | 'annual'): Promise<{ url: string }> {
-  return cloudCall<{ url: string }>(settings, '/v1/billing/checkout', { interval })
-}
-
-/** Manage an existing subscription: returns the Stripe customer-portal URL. */
-export async function cloudBillingPortal(settings: Settings): Promise<{ url: string }> {
-  return cloudCall<{ url: string }>(settings, '/v1/billing/portal', {})
-}
-
-/** One row of the user-facing credit history (grants, spends, monthly expiry). */
-export interface CreditLedgerRow {
-  type: 'grant' | 'spend' | 'expire' | 'adjust' | 'refund'
-  amount: number
-  balanceAfter: number
-  capability: string | null
-  description: string
-  createdAt: string
-}
-
-export async function cloudCreditHistory(settings: Settings): Promise<CreditLedgerRow[]> {
-  const { history } = await cloudCall<{ history: CreditLedgerRow[] }>(settings, '/v1/credits/history', undefined, 'GET')
-  return history
-}
+const POLISH_PROMPT = [
+  'You rewrite a job-applicant answer as ONE clear first-person sentence.',
+  'Keep every fact exactly as given; add nothing, no filler, no flattery.',
+  'Answer in the same language the user wrote in.',
+  'If the answer is already a well-formed sentence, return it unchanged.',
+  'Return ONLY the rewritten answer text — no quotes, no commentary.',
+].join(' ')
 
 /**
  * One clean sentence out of a raw bank answer ("two weeks" → "I can start two
- * weeks after accepting an offer."). Free micro-call; same facts, nothing added.
+ * weeks after accepting an offer."). Same facts, nothing added.
  */
 export async function polishAnswer(settings: Settings, question: string, answer: string): Promise<string> {
-  const { polished } = await cloudCall<{ polished: string }>(settings, '/v1/polish-answer', { question, answer })
+  const q = question.trim().slice(0, 300)
+  const a = answer.trim()
+  if (!a || a.length > 600) return answer
+  const res = await client(settings)({
+    tier: 'mini',
+    temperature: 0.2,
+    maxTokens: 300,
+    systemPrompt: POLISH_PROMPT,
+    input: q ? `Question: ${q}\nAnswer: ${a}` : `Answer: ${a}`,
+  })
+  const polished = res.text.trim().replace(/^["'“]|["'”]$/g, '')
+  // A polish that balloons or vanishes is worse than the original.
+  if (!polished || polished.length > Math.max(160, a.length * 3)) return a
   return polished
-}
-
-// DEV TOOLING — real-cost breakdown while we calibrate pricing (remove pre-launch).
-export interface UsageStatsRow {
-  endpoint: string
-  kind: string
-  calls: number
-  inputTokens: number
-  outputTokens: number
-  costUsd: number
-}
-
-export async function cloudUsageStats(settings: Settings): Promise<UsageStatsRow[]> {
-  const { stats } = await cloudCall<{ stats: UsageStatsRow[] }>(settings, '/v1/usage-stats', undefined, 'GET')
-  return stats
-}
-
-// ---- account (email OTP; links this device to the user) ----
-
-export async function sendLoginCode(settings: Settings, email: string): Promise<void> {
-  await cloudCall(settings, '/v1/auth/send-code', { email })
-}
-
-export async function verifyLoginCode(
-  settings: Settings,
-  email: string,
-  otp: string,
-): Promise<CloudUsage & { isNewAccount: boolean }> {
-  // Verify returns the Better Auth SESSION token — the credential every later
-  // call sends as its bearer — plus whether this was the account's first sign-in.
-  const res = await cloudCall<CloudUsage & { token: string; isNewAccount?: boolean }>(settings, '/v1/auth/verify', { email, otp })
-  const newEmail = res.email ?? email
-  // No per-user bucketing: a device caches one account at a time. Wipe the
-  // previous account's cached content whenever a DIFFERENT account signs in.
-  // Gate on `dataOwner` (which survives sign-out), NOT `accountEmail` (which a
-  // logout clears) — otherwise the logout→login-as-someone-else path skips the
-  // wipe and the pull adopts the leftover into the new account (the leak).
-  const prev = await store.get('settings')
-  if (prev.dataOwner && prev.dataOwner !== newEmail) await store.clearAccountData()
-  await store.update('settings', (s) => ({ ...s, cloudToken: res.token, accountEmail: newEmail, dataOwner: newEmail }))
-  return { ...res, isNewAccount: Boolean(res.isNewAccount) }
-}
-
-// ---- account data (server holds the source of truth; see background mirror) ----
-
-export interface CloudData {
-  profile: Profile | null
-  visibility: string
-  resumes: ResumeVariant[]
-  applications: ApplicationRecord[]
-  savedJobs: QueueItem[]
-  answers: BankAnswer[]
-  pendingQuestions: PendingQuestion[]
-  fitScores: Record<string, FitScoreRecord>
-}
-
-export async function fetchCloudData(settings: Settings): Promise<CloudData> {
-  return cloudCall<CloudData>(settings, '/v1/data', undefined, 'GET')
-}
-
-export async function pushCloudData(settings: Settings, patch: Record<string, unknown>): Promise<void> {
-  await cloudCall(settings, '/v1/data', patch, 'PUT')
-}
-
-/** One resume's PDF bytes on demand — /v1/data no longer ships them, so the
- *  mirror fetches only the resumes it doesn't already have cached. */
-export async function fetchResumePdf(settings: Settings, id: string): Promise<string> {
-  const { dataBase64 } = await cloudCall<{ dataBase64: string }>(settings, `/v1/resume/${encodeURIComponent(id)}`, undefined, 'GET')
-  return dataBase64 ?? ''
 }
 
 // ---- plumbing ----
 
-async function cloudCall<T>(
-  settings: Settings,
-  path: string,
-  body?: unknown,
-  method: 'GET' | 'POST' | 'PUT' = body === undefined ? 'GET' : 'POST',
-): Promise<T> {
-  // The credential is a Better Auth SESSION token, set on verify. Read it live
-  // (not from the possibly-stale `settings` handed in). Pre-auth calls
-  // (send-code, verify) have none yet — they hit public endpoints.
-  const token = settings.cloudToken ?? (await store.get('settings')).cloudToken
-  const res = await cloudFetch(path, {
-    method,
-    headers: {
-      'content-type': 'application/json',
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  })
-
-  // 401 = the session token is invalid or expired (e.g. signed out elsewhere, a
-  // dev DB reset, or lapsed). There is no anonymous fallback: drop the stale
-  // local session so the UI routes cleanly to sign-in instead of looping.
-  if (res.status === 401) {
-    await store.clearAccount()
-    throw new Error('Your session has expired — please sign in again.')
+async function readPdf(pdf: ArrayBuffer): Promise<string> {
+  const text = await extractPdfText(pdf)
+  if (text.trim().length < 100) {
+    // The server rasterized and OCR'd at this point. There is no offline
+    // equivalent worth shipping, so say plainly what will work instead.
+    throw new Error(
+      'This PDF has almost no selectable text — it is probably a scan. Paste your CV text instead.',
+    )
   }
-
-  const data = await res.json().catch(() => null)
-  if (!res.ok) {
-    const msg =
-      (data as { error?: string } | null)?.error ??
-      `Shortlisted Cloud error ${res.status}. Is the server running at ${cloudBaseUrl()}?`
-    console.error(`[shortlisted] cloud ${method} ${path} → ${res.status}:`, msg)
-    throw new Error(msg)
-  }
-  return data as T
+  return text
 }
 
-// fetch() rejects with a bare "Failed to fetch" when nothing answers (server
-// down). Rethrow with the address so the user can actually see what to fix.
-async function cloudFetch(path: string, init?: RequestInit): Promise<Response> {
-  try {
-    return await fetch(cloudBaseUrl() + path, init)
-  } catch (e) {
-    console.error(`[shortlisted] cloud unreachable: ${cloudBaseUrl()}${path}`, e)
-    throw new Error(`Could not reach Shortlisted Cloud at ${cloudBaseUrl()}. Is the server running?`)
-  }
+async function pdfTextFromBase64(pdfBase64: string): Promise<string> {
+  const bin = atob(pdfBase64)
+  const bytes = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+  return readPdf(bytes.buffer)
+}
+
+/** A delta with every category present — the merge UI reads each array, and a
+ *  missing key would read as "the model returned nothing here". */
+function emptyDelta(): ProfileDelta {
+  return diffProfile(emptyProfile(), emptyProfile())
 }

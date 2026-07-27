@@ -21,7 +21,7 @@ export const home: tLocale['home'] = {
   tailorACv: 'Lebenslauf anpassen',
   tailorACvSub: 'Auf diesen Job zugeschnitten, nichts erfunden',
   tailorACvSubGeneric: 'Auf einen Job zugeschnitten, nichts erfunden',
-  oneCredit: '1 Credit',
+  usesAi: 'nutzt KI',
   jobListTitle: 'Jobliste',
   startApplying: 'Loslegen',
   addJobsLabel: 'Jobs hinzufügen',
@@ -80,7 +80,6 @@ export const home: tLocale['home'] = {
   fillCannotFill: 'Diese Seite kann nicht ausgefüllt werden.',
   fillNoForm: 'Auf dieser Seite wurde kein Bewerbungsformular gefunden.',
 
-  credits: (n: number) => `${n} Credits`,
   jobsTitle: 'Jobs',
   yourListSub: 'Jobs, die du gespeichert oder eingefügt hast',
   foundForYou: 'Für dich gefunden',

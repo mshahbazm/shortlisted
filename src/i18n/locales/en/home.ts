@@ -28,7 +28,7 @@ export const home = {
   tailorACv: 'Tailor a CV',
   tailorACvSub: 'Re-angled for this job, nothing invented',
   tailorACvSubGeneric: 'Re-angled for one job, nothing invented',
-  oneCredit: '1 credit',
+  usesAi: 'uses AI',
   jobListTitle: 'Job list',
   startApplying: 'Start applying',
   addJobsLabel: 'Add jobs',
@@ -91,7 +91,6 @@ export const home = {
   fillCannotFill: 'This page can’t be filled.',
   fillNoForm: 'No application form found on this page.',
 
-  credits: (n: number) => `${n} credits`,
   jobsTitle: 'Jobs',
   yourListSub: 'Jobs you saved or pasted in',
   foundForYou: 'Found for you',

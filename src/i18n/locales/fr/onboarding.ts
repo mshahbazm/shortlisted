@@ -28,9 +28,8 @@ export const onboarding: tLocale['onboarding'] = {
   talkCountReady: 'Plus tu partages, meilleur sera ton CV — projets, réussites, tout.',
   back: 'Retour',
   skip: 'Passer',
-  welcomeLoginLink: 'Vous avez déjà un compte ? Connectez-vous',
-  loginTitle: 'Bon retour.',
-  loginLead: 'Saisissez votre e-mail — nous vous enverrons un code à 6 chiffres.',
+  nameTitle: 'Comment devons-nous vous appeler ?',
+  nameLead: 'Ce nom figure sur votre CV — utilisez celui sous lequel vous postulez.',
 
   welcomeTitle: 'Objectif : la shortlist.',
   welcomeLead:
@@ -78,19 +77,5 @@ export const onboarding: tLocale['onboarding'] = {
   noticeDaysHint: '0 = tout de suite',
   continue: 'Continuer',
 
-  verifyTitle: 'Créez votre compte.',
-  verifyLead:
-    'Un code et c’est réglé — vos données dans votre compte et vos crédits IA gratuits débloqués.',
-  emailPlaceholder: 'vous@exemple.com',
-  sendCode: 'Envoyer le code',
-  sending: 'Envoi…',
-  inboxTitle: 'Vérifiez votre boîte mail.',
-  inboxLead: (email: string) =>
-    `Nous avons envoyé un code à 6 chiffres à ${email}. Saisissez-le ci-dessous pour terminer — vérifiez vos spams ou courriers indésirables s'il n'est pas dans votre boîte de réception.`,
-  codeLabel: 'Code',
-  codePlaceholder: '123456',
-  verifyStart: 'Vérifier et démarrer',
-  checking: 'Vérification…',
-  resendCode: 'Renvoyer le code',
-  changeEmail: 'Changer d’e-mail',
+  checking: 'Un instant…',
 }

@@ -59,7 +59,7 @@ export function onChange<K extends Key>(key: K, cb: (value: StorageShape[K]) => 
 }
 
 // The account-content keys this device caches — everything except device-level
-// settings. Kept as one list so clearAccount() and clearAccountData() can't drift.
+// settings. Kept as one list so the wipe and the export can't drift apart.
 function contentDefaults() {
   const d = storageDefaults()
   return {
@@ -70,31 +70,22 @@ function contentDefaults() {
     applications: d.applications,
     queue: d.queue,
     fitScores: d.fitScores,
-    sync: d.sync, // outbox/knownIds belong to the account being cleared
+    intake: d.intake,
     pendingNav: d.pendingNav,
   }
 }
 
-// There's no local-first per-user bucketing yet — this device holds one
-// account's data at a time — so signing out must wipe it, or the next
-// person to sign in on this device sees the previous person's CV,
-// applications, and answer bank. Device-level preferences (locale,
-// detectEverywhere) are left alone.
-export function clearAccount(): Promise<void> {
-  // Serialized on 'settings' so it can't interleave with a concurrent device-
-  // token or `onboarded` write and leave half-signed-in state behind.
-  return enqueue('settings', async () => {
-    const settings = await get('settings')
-    await chrome.storage.local.set({
-      ...contentDefaults(),
-      settings: { ...settings, accountEmail: undefined, cloudToken: undefined, onboarded: undefined },
-    })
-  })
-}
-
-/** Wipe cached account CONTENT but keep settings (token, locale). Used when a
- *  DIFFERENT account signs in on a device still holding the previous one's data,
- *  so nobody sees someone else's CV even if a prior sign-out never wiped it. */
-export function clearAccountData(): Promise<void> {
+/**
+ * Erase everything this extension knows about the user — profile, CVs,
+ * applications, answer bank, saved jobs, the builder transcript. Settings (AI
+ * endpoint, key, locale) are left alone: they describe the tool, not the person.
+ *
+ * This used to be sign-out, which had to wipe because one device held one
+ * account's cache and the next person to sign in must not see it. There are no
+ * accounts now and nothing leaves this machine, so the wipe is no longer a
+ * safety mechanism — it is just the "start over" button, and the only way to
+ * get rid of the data short of uninstalling. It cannot be undone; export first.
+ */
+export function clearAllData(): Promise<void> {
   return enqueue('profile', () => chrome.storage.local.set(contentDefaults()))
 }

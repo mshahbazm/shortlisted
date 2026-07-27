@@ -1,59 +1,57 @@
-// Wizard A — "Let's get you shortlisted". Shown when logged out. A branching
-// graph: the welcome screen forks three ways (import a CV / start blank / log
-// in), and email OTP is shared by all three. After auth the wizard ends
-// (ctx.finish) and the App router decides Home vs the Build wizard — except the
-// has-CV door, which continues through building → review → answers because those
-// steps depend on the in-memory CV text (it doesn't survive the auth boundary).
+// Wizard A — "Let's get you shortlisted". Shown until the extension is set up.
+// A branching graph: the welcome screen forks two ways (import a CV / start
+// blank), and both doors pass through the same name + AI-setup steps.
+//
+// The third door used to be "log in", and the shared middle used to be an email
+// OTP. There is no account to log into now — the equivalent gate is having an
+// AI endpoint, because that is what everything downstream actually needs. The
+// has-CV door still continues through building → review → answers in one run,
+// since those steps depend on the in-memory CV text.
 
 import { useEffect, useRef } from 'react'
 import { useContent } from '../../i18n'
 import { useStore } from '../hooks'
 import { BigChoice, Button, Input, Label, Textarea } from '../ui'
 import { StepFrame, Actions, ErrLine, Spinner, WizardShell, useWizard, wizard, type Step } from '../wizard'
-import { runExtractProfile, sendLoginCode, verifyLoginCode } from '../../ai/run'
+import { runExtractProfile } from '../../ai/run'
 import { sendMsg } from '../../lib/messaging'
-import { markResumeWanted, type Profile } from '../../lib/types'
+import { AiSetup } from '../AiSetup'
+import { aiConfigured, markResumeWanted, type Profile } from '../../lib/types'
 import * as store from '../../lib/store'
 import { WizCtx, answersStep, reviewStep } from './steps'
 import { createUploadedResume, readCvPdf } from './cv'
 
-const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())
-
 interface EntryState {
-  door: 'haveCv' | 'noCv' | 'login'
+  door: 'haveCv' | 'noCv'
   cvText: string
-  cvBase64?: string // the uploaded PDF, kept until sign-in (see readCvPdf)
+  cvBase64?: string // the uploaded PDF, carried to the end of the flow
   cvFileName?: string
-  firstName: string // captured at signup
+  firstName: string
   lastName: string
-  email: string
-  otp: string
-  isNewAccount?: boolean // set by verify(): a first-ever sign-in for this email
 }
-const initEntry = (): EntryState => ({ door: 'noCv', cvText: '', firstName: '', lastName: '', email: '', otp: '' })
+const initEntry = (): EntryState => ({ door: 'noCv', cvText: '', firstName: '', lastName: '' })
 
-// Seed the signup name/email onto identity, filling only fields that are still
-// blank — so an existing value (e.g. from a parsed CV) always wins and the typed
-// name is just a fallback that keeps us from ever being nameless.
-function seedIdentity(p: Profile, firstName: string, lastName: string, authEmail: string): Profile {
+// Seed the typed name onto identity, filling only fields that are still blank —
+// so an existing value (e.g. from a parsed CV) always wins and the typed name is
+// just a fallback that keeps us from ever being nameless.
+function seedIdentity(p: Profile, firstName: string, lastName: string): Profile {
   return {
     ...p,
     identity: {
       ...p.identity,
       firstName: p.identity.firstName || firstName.trim(),
       lastName: p.identity.lastName || lastName.trim(),
-      email: p.identity.email || authEmail.trim(),
     },
   }
 }
 
 interface EntryCtx extends WizCtx {
-  /** Signed in but built no resume in this flow (login / no-CV) — just close;
-   *  the App router lands them on Home, where the "build" CTA still shows. */
+  /** The `ai` namespace — the AI-setup step shares its wording with Settings. */
+  ta: ReturnType<typeof useContent<'ai'>>
+  /** Built no resume in this flow (the no-CV door) — just close; the App router
+   *  lands them on Home, where the "build" CTA still shows. */
   exit: () => void
-  sendCode: (email: string) => Promise<void>
-  verify: (email: string, otp: string) => Promise<{ isNewAccount: boolean }>
-  extract: (cvText: string, cvBase64: string | undefined, cvFileName: string | undefined, firstName: string, lastName: string, authEmail: string) => Promise<void>
+  extract: (cvText: string, cvBase64: string | undefined, cvFileName: string | undefined, firstName: string, lastName: string) => Promise<void>
   onPdf: (file: File) => Promise<{ cvText: string; cvBase64: string; cvFileName: string }>
 }
 
@@ -62,17 +60,14 @@ const welcome: Step<EntryState, EntryCtx> = {
     <StepFrame title={ctx.t.welcomeTitle} lead={ctx.t.welcomeLead}>
       <div className="flex flex-col gap-2.5">
         <BigChoice title={<>{ctx.t.importCvTitle}</>} sub={<>{ctx.t.importCvSub}</>} onClick={() => api.goto('paste', { door: 'haveCv' })} />
-        <BigChoice title={<>{ctx.t.startBlankTitle}</>} sub={<>{ctx.t.startBlankSub}</>} onClick={() => api.goto('email', { door: 'noCv' })} />
+        <BigChoice title={<>{ctx.t.startBlankTitle}</>} sub={<>{ctx.t.startBlankSub}</>} onClick={() => api.goto('name', { door: 'noCv' })} />
       </div>
-      <Actions>
-        <Button variant="link" onClick={() => api.goto('email', { door: 'login' })}>{ctx.t.welcomeLoginLink}</Button>
-      </Actions>
     </StepFrame>
   ),
 }
 
 const paste: Step<EntryState, EntryCtx> = {
-  next: 'email',
+  next: 'name',
   view: ({ api, ctx }) => {
     const fileRef = useRef<HTMLInputElement>(null)
     const s = api.state
@@ -114,80 +109,47 @@ const paste: Step<EntryState, EntryCtx> = {
   },
 }
 
-const email: Step<EntryState, EntryCtx> = {
-  next: 'code',
+// The name, asked once. It used to ride along with the signup email; there is
+// no signup any more, but a profile with no name still cannot produce a CV, so
+// the question stays and the email goes.
+const name: Step<EntryState, EntryCtx> = {
+  next: 'ai',
   view: ({ api, ctx }) => {
     const s = api.state
-    // Returning users (login door) give email only; the two signup doors also
-    // capture a name so every new account/profile has one to build a CV from.
-    const isSignup = s.door !== 'login'
-    const nameOk = !isSignup || s.firstName.trim().length > 0
-    const ready = emailOk(s.email) && nameOk
-    const send = () => api.run(() => ctx.sendCode(s.email.trim()), 'code')
+    const ready = s.firstName.trim().length > 0
     return (
-      <StepFrame
-        title={s.door === 'login' ? ctx.t.loginTitle : ctx.t.verifyTitle}
-        lead={s.door === 'login' ? ctx.t.loginLead : ctx.t.verifyLead}
-      >
-        {isSignup && (
-          <div className="mb-2.5 flex gap-2.5 [&>*]:flex-1">
-            <Label>{ctx.t.firstName}
-              <Input type="text" value={s.firstName} autoFocus onChange={(e) => api.set({ firstName: e.target.value })} /></Label>
-            <Label>{ctx.t.lastName}
-              <Input type="text" value={s.lastName} onChange={(e) => api.set({ lastName: e.target.value })} /></Label>
-          </div>
-        )}
-        <Label className="mb-2.5">{ctx.t.email}
-          <Input
-            type="email"
-            placeholder={ctx.t.emailPlaceholder}
-            value={s.email}
-            autoFocus={!isSignup}
-            onChange={(e) => api.set({ email: e.target.value })}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !api.busy && ready) void send() }}
-          /></Label>
+      <StepFrame title={ctx.t.nameTitle} lead={ctx.t.nameLead}>
+        <div className="mb-2.5 flex gap-2.5 [&>*]:flex-1">
+          <Label>{ctx.t.firstName}
+            <Input type="text" value={s.firstName} autoFocus onChange={(e) => api.set({ firstName: e.target.value })} /></Label>
+          <Label>{ctx.t.lastName}
+            <Input type="text" value={s.lastName} onChange={(e) => api.set({ lastName: e.target.value })} /></Label>
+        </div>
         <ErrLine msg={api.error} />
         <Actions>
-          <Button disabled={api.busy || !ready} onClick={() => void send()}>{api.busy ? ctx.t.sending : ctx.t.sendCode}</Button>
+          <Button disabled={api.busy || !ready} onClick={() => api.next()}>{ctx.t.continue}</Button>
         </Actions>
       </StepFrame>
     )
   },
 }
 
-const code: Step<EntryState, EntryCtx> = {
+// Where sign-in used to be. Everything past this point needs a model, so this
+// is the one gate the flow cannot route around — but it CAN be deferred: the
+// skip link leaves the extension usable for everything that isn't AI (the
+// profile editor, the answer bank, autofill from what you've already saved).
+const ai: Step<EntryState, EntryCtx> = {
   view: ({ api, ctx }) => {
-    const s = api.state
-    // After auth: has-CV with real text → structure it; everyone else ends here
-    // and the App router takes over. reset:true so Back can't re-enter the OTP.
-    const verify = () =>
-      api.run(
-        () => ctx.verify(s.email.trim(), s.otp),
-        (st) => (st.door === 'haveCv' && st.cvText.trim().length >= 50 ? 'building' : 'end'),
-        { reset: true },
-      )
-    // The code IS the screen — verify the moment all six digits are in.
-    useEffect(() => {
-      if (!api.busy && s.otp.length === 6) void verify()
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [s.otp])
+    const [settings] = useStore('settings')
+    // With a CV in hand, continuing means running the extractor; without one
+    // there is nothing left to do here.
+    const onwards = () =>
+      api.goto(api.state.door === 'haveCv' && api.state.cvText.trim().length >= 50 ? 'building' : 'end', {}, { reset: true })
     return (
-      <StepFrame busy={api.busy} busyTitle={ctx.t.checking} title={ctx.t.inboxTitle} lead={ctx.t.inboxLead(s.email.trim())}>
-        <Label className="mb-2.5">{ctx.t.codeLabel}
-          <Input
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            placeholder={ctx.t.codePlaceholder}
-            value={s.otp}
-            autoFocus
-            onChange={(e) => api.set({ otp: e.target.value.replace(/\D/g, '').slice(0, 6) })}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !api.busy && s.otp.trim().length >= 4) void verify() }}
-          /></Label>
-        <ErrLine msg={api.error} />
+      <StepFrame title={ctx.ta.title} lead={ctx.ta.lead}>
+        <AiSetup onSaved={onwards} saveLabel={ctx.ta.continue} />
         <Actions>
-          <Button disabled={api.busy || s.otp.trim().length < 4} onClick={() => void verify()}>{api.busy ? ctx.t.checking : ctx.t.verifyStart}</Button>
-          <Button variant="link" disabled={api.busy} onClick={() => void api.run(() => ctx.sendCode(s.email.trim()))}>{ctx.t.resendCode}</Button>
-          <Button variant="link" disabled={api.busy} onClick={() => api.back()}>{ctx.t.changeEmail}</Button>
+          <Button variant="link" onClick={onwards}>{aiConfigured(settings) ? ctx.t.skip : ctx.ta.skipForNow}</Button>
         </Actions>
       </StepFrame>
     )
@@ -199,7 +161,7 @@ const code: Step<EntryState, EntryCtx> = {
 const building: Step<EntryState, EntryCtx> = {
   view: ({ api, ctx }) => {
     const run = () =>
-      api.run(() => ctx.extract(api.state.cvText, api.state.cvBase64, api.state.cvFileName, api.state.firstName, api.state.lastName, api.state.email), 'review', { reset: true })
+      api.run(() => ctx.extract(api.state.cvText, api.state.cvBase64, api.state.cvFileName, api.state.firstName, api.state.lastName), 'review', { reset: true })
     useEffect(() => {
       void run()
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -220,21 +182,17 @@ const building: Step<EntryState, EntryCtx> = {
   },
 }
 
-// login / noCv / empty-CV terminal: set the "help wanted" flag when it applies,
-// then end the wizard; the App router takes over. verify() already ran cloudPull,
-// so this write lands on top of the freshly-pulled profile.
+// noCv / empty-CV terminal: set the "help wanted" flag when it applies, then
+// end the wizard and let the App router take over.
 const end: Step<EntryState, EntryCtx> = {
   view: ({ api, ctx }) => {
     useEffect(() => {
       const s = api.state
-      // We offer the guided builder to the "no CV" door, and to a brand-new
-      // account signing in through the Log-in door (treated as door 2). A has-CV
-      // door or an existing login keeps its own state (default: no help).
-      const wantsHelp = s.door === 'noCv' || (s.door === 'login' && !!s.isNewAccount)
+      // The guided builder is offered to the "no CV" door only — arriving with
+      // a CV is the path that skips it.
+      const wantsHelp = s.door === 'noCv'
       void (async () => {
-        // Signup doors typed a name — seed it onto the freshly-pulled profile so
-        // the builder (and CV) always have a name. The login door has no name.
-        if (s.door !== 'login' && s.firstName.trim()) await store.update('profile', (p) => seedIdentity(p, s.firstName, s.lastName, s.email))
+        if (s.firstName.trim()) await store.update('profile', (p) => seedIdentity(p, s.firstName, s.lastName))
         if (wantsHelp) await store.update('profile', markResumeWanted)
         ctx.exit()
       })()
@@ -247,8 +205,8 @@ const end: Step<EntryState, EntryCtx> = {
 const entryWizard = wizard<EntryState, EntryCtx>('welcome', {
   welcome,
   paste,
-  email,
-  code,
+  name,
+  ai,
   building,
   review: reviewStep<EntryState>('answers'),
   end,
@@ -259,37 +217,40 @@ export function EntryWizard({ onDone }: { onDone: (builtProfile?: boolean) => vo
   const [profile, saveProfile] = useStore('profile')
   const [settings] = useStore('settings')
   const t = useContent('onboarding')
+  const ta = useContent('ai')
+
+  // Onboarding is done once the wizard closes, whichever door was taken — the
+  // App router reads this flag, so without the write the welcome screen comes
+  // straight back.
+  const done = (builtProfile: boolean) => {
+    void store.update('settings', (x) => ({ ...x, onboarded: true }))
+    onDone(builtProfile)
+  }
 
   const ctx: EntryCtx = {
     t,
+    ta,
     finish: () => {
       // Reached only via the has-CV path; extract() already saved + intaked the
       // CV. No help flag — arriving with a CV is the path that skips the builder.
       // A profile was just built, so land on Profile.
-      onDone(true)
+      done(true)
     },
     // Login / no-CV terminal: nothing was built here — land on Home.
-    exit: () => onDone(false),
-    sendCode: (e) => sendLoginCode(settings, e),
-    verify: async (e, otp) => {
-      const { isNewAccount } = await verifyLoginCode(settings, e, otp) // wipes another account's cache on mismatch
-      await sendMsg({ type: 'cloudPull' }) // load THIS account's data from the server
-      return { isNewAccount }
-    },
-    extract: async (cvText, cvBase64, cvFileName, firstName, lastName, authEmail) => {
-      // Post-verify: create the resume now so it belongs to THIS account (and
-      // syncs up), resume first so it survives even if the AI pass fails.
+    exit: () => done(false),
+    extract: async (cvText, cvBase64, cvFileName, firstName, lastName) => {
+      // Save the resume first, so it survives even if the AI pass fails.
       if (cvBase64 && cvFileName) {
         const id = await createUploadedResume(cvBase64, cvFileName)
         void sendMsg({ type: 'intakeResume', resumeId: id })
       }
       const extracted = await runExtractProfile(settings, cvText)
       // Spread the existing profile first so the extract keeps `onboarding`; the
-      // CV's identity wins, and the typed name/email backfill only what it left
-      // blank (so a CV that missed the name is never left nameless).
-      saveProfile(seedIdentity({ ...profile, ...extracted, facts: profile.facts }, firstName, lastName, authEmail))
+      // CV's identity wins, and the typed name backfills only what it left blank
+      // (so a CV that missed the name is never left nameless).
+      saveProfile(seedIdentity({ ...profile, ...extracted, facts: profile.facts }, firstName, lastName))
     },
-    onPdf: (file) => readCvPdf(file, settings),
+    onPdf: (file) => readCvPdf(file),
   }
 
   const { view, canBack, busy, back } = useWizard(entryWizard, ctx, initEntry())

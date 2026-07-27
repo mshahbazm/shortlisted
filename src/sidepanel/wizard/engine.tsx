@@ -1,9 +1,9 @@
 // A tiny declarative wizard engine for the side panel — the frontend cousin of
-// the cloud's step-based workflow engine (src/workflow on the server).
+// the step-based workflow engine in src/workflow.
 //
 // Same philosophy: a wizard is DATA (a map of steps + their edges), state is a
 // reducer of patches (`state = {...state, ...patch}`), the runner is dumb and
-// the steps are smart. What the cloud engine can't do — because it runs to
+// the steps are smart. What that engine can't do — because it runs to
 // completion with no human — this adds:
 //
 //   - render a step and WAIT for input (each step is a view)
@@ -32,7 +32,7 @@ export type NavOpts = { reset?: boolean }
 export type To<S> = string | ((state: S) => string)
 
 /** What a step's view receives. Every write goes through here — a step never
- *  mutates state directly, exactly like a cloud step returning a patch. */
+ *  mutates state directly, exactly like a workflow step returning a patch. */
 export interface StepApi<S> {
   readonly state: S
   /** Merge a patch and STAY on the step (field edits). No history snapshot. */
@@ -67,7 +67,7 @@ export interface Wizard<S, C extends BaseCtx = BaseCtx> {
   readonly steps: Record<string, Step<S, C>>
 }
 
-/** Assemble a wizard from its entry id and step map (like the cloud's workflow()). */
+/** Assemble a wizard from its entry id and step map (like workflow()). */
 export function wizard<S, C extends BaseCtx = BaseCtx>(
   initial: string,
   steps: Record<string, Step<S, C>>,
