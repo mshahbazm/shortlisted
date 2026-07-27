@@ -38,12 +38,10 @@ export const onboarding = {
   startBlankTitle: "I don't have a CV",
   startBlankSub: "No problem — we'll help you build your profile and a polished CV inside.",
   nameTitle: "Nice to meet you.",
-  nameLead:
-    "Your name goes on your CV. Your email is so we can tell you what’s new — and now and then ask how you’re getting on.",
-  emailLabel: "Email",
+  nameLead: "A couple of details to get started.",
+  emailLabel: "Email (optional)",
   emailPlaceholder: "you@example.com",
-  emailWhy:
-    "Updates and the odd question, nothing else. It’s not an account — there’s nothing to log into, and your CV and answers stay on this computer.",
+  emailWhy: "We might email you about updates, or to ask for feedback.",
   emailSkip: "Continue without it",
   emailInvalid: "That doesn’t look like an email address — check it, or continue without it.",
 

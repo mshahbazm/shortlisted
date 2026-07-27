@@ -29,12 +29,10 @@ export const onboarding: tLocale['onboarding'] = {
   back: 'Indietro',
   skip: 'Salta',
   nameTitle: "Piacere di conoscerti.",
-  nameLead:
-    "Il tuo nome finisce sul CV. La tua email serve a dirti cosa c’è di nuovo — e ogni tanto a chiederti come va.",
-  emailLabel: "Email",
+  nameLead: "Qualche dato per iniziare.",
+  emailLabel: "Email (facoltativa)",
   emailPlaceholder: "tu@esempio.com",
-  emailWhy:
-    "Novità e qualche domanda ogni tanto, nient’altro. Non è un account: non c’è nulla in cui accedere, e il tuo CV e le tue risposte restano su questo computer.",
+  emailWhy: "Potremmo scriverti per gli aggiornamenti o per chiederti un parere.",
   emailSkip: "Continua senza",
   emailInvalid: "Non sembra un indirizzo email — controllalo, oppure continua senza.",
 

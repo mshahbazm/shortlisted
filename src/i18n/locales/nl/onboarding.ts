@@ -29,12 +29,10 @@ export const onboarding: tLocale['onboarding'] = {
   back: 'Terug',
   skip: 'Overslaan',
   nameTitle: "Leuk je te ontmoeten.",
-  nameLead:
-    "Je naam komt op je cv. Je e-mailadres is zodat we kunnen laten weten wat er nieuw is — en af en toe kunnen vragen hoe het gaat.",
-  emailLabel: "E-mailadres",
+  nameLead: "Een paar gegevens om te beginnen.",
+  emailLabel: "E-mailadres (optioneel)",
   emailPlaceholder: "jij@voorbeeld.nl",
-  emailWhy:
-    "Updates en af en toe een vraag, verder niets. Het is geen account — er is niets om op in te loggen, en je cv en antwoorden blijven op deze computer.",
+  emailWhy: "We mailen je misschien over updates, of om je mening te vragen.",
   emailSkip: "Ga verder zonder",
   emailInvalid: "Dat lijkt geen e-mailadres — controleer het, of ga verder zonder.",
 
