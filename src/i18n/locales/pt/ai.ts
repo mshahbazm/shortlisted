@@ -37,8 +37,7 @@ export const ai = {
   untested: "Ainda não testado.",
   testedOn: (when: string) => `Testado ${when}`,
 
-  whatItCosts: "Quanto custa",
-  whatItCostsBody: "Pagas diretamente ao teu fornecedor de IA, aos preços dele. Um CV à medida custa normalmente uma fração de cêntimo num modelo barato, e uns cêntimos num de topo. O Shortlisted não fica com nada e nunca vê a tua chave.",
+  privacyNote: "A tua chave e tudo o que escreves ficam neste computador. Os pedidos vão daqui diretamente para o endereço acima — o Shortlisted não está pelo meio e não vê nada. Pagas a esse fornecedor diretamente, aos preços dele.",
 
   notConfiguredTitle: "A IA ainda não está configurada.",
   notConfiguredBody: "Adiciona um endereço de API e um modelo para ligar os CV à medida, as pontuações de vagas e o preenchimento inteligente.",

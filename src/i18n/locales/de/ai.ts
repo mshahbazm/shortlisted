@@ -37,8 +37,7 @@ export const ai = {
   untested: "Noch nicht getestet.",
   testedOn: (when: string) => `Getestet ${when}`,
 
-  whatItCosts: "Was das kostet",
-  whatItCostsBody: "Du zahlst direkt an deinen KI-Anbieter, zu dessen Preisen. Ein zugeschnittener Lebenslauf kostet auf einem günstigen Modell meist Bruchteile eines Cents, auf einem Spitzenmodell ein paar Cent. Shortlisted bekommt nichts und sieht deinen Schlüssel nie.",
+  privacyNote: "Dein Schlüssel und alles, was du schreibst, bleiben auf diesem Computer. Anfragen gehen direkt von hier an die Adresse oben — Shortlisted sitzt nicht dazwischen und sieht nichts davon. Du zahlst direkt an den Anbieter, zu dessen Preisen.",
 
   notConfiguredTitle: "Die KI ist noch nicht eingerichtet.",
   notConfiguredBody: "Trage eine API-Adresse und ein Modell ein, um zugeschnittene Lebensläufe, Stellenbewertungen und schlaues Ausfüllen zu aktivieren.",

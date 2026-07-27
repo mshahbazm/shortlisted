@@ -155,7 +155,7 @@ export function AiSetup({ onSaved, saveLabel }: { onSaved?: () => void; saveLabe
         </Button>
       </div>
 
-      <Hint>{t.whatItCostsBody}</Hint>
+      <Hint>{t.privacyNote}</Hint>
     </div>
   )
 }

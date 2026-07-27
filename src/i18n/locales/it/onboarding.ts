@@ -33,7 +33,7 @@ export const onboarding: tLocale['onboarding'] = {
 
   welcomeTitle: 'Facciamoci notare.',
   welcomeLead:
-    'Crea il tuo profilo professionale una sola volta. Shortlisted riutilizza i tuoi dati e le tue risposte nelle candidature. Tu controlli tutto prima di inviare.',
+    "Crea il tuo profilo professionale una volta e Shortlisted riusa i tuoi dati e le tue risposte in ogni candidatura — controlli tutto prima di inviare. Resta tutto su questo computer: nessun account, nessun nostro server, niente che possa trapelare.",
   importCvTitle: 'Ho un CV',
   importCvSub: 'Carica o incolla il tuo CV — l\'IA lo trasforma nel tuo profilo. ~1 minuto.',
   startBlankTitle: 'Non ho un CV',

@@ -53,8 +53,6 @@ export const resumes: tLocale['resumes'] = {
   fromProfileSub: 'Ein sauberer allgemeiner Lebenslauf aus allem, was du eingetragen hast. Stil wählen.',
   fromUploadTitle: 'PDF hochladen',
   fromUploadSub: 'Schon einen? Ich lese ihn und lerne daraus.',
-  freeLabel: 'Kostenlos',
-  usesAi: 'nutzt KI',
   theJob: 'Der Job',
   anythingToAdd: 'Noch etwas dazu?',
   optionalLabel: 'optional',

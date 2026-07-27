@@ -52,8 +52,6 @@ export const resumes = {
   fromProfileSub: 'A clean general CV from everything you’ve entered. Pick a style.',
   fromUploadTitle: 'Upload a PDF',
   fromUploadSub: 'Already have one? I’ll read it and learn from it.',
-  freeLabel: 'Free',
-  usesAi: 'uses AI',
   theJob: 'The job',
   anythingToAdd: 'Anything to add?',
   optionalLabel: 'optional',

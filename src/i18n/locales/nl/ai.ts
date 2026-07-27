@@ -37,8 +37,7 @@ export const ai = {
   untested: "Nog niet getest.",
   testedOn: (when: string) => `Getest ${when}`,
 
-  whatItCosts: "Wat dit kost",
-  whatItCostsBody: "Je betaalt je AI-aanbieder rechtstreeks, tegen hun tarieven. Een cv op maat kost meestal een fractie van een cent op een goedkoop model, een paar cent op een topmodel. Shortlisted krijgt niets en ziet je sleutel nooit.",
+  privacyNote: "Je sleutel en alles wat je schrijft blijven op deze computer. Verzoeken gaan rechtstreeks van hier naar het adres hierboven — Shortlisted zit er niet tussen en ziet er niets van. Je betaalt die aanbieder rechtstreeks, tegen hun tarieven.",
 
   notConfiguredTitle: "AI is nog niet ingesteld.",
   notConfiguredBody: "Voeg een API-adres en een model toe om cv\u0027s op maat, vacaturescores en slim invullen aan te zetten.",

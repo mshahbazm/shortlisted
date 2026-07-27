@@ -37,9 +37,7 @@ export const ai = {
   untested: 'Not tested yet.',
   testedOn: (when: string) => `Tested ${when}`,
 
-  whatItCosts: 'What this costs',
-  whatItCostsBody:
-    'You pay your AI provider directly, at their prices. A tailored CV is usually a fraction of a cent on a cheap model, a few cents on a top one. Shortlisted takes nothing and never sees your key.',
+  privacyNote: "Your key and everything you write stay on this computer. Requests go straight from here to the address above — Shortlisted has no server in between and never sees any of it. You pay that provider directly, at their prices.",
 
   notConfiguredTitle: 'AI is not set up yet.',
   notConfiguredBody: 'Add an API address and a model to turn on CV tailoring, job scoring, and smart form filling.',

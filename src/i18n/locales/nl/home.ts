@@ -11,7 +11,7 @@ export const home: tLocale['home'] = {
   bubbleOpenNote: 'Het Shortlisted-paneel staat open op de pagina — vul daar in, of',
   bringItHere: 'vul het hiervandaan in',
   fillThisApplication: 'Deze sollicitatie invullen',
-  fillFoot: 'Gratis · je standaard-cv wordt bijgevoegd · jij controleert en verstuurt',
+  fillFoot: "Je standaard-cv wordt bijgevoegd · jij controleert en verstuurt",
   noFormHere: 'Hier staat geen formulier — de sollicitatieknop leidt ergens anders heen.',
   saveToList: 'Aan lijst toevoegen',
 
@@ -21,7 +21,6 @@ export const home: tLocale['home'] = {
   tailorACv: 'Cv op maat',
   tailorACvSub: 'Toegespitst op deze vacature, niets verzonnen',
   tailorACvSubGeneric: 'Toegespitst op één vacature, niets verzonnen',
-  usesAi: 'gebruikt AI',
   jobListTitle: 'Vacaturelijst',
   startApplying: 'Beginnen met solliciteren',
   addJobsLabel: 'Vacatures toevoegen',
@@ -45,7 +44,7 @@ export const home: tLocale['home'] = {
 
   composerLabel: 'Profiel bijwerken',
   composerPlaceholder: 'Een cursus, een project, een vaardigheid die je vergat…',
-  composerHint: 'Ik zet het op de juiste plek in je profiel. Gratis.',
+  composerHint: "Ik zet het op de juiste plek in je profiel.",
   composerSubmit: 'Aan profiel toevoegen',
   composerSaved: (n: number) => `In je profiel gezet ✓ (${n} nieuw)`,
   composerNothingNew: 'Niets nieuws — dit staat al in je profiel.',

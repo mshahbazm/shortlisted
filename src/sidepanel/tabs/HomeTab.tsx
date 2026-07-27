@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { cn } from '../../lib/cn'
-import { Body, Button, Card, Chip, Composer, Cost, FIELD, Feature, Icon, IconButton, Pill, Row, ScreenHead, Textarea, TopBar, useStack } from '../ui'
+import { Body, Button, Card, Chip, Composer, FIELD, Feature, Icon, IconButton, Pill, Row, ScreenHead, Textarea, TopBar, useStack } from '../ui'
 import { PageContext, sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
 import { ApplicationRecord, base64ToBytes, resumeHelpWanted, uid } from '../../lib/types'
@@ -254,14 +254,12 @@ export function HomeTab({
             accent
             title={t.checkMyFit}
             sub={page?.isJobPage ? t.checkMyFitSub : t.checkMyFitSubGeneric}
-            cost={t.usesAi}
             onClick={() => nav.push('fit')}
           />
           <Feature
             icon="doc"
             title={t.tailorACv}
             sub={page?.isJobPage ? t.tailorACvSub : t.tailorACvSubGeneric}
-            cost={t.usesAi}
             onClick={onGoCvs}
           />
         </div>
@@ -615,7 +613,6 @@ function FitPanel({
         }}
       >
         {step ? t.scoring : t.scoreMyFit}
-        {!step && <Cost onDark>{t.usesAi}</Cost>}
       </Button>
       {step && <p className="my-1 text-[13px] text-muted">{step}</p>}
       {err && <p className="my-1 text-[13px] text-bad">{err}</p>}

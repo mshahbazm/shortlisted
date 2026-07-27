@@ -33,7 +33,7 @@ export const onboarding: tLocale['onboarding'] = {
 
   welcomeTitle: 'Objectif : la shortlist.',
   welcomeLead:
-    'Créez votre profil professionnel une seule fois. Shortlisted réutilise vos informations et vos réponses dans vos candidatures. Vous vérifiez tout avant l’envoi.',
+    "Créez votre profil professionnel une fois : Shortlisted réutilise vos informations et vos réponses à chaque candidature, et vous relisez tout avant d’envoyer. Tout reste sur cet ordinateur : pas de compte, aucun serveur chez nous, rien qui puisse fuiter.",
   importCvTitle: 'J’ai un CV',
   importCvSub: 'Importez ou collez votre CV — l\'IA en fait votre profil. ~1 minute.',
   startBlankTitle: 'Je n’ai pas de CV',

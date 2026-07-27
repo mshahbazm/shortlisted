@@ -116,7 +116,6 @@ export const profile: tLocale['profile'] = {
   reimportMergeButton: 'Aan mijn profiel toevoegen',
   moreCount: 'meer',
   nothingYet: 'Hier nog niets',
-  usesAi: 'gebruikt AI',
   segProfile: 'Profiel',
   segUnanswered: 'Open',
   newRole: 'Nieuwe functie',

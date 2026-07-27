@@ -11,7 +11,7 @@ export const home: tLocale['home'] = {
   bubbleOpenNote: 'Das Shortlisted-Panel ist auf der Seite offen — füll dort aus, oder',
   bringItHere: 'füll es von hier aus',
   fillThisApplication: 'Diese Bewerbung ausfüllen',
-  fillFoot: 'Kostenlos · dein Standard-Lebenslauf wird angehängt · du prüfst und schickst ab',
+  fillFoot: "Dein Standard-Lebenslauf wird angehängt · du prüfst und schickst ab",
   noFormHere: 'Hier ist kein Formular — der Bewerben-Button führt woandershin.',
   saveToList: 'Zur Liste',
 
@@ -21,7 +21,6 @@ export const home: tLocale['home'] = {
   tailorACv: 'Lebenslauf anpassen',
   tailorACvSub: 'Auf diesen Job zugeschnitten, nichts erfunden',
   tailorACvSubGeneric: 'Auf einen Job zugeschnitten, nichts erfunden',
-  usesAi: 'nutzt KI',
   jobListTitle: 'Jobliste',
   startApplying: 'Loslegen',
   addJobsLabel: 'Jobs hinzufügen',
@@ -45,7 +44,7 @@ export const home: tLocale['home'] = {
 
   composerLabel: 'Profil aktualisieren',
   composerPlaceholder: 'Ein Kurs, ein Projekt, eine vergessene Fähigkeit…',
-  composerHint: 'Ich sortiere es an die richtige Stelle in deinem Profil. Kostenlos.',
+  composerHint: "Ich sortiere es an die richtige Stelle in deinem Profil.",
   composerSubmit: 'Zum Profil',
   composerSaved: (n: number) => `Ins Profil übernommen ✓ (${n} neu)`,
   composerNothingNew: 'Nichts Neues dabei — steht schon in deinem Profil.',

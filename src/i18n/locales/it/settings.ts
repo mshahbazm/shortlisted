@@ -2,7 +2,7 @@
 
 export const settings = {
   title: "Impostazioni",
-  hint: "Compilare i moduli funziona senza configurare nulla. La tua chiave IA attiva l’import del CV, la personalizzazione e i punteggi degli annunci.",
+  hint: "Resta tutto su questo computer — nessun account e nessun nostro server. Compilare i moduli non richiede alcuna configurazione; aggiungi la tua chiave IA per import del CV, personalizzazione e punteggi.",
 
   languageTitle: "Lingua",
   languageAuto: "Automatica (lingua del browser)",

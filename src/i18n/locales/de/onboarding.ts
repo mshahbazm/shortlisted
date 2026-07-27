@@ -33,7 +33,7 @@ export const onboarding: tLocale['onboarding'] = {
 
   welcomeTitle: 'Bringen wir dich auf die Shortlist.',
   welcomeLead:
-    'Erstelle einmal dein Karriereprofil. Shortlisted verwendet deine Angaben und Antworten in Bewerbungen wieder. Vor dem Absenden prüfst du alles.',
+    "Leg dein Karriereprofil einmal an — Shortlisted verwendet deine Angaben und Antworten bei jeder Bewerbung wieder, und du prüfst alles vor dem Absenden. Alles bleibt auf diesem Computer: kein Konto, kein Server von uns, nichts, was abfließen kann.",
   importCvTitle: 'Ich habe einen Lebenslauf',
   importCvSub: 'Lade deinen Lebenslauf hoch oder füge ihn ein — die KI macht daraus dein Profil. ~1 Minute.',
   startBlankTitle: 'Ich habe keinen Lebenslauf',

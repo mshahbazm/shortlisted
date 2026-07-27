@@ -1,13 +1,22 @@
 # Shortlisted
 
-**The job application copilot that never lies on your CV.**
+**The job application copilot that never lies on your CV — and never sees it.**
 
 Applying to jobs is a part-time job nobody pays you for: the same form, the same
 questions, fifteen minutes at a time, dozens of times a week. Shortlisted turns
 that into about two minutes per application — and every application you send
 makes the next one faster.
 
-🧩 Chrome Web Store (coming soon) · ⚖️ AGPL-3.0 · 🔌 Bring your own AI key
+It does that without a server. Your CV, your salary expectations, your work
+history and every answer you've ever given sit in your own browser's storage and
+go nowhere. There's no account to make, no data to breach, and no company
+between you and the model — you bring your own AI key, or run a model on your
+own machine and stay offline entirely.
+
+Most tools in this category ask you to upload your entire career to a stranger's
+database. This one is the same product with that part deleted.
+
+🧩 Chrome Web Store (coming soon) · ⚖️ AGPL-3.0 · 🔒 No account, no server, no telemetry
 
 ---
 
@@ -36,12 +45,12 @@ makes the next one faster.
   about. Built to be honest, not encouraging — unrelated experience is capped,
   and generic claims count for nothing.
 
-- **Runs entirely on your machine.** There is no Shortlisted account, no
-  Shortlisted server, and no Shortlisted subscription. Your profile, CVs,
-  applications and answers live in your browser's storage and go nowhere else.
-  For the AI features you plug in your own key — any OpenAI-compatible endpoint,
-  including a model running locally — and you pay that provider directly, at
-  their prices. Filling forms and the answer bank need no AI at all.
+- **Runs entirely on your machine.** No account, no server of ours, nothing to
+  subscribe to. Your profile, CVs, applications and answers live in your
+  browser's storage and go nowhere else. For the AI features you plug in your
+  own key — any OpenAI-compatible endpoint, including a model running locally —
+  and you pay that provider directly. Filling forms and the answer bank need no
+  AI at all, so they work with nothing configured.
 
 ## Why it works when auto-apply tools don't
 
@@ -62,11 +71,12 @@ makes the next one faster.
   That's also why it sails past the bot-detection that breaks auto-appliers:
   there's no bot to detect. A human is right there, clicking submit.
 
-- **Nothing to trust us about.** The one hard question with a tool that reads
-  your CV and your job history is where that data goes. Here it doesn't go
+- **Nothing to trust us about.** The hard question with any tool that reads your
+  CV and your job history is where that data ends up. Here it doesn't go
   anywhere: the only host the extension ever contacts is the AI endpoint you
-  typed in yourself. That's not a promise in a privacy policy — it's the whole
-  architecture, and it's in this repo.
+  typed in yourself. That isn't a promise in a privacy policy you'd have to
+  believe — there is no server in the code to send it to, and the code is right
+  here. Grep it for `fetch` and you'll find one file.
 
 All of this is open source, so you don't have to take our word for any of it —
 read the code, build it yourself.

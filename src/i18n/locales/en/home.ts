@@ -1,4 +1,4 @@
-// Home: the context slot, the two paid actions, the job list, applied, and
+// Home: the context slot, the two AI actions, the job list, applied, and
 // the "something new" composer. Replaces the old Apply tab.
 //
 // Tone: plain spoken English for someone who may be applying for their first
@@ -17,18 +17,17 @@ export const home = {
   bubbleOpenNote: 'The Shortlisted panel is open on the page — fill from there, or',
   bringItHere: 'fill it from here',
   fillThisApplication: 'Fill this application',
-  fillFoot: 'Free · your default CV attaches · you review and submit',
+  fillFoot: "Your default CV attaches · you review and submit",
   noFormHere: 'No form here — the apply button leads somewhere else.',
   saveToList: 'Save to list',
 
-  // --- the two paid actions ---
+  // --- the two AI actions ---
   checkMyFit: 'Check my fit',
   checkMyFitSub: 'An honest score before you spend an hour',
   checkMyFitSubGeneric: 'Paste a job, get an honest score',
   tailorACv: 'Tailor a CV',
   tailorACvSub: 'Re-angled for this job, nothing invented',
   tailorACvSubGeneric: 'Re-angled for one job, nothing invented',
-  usesAi: 'uses AI',
   jobListTitle: 'Job list',
   startApplying: 'Start applying',
   addJobsLabel: 'Add jobs',
@@ -54,7 +53,7 @@ export const home = {
   // --- composer ---
   composerLabel: 'Update Profile',
   composerPlaceholder: 'A course, a project, a skill you forgot…',
-  composerHint: 'I’ll file it in the right part of your profile. Free.',
+  composerHint: "I’ll file it in the right part of your profile.",
   composerSubmit: 'Add to profile',
   composerSaved: (n: number) => `Filed into your profile ✓ (${n} new)`,
   composerNothingNew: 'Nothing new in there — it’s already on your profile.',

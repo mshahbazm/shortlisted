@@ -2,7 +2,7 @@
 
 export const settings = {
   title: "Definições",
-  hint: "Preencher formulários funciona sem configurar nada. A tua própria chave de IA liga a importação de CV, a personalização e as pontuações de vagas.",
+  hint: "Fica tudo neste computador — não há conta nem servidor nosso. Preencher formulários não precisa de configuração; adiciona a tua chave de IA para importar CV, personalizar e pontuar vagas.",
 
   languageTitle: "Idioma",
   languageAuto: "Automático (idioma do navegador)",

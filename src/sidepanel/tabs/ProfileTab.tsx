@@ -11,7 +11,7 @@ import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { cn } from '../../lib/cn'
 import { KV } from '../components'
-import { Bar, Body, Button, Card, Chip, ChipInput, Composer, Cost, Count, Icon, IconButton, Input, Label, ListEditor, RemoveButton, Row, ScreenHead, Segments, Select, Sheet, Textarea, TopBar, useStack } from '../ui'
+import { Bar, Body, Button, Card, Chip, ChipInput, Composer, Count, Icon, IconButton, Input, Label, ListEditor, RemoveButton, Row, ScreenHead, Segments, Select, Sheet, Textarea, TopBar, useStack } from '../ui'
 import { QuestionsTab } from './QuestionsTab'
 import {
   EducationEntry,
@@ -738,9 +738,6 @@ export function ProfileTab({
           <Button variant="ghost" size="sm" wide onClick={() => nav.push('reimport-upload')}>
             <Icon name="up" /> {t.reimportTitle}
           </Button>
-          <div className="flex items-center gap-[7px] text-[11.5px] text-faint">
-            <Cost>{t.usesAi}</Cost>
-          </div>
         </Card>
           </>
         )}
@@ -1326,7 +1323,6 @@ function ImportBox({
     <>
       <Button variant="ghost" wide disabled={busy} onClick={() => fileRef.current?.click()}>
         <Icon name="up" /> {busy ? t.readingPdf : t.uploadPdf}
-        {!busy && <Cost>{t.usesAi}</Cost>}
       </Button>
       <input
         ref={fileRef} type="file" accept="application/pdf" className="hidden"
@@ -1362,7 +1358,6 @@ function ImportBox({
         }}
       >
         {busy ? t.reading : submitLabel}
-        {!busy && <Cost onDark>{t.usesAi}</Cost>}
       </Button>
       {err && <p className="my-1 text-[13px] text-bad">{err}</p>}
     </>

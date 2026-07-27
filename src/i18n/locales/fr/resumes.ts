@@ -53,8 +53,6 @@ export const resumes: tLocale['resumes'] = {
   fromProfileSub: 'Un CV général propre à partir de tout ce que vous avez saisi. Choisissez un style.',
   fromUploadTitle: 'Envoyer un PDF',
   fromUploadSub: 'Vous en avez déjà un ? Je le lis et j’en tire ce qu’il faut.',
-  freeLabel: 'Gratuit',
-  usesAi: 'utilise l’IA',
   theJob: 'L’offre',
   anythingToAdd: 'Quelque chose à ajouter ?',
   optionalLabel: 'facultatif',

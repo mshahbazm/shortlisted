@@ -406,13 +406,12 @@ export function Row({
 
 /* ---------- paid action tile ---------- */
 
-/** One of the two things we charge for. Given real weight on Home: these are
- *  the product, and in the old panel they were collapsed grey rows. */
+/** The two headline AI actions. Given real weight on Home: these are the
+ *  product, and in the old panel they were collapsed grey rows. */
 export function Feature({
   icon,
   title,
   sub,
-  cost,
   accent,
   disabled,
   onClick,
@@ -420,8 +419,6 @@ export function Feature({
   icon: IconName
   title: string
   sub: string
-  /** Rendered top-right. Omit for free actions. */
-  cost?: string
   accent?: boolean
   disabled?: boolean
   onClick: () => void
@@ -437,7 +434,6 @@ export function Feature({
         'disabled:translate-y-0 disabled:cursor-default disabled:opacity-55 disabled:shadow-none',
       )}
     >
-      {cost && <span className="absolute top-2.5 right-2.5 text-[10px] font-semibold text-warn">{cost}</span>}
       <span
         className={cn(
           'mb-2 grid size-7 place-items-center rounded-lg',
@@ -463,9 +459,9 @@ export function Feature({
   )
 }
 
-/** A full-width choice card: a title, a line of explanation, usually a cost.
- *  Used wherever the panel asks "which of these do you want" — the new-CV
- *  sheet, the wizard's forks. Six copies of the same markup before this. */
+/** A full-width choice card: a title and a line of explanation. Used wherever
+ *  the panel asks "which of these do you want" — the new-CV sheet, the
+ *  wizard's forks. Six copies of the same markup before this. */
 export function BigChoice({
   title,
   sub,
@@ -475,7 +471,7 @@ export function BigChoice({
 }: {
   title: ReactNode
   sub: ReactNode
-  /** Usually a Cost. */
+  /** A small badge or status label on the right. */
   right?: ReactNode
   disabled?: boolean
   onClick: () => void
@@ -956,21 +952,6 @@ export function Pill({ tone = 'flat', children }: { tone?: keyof typeof PILL_TON
       className={cn(
         'inline-block rounded-full px-2 py-[3px] text-[10.5px] font-[650] whitespace-nowrap',
         PILL_TONE[tone],
-      )}
-    >
-      {children}
-    </span>
-  )
-}
-
-/** What an action costs, stated before the click. Muted amber states a fact;
- *  red would make our own paid features read as a penalty. */
-export function Cost({ children, free, onDark }: { children: ReactNode; free?: boolean; onDark?: boolean }) {
-  return (
-    <span
-      className={cn(
-        'rounded-full px-[7px] py-0.5 text-[10.5px] font-semibold whitespace-nowrap',
-        onDark ? 'bg-white/[0.17] text-white' : free ? 'bg-good-bg text-good' : 'bg-warn-bg text-warn',
       )}
     >
       {children}

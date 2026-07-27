@@ -2,7 +2,7 @@
 
 export const settings = {
   title: 'Settings',
-  hint: 'Filling forms works with no setup. Adding your own AI key turns on CV import, tailoring and fit scores.',
+  hint: "Everything stays on this computer — there is no account and no server of ours. Filling forms needs no setup at all; add your own AI key to turn on CV import, tailoring and fit scores.",
 
   languageTitle: 'Language',
   languageAuto: 'Auto (browser language)',

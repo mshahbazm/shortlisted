@@ -11,7 +11,7 @@ export const home: tLocale['home'] = {
   bubbleOpenNote: 'Le panneau Shortlisted est ouvert sur la page — remplissez depuis là, ou',
   bringItHere: 'remplissez depuis ici',
   fillThisApplication: 'Remplir cette candidature',
-  fillFoot: 'Gratuit · votre CV par défaut est joint · vous relisez et envoyez',
+  fillFoot: "Votre CV par défaut est joint · vous relisez et envoyez",
   noFormHere: 'Pas de formulaire ici — le bouton de candidature mène ailleurs.',
   saveToList: 'Ajouter à la liste',
 
@@ -21,7 +21,6 @@ export const home: tLocale['home'] = {
   tailorACv: 'Adapter un CV',
   tailorACvSub: 'Recentré sur cette offre, rien d’inventé',
   tailorACvSubGeneric: 'Recentré sur une offre, rien d’inventé',
-  usesAi: 'utilise l’IA',
   jobListTitle: 'Liste d’offres',
   startApplying: 'Commencer à postuler',
   addJobsLabel: 'Ajouter des offres',
@@ -45,7 +44,7 @@ export const home: tLocale['home'] = {
 
   composerLabel: 'Mettre à jour le profil',
   composerPlaceholder: 'Une formation, un projet, une compétence oubliée…',
-  composerHint: 'Je le range au bon endroit dans votre profil. Gratuit.',
+  composerHint: "Je le range au bon endroit dans votre profil.",
   composerSubmit: 'Ajouter au profil',
   composerSaved: (n: number) => `Ajouté à votre profil ✓ (${n} nouveau${n === 1 ? '' : 'x'})`,
   composerNothingNew: 'Rien de nouveau — c’est déjà dans votre profil.',

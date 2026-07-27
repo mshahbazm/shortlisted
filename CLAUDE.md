@@ -114,5 +114,8 @@ Small pieces over one shared engine — keep them small:
 - **Nothing phones home.** No analytics, no crash reporting, no update pings, no
   default endpoint that happens to be ours. The only host this extension ever
   talks to is the one the user typed into Settings.
+  **`ai/client.ts` is the only file in `src/` containing `fetch(`** — the README
+  invites readers to grep for exactly that, and the privacy claim is the product.
+  Adding a network call anywhere else breaks a promise, not just a convention.
 - Plain spoken English in anything user-facing.
 - Prefer the simplest thing that works; cut what isn't needed.

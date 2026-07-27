@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../hooks'
 import { useContent } from '../../i18n'
 import { cn } from '../../lib/cn'
-import { BigChoice, Body, Button, Checkbox, Chip, ChipInput, Cost, FIELD, Icon, Label, Pill, ScreenHead, Sheet, Textarea, TopBar, useStack } from '../ui'
+import { BigChoice, Body, Button, Checkbox, Chip, ChipInput, FIELD, Icon, Label, Pill, ScreenHead, Sheet, Textarea, TopBar, useStack } from '../ui'
 import { Profile, ResumeVariant, base64ToBytes, bytesToBase64, roleCompanyLabel, uid } from '../../lib/types'
 import { sendMsg } from '../../lib/messaging'
 import * as store from '../../lib/store'
@@ -271,7 +271,6 @@ export function ResumesTab() {
             onClick={() => setPicking('tailor')}
           >
             {busyStep ? t.working : t.nextPickStyle}
-            {!busyStep && <Cost onDark>{t.usesAi}</Cost>}
           </Button>
           {busyStep && <p className="my-1 text-[13px] text-muted">{busyStep}</p>}
           {err && <p className="my-1 text-[13px] text-bad">{err}</p>}
@@ -342,20 +341,17 @@ export function ResumesTab() {
         >
           <BigChoice
             title={t.fromJobTitle}
-            right={<Cost>{t.usesAi}</Cost>}
             sub={t.fromJobSub}
             onClick={() => { setSheetOpen(false); nav.push('tailor') }}
           />
           <BigChoice
             title={t.fromProfileTitle}
-            right={<Cost free>{t.freeLabel}</Cost>}
             sub={hasProfile ? t.fromProfileSub : t.fillProfileHint}
             disabled={!hasProfile}
             onClick={() => { setSheetOpen(false); setPicking('master') }}
           />
           <BigChoice
             title={t.fromUploadTitle}
-            right={<Cost free>{t.freeLabel}</Cost>}
             sub={t.fromUploadSub}
             onClick={() => { setSheetOpen(false); fileRef.current?.click() }}
           />
