@@ -1,20 +1,14 @@
 # Shortlisted
 
-**The job application copilot that never lies on your CV — and never sees it.**
+**Apply to a lot of jobs. Keep your data yours.**
 
-Applying to jobs is a part-time job nobody pays you for: the same form, the same
-questions, fifteen minutes at a time, dozens of times a week. Shortlisted turns
-that into about two minutes per application — and every application you send
-makes the next one faster.
+Looking for work means a lot of applications — the same form, the same
+questions, fifteen minutes at a time. Shortlisted fills them from your profile
+in about two minutes each, and learns every new question so the next one is
+faster. You review everything and click submit yourself.
 
-It does that without a server. Your CV, your salary expectations, your work
-history and every answer you've ever given sit in your own browser's storage and
-go nowhere. There's no account to make, no data to breach, and no company
-between you and the model — you bring your own AI key, or run a model on your
-own machine and stay offline entirely.
-
-Most tools in this category ask you to upload your entire career to a stranger's
-database. This one is the same product with that part deleted.
+Your CV, your salary expectations, your work history and every answer you've
+given stay in your browser, on your computer. No account, no server of ours.
 
 🧩 Chrome Web Store (coming soon) · ⚖️ AGPL-3.0 · 🔒 No account, no server, no telemetry
 
@@ -71,12 +65,9 @@ database. This one is the same product with that part deleted.
   That's also why it sails past the bot-detection that breaks auto-appliers:
   there's no bot to detect. A human is right there, clicking submit.
 
-- **Nothing to trust us about.** The hard question with any tool that reads your
-  CV and your job history is where that data ends up. Here it doesn't go
-  anywhere: the only host the extension ever contacts is the AI endpoint you
-  typed in yourself. That isn't a promise in a privacy policy you'd have to
-  believe — there is no server in the code to send it to, and the code is right
-  here. Grep it for `fetch` and you'll find one file.
+- **Your data never leaves.** The only thing the extension ever contacts is the
+  AI endpoint you set up yourself. Not a privacy policy — there's simply no
+  server of ours in the code.
 
 All of this is open source, so you don't have to take our word for any of it —
 read the code, build it yourself.
