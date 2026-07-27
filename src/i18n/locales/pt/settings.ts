@@ -2,7 +2,7 @@
 
 export const settings = {
   title: "Definições",
-  hint: "Fica tudo neste computador — não há conta nem servidor nosso. Preencher formulários não precisa de configuração; adiciona a tua chave de IA para importar CV, personalizar e pontuar vagas.",
+  hint: "O teu CV, as tuas respostas e as tuas candidaturas ficam neste computador. Preencher formulários não precisa de configuração; adiciona a tua chave de IA para importar CV, personalizar e pontuar vagas.",
 
   languageTitle: "Idioma",
   languageAuto: "Automático (idioma do navegador)",

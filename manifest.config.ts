@@ -12,12 +12,13 @@ export default defineManifest(({ mode }) => ({
   // one you are actually looking at.
   name: mode === 'production' ? 'Shortlisted — job application copilot' : 'Shortlisted (dev)',
   version: '0.1.0',
-  // Also the Chrome Web Store short description — 132 characters, hard limit.
-  // Leads with the privacy claim because it is the one thing that separates
-  // this from every other autofill tool, and it is verifiable: the repo is
-  // public and there is no server to take our word about.
+  // Also the Chrome Web Store short description — 132 characters, hard limit,
+  // and this is exactly 132. Leads with the privacy claim because it is what
+  // separates this from every other autofill tool. It says "your CV" rather
+  // than "nothing": the onboarding screen offers to take an email address for
+  // product updates, so a blanket claim would be one word too strong.
   description:
-    'Fills job applications from your profile and tailors truthful CVs. Open source, your own AI key, nothing leaves your computer.',
+    'Fills job applications from your profile and tailors truthful CVs. Open source, your own AI key, your CV never leaves your computer.',
   action: {
     default_title: 'Shortlisted',
   },

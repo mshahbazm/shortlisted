@@ -2,7 +2,7 @@
 
 export const settings = {
   title: "Réglages",
-  hint: "Tout reste sur cet ordinateur — pas de compte, aucun serveur chez nous. Le remplissage ne demande aucune configuration ; ajoutez votre clé d’IA pour l’import de CV, la personnalisation et les scores d’offres.",
+  hint: "Votre CV, vos réponses et vos candidatures restent sur cet ordinateur. Le remplissage ne demande aucune configuration ; ajoutez votre clé d’IA pour l’import de CV, la personnalisation et les scores d’offres.",
 
   languageTitle: "Langue",
   languageAuto: "Automatique (langue du navigateur)",

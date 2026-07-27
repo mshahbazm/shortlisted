@@ -2,7 +2,7 @@
 
 export const settings = {
   title: "Ustawienia",
-  hint: "Wszystko zostaje na tym komputerze — nie ma konta ani naszego serwera. Wypełnianie formularzy nie wymaga konfiguracji; dodaj własny klucz AI, aby włączyć import CV, dopasowywanie i ocenę ofert.",
+  hint: "Twoje CV, odpowiedzi i aplikacje zostają na tym komputerze. Wypełnianie formularzy nie wymaga konfiguracji; dodaj własny klucz AI, aby włączyć import CV, dopasowywanie i ocenę ofert.",
 
   languageTitle: "Język",
   languageAuto: "Automatycznie (język przeglądarki)",

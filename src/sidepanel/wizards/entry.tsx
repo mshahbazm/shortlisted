@@ -16,6 +16,7 @@ import { StepFrame, Actions, ErrLine, Spinner, WizardShell, useWizard, wizard, t
 import { runExtractProfile } from '../../ai/run'
 import { sendMsg } from '../../lib/messaging'
 import { AiSetup } from '../AiSetup'
+import { sendSignup } from '../../lib/signup'
 import { aiConfigured, markResumeWanted, type Profile } from '../../lib/types'
 import * as store from '../../lib/store'
 import { WizCtx, answersStep, reviewStep } from './steps'
@@ -28,8 +29,12 @@ interface EntryState {
   cvFileName?: string
   firstName: string
   lastName: string
+  /** Typed on the name step. Sent to the mailing list, never stored on the
+   *  profile — the profile's own email comes from the CV or the user editing
+   *  it, and conflating the two would put a marketing address on their CV. */
+  email: string
 }
-const initEntry = (): EntryState => ({ door: 'noCv', cvText: '', firstName: '', lastName: '' })
+const initEntry = (): EntryState => ({ door: 'noCv', cvText: '', firstName: '', lastName: '', email: '' })
 
 // Seed the typed name onto identity, filling only fields that are still blank —
 // so an existing value (e.g. from a parsed CV) always wins and the typed name is
@@ -48,6 +53,10 @@ function seedIdentity(p: Profile, firstName: string, lastName: string): Profile 
 interface EntryCtx extends WizCtx {
   /** The `ai` namespace — the AI-setup step shares its wording with Settings. */
   ta: ReturnType<typeof useContent<'ai'>>
+  /** Hand the typed name + address to the mailing list. Best-effort and never
+   *  awaited by the UI — a list outage must not stand between a user and their
+   *  CV. Only called from the Continue button, never from the skip. */
+  signUp: (firstName: string, lastName: string, email: string) => Promise<void>
   /** Built no resume in this flow (the no-CV door) — just close; the App router
    *  lands them on Home, where the "build" CTA still shows. */
   exit: () => void
@@ -112,11 +121,32 @@ const paste: Step<EntryState, EntryCtx> = {
 // The name, asked once. It used to ride along with the signup email; there is
 // no signup any more, but a profile with no name still cannot produce a CV, so
 // the question stays and the email goes.
+// Two asks on one screen, and they are not the same kind of thing.
+//
+// The NAME is needed locally — it goes on the CV, and a profile without one
+// cannot produce a document. The EMAIL is for us: updates, and the occasional
+// question about how it is going. Keeping them on one screen keeps the flow
+// short; keeping them clearly labelled is what stops that from being a trick.
+//
+// Deliberately not called an account. There is no password and nothing to sign
+// in to, and "create your account" would imply that installing on a second
+// machine brings your data along — it does not, and the support load from that
+// misunderstanding would cost more than the signups are worth.
+//
+// The skip is quiet but real: plain grey, one click, and it continues with the
+// email discarded. Small is a hierarchy decision. Hidden would be a dark
+// pattern, and on an open-source privacy tool that is the sort of thing that
+// ends up as the top comment on the launch thread.
 const name: Step<EntryState, EntryCtx> = {
-  next: 'ai',
   view: ({ api, ctx }) => {
     const s = api.state
     const ready = s.firstName.trim().length > 0
+    // Both paths go to the same place. The only difference is whether the
+    // address travels, which is exactly what the two labels say.
+    const go = (withEmail: boolean) => {
+      if (withEmail) void ctx.signUp(s.firstName, s.lastName, s.email)
+      api.goto('ai', withEmail ? {} : { email: '' })
+    }
     return (
       <StepFrame title={ctx.t.nameTitle} lead={ctx.t.nameLead}>
         <div className="mb-2.5 flex gap-2.5 [&>*]:flex-1">
@@ -125,9 +155,27 @@ const name: Step<EntryState, EntryCtx> = {
           <Label>{ctx.t.lastName}
             <Input type="text" value={s.lastName} onChange={(e) => api.set({ lastName: e.target.value })} /></Label>
         </div>
+        <Label className="mb-1.5">{ctx.t.emailLabel}
+          <Input
+            type="email"
+            spellCheck={false}
+            placeholder={ctx.t.emailPlaceholder}
+            value={s.email}
+            onChange={(e) => api.set({ email: e.target.value })}
+            onKeyDown={(e) => { if (e.key === 'Enter' && ready) go(true) }}
+          /></Label>
+        <p className="mt-0 mb-1 text-[11px] leading-[1.45] text-faint">{ctx.t.emailWhy}</p>
         <ErrLine msg={api.error} />
         <Actions>
-          <Button disabled={api.busy || !ready} onClick={() => api.next()}>{ctx.t.continue}</Button>
+          <Button disabled={api.busy || !ready} onClick={() => go(true)}>{ctx.t.continue}</Button>
+          <button
+            type="button"
+            disabled={api.busy || !ready}
+            className="cursor-pointer border-0 bg-transparent p-0 text-[11px] text-faint underline hover:text-muted disabled:cursor-default disabled:opacity-50"
+            onClick={() => go(false)}
+          >
+            {ctx.t.emailSkip}
+          </button>
         </Actions>
       </StepFrame>
     )
@@ -238,6 +286,9 @@ export function EntryWizard({ onDone }: { onDone: (builtProfile?: boolean) => vo
     },
     // Login / no-CV terminal: nothing was built here — land on Home.
     exit: () => done(false),
+    signUp: async (firstName, lastName, email) => {
+      await sendSignup({ firstName, lastName, email })
+    },
     extract: async (cvText, cvBase64, cvFileName, firstName, lastName) => {
       // Save the resume first, so it survives even if the AI pass fails.
       if (cvBase64 && cvFileName) {

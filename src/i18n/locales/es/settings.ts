@@ -2,7 +2,7 @@
 
 export const settings = {
   title: "Ajustes",
-  hint: "Todo se queda en este ordenador: no hay cuenta ni ningún servidor nuestro. Rellenar formularios no necesita configuración; añade tu propia clave de IA para la importación de CV, la personalización y las puntuaciones.",
+  hint: "Tu CV, tus respuestas y tus candidaturas se quedan en este ordenador. Rellenar formularios no necesita configuración; añade tu propia clave de IA para la importación de CV, la personalización y las puntuaciones.",
 
   languageTitle: "Idioma",
   languageAuto: "Automático (idioma del navegador)",

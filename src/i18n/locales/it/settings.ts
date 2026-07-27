@@ -2,7 +2,7 @@
 
 export const settings = {
   title: "Impostazioni",
-  hint: "Resta tutto su questo computer — nessun account e nessun nostro server. Compilare i moduli non richiede alcuna configurazione; aggiungi la tua chiave IA per import del CV, personalizzazione e punteggi.",
+  hint: "Il tuo CV, le tue risposte e le tue candidature restano su questo computer. Compilare i moduli non richiede alcuna configurazione; aggiungi la tua chiave IA per import del CV, personalizzazione e punteggi.",
 
   languageTitle: "Lingua",
   languageAuto: "Automatica (lingua del browser)",

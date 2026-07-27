@@ -2,7 +2,7 @@
 
 export const settings = {
   title: "Einstellungen",
-  hint: "Alles bleibt auf diesem Computer — es gibt kein Konto und keinen Server von uns. Das Ausfüllen braucht keine Einrichtung; mit deinem eigenen KI-Schlüssel kommen Lebenslauf-Import, Zuschnitt und Stellenbewertungen dazu.",
+  hint: "Dein Lebenslauf, deine Antworten und deine Bewerbungen bleiben auf diesem Computer. Das Ausfüllen braucht keine Einrichtung; mit deinem eigenen KI-Schlüssel kommen Lebenslauf-Import, Zuschnitt und Stellenbewertungen dazu.",
 
   languageTitle: "Sprache",
   languageAuto: "Automatisch (Browsersprache)",

@@ -29,12 +29,18 @@ export const onboarding: tLocale['onboarding'] = {
   talkCountReady: 'Im więcej podasz, tym lepsze CV — projekty, sukcesy, cokolwiek.',
   back: 'Wstecz',
   skip: 'Pomiń',
-  nameTitle: 'Jak masz na imię?',
-  nameLead: 'Trafi na Twoje CV, więc podaj imię, pod którym aplikujesz.',
+  nameTitle: "Miło Cię poznać.",
+  nameLead:
+    "Twoje imię trafi na CV. E-mail jest po to, żebyśmy mogli napisać, co nowego — i czasem zapytać, jak Ci idzie.",
+  emailLabel: "E-mail",
+  emailPlaceholder: "ty@przyklad.pl",
+  emailWhy:
+    "Nowości i od czasu do czasu pytanie, nic więcej. To nie jest konto — nie ma się gdzie logować, a Twoje CV i odpowiedzi zostają na tym komputerze.",
+  emailSkip: "Dalej bez tego",
 
   welcomeTitle: 'Czas trafić na shortlistę.',
   welcomeLead:
-    "Utwórz profil zawodowy raz, a Shortlisted użyje Twoich danych i odpowiedzi w każdej aplikacji — wszystko sprawdzasz przed wysłaniem. Całość zostaje na tym komputerze: bez konta, bez naszego serwera, nie ma czemu wyciec.",
+    "Utwórz profil zawodowy raz, a Shortlisted użyje Twoich danych i odpowiedzi w każdej aplikacji — wszystko sprawdzasz przed wysłaniem. Twoje CV, odpowiedzi i historia pracy zostają na tym komputerze.",
   importCvTitle: 'Mam CV',
   importCvSub: 'Prześlij lub wklej CV — AI zamieni je w Twój profil. ~1 minuta.',
   startBlankTitle: 'Nie mam CV',

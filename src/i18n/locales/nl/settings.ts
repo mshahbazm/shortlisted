@@ -2,7 +2,7 @@
 
 export const settings = {
   title: "Instellingen",
-  hint: "Alles blijft op deze computer — er is geen account en geen server van ons. Formulieren invullen werkt zonder instellen; voeg je eigen AI-sleutel toe voor cv-import, op maat maken en vacaturescores.",
+  hint: "Je cv, antwoorden en sollicitaties blijven op deze computer. Formulieren invullen werkt zonder instellen; voeg je eigen AI-sleutel toe voor cv-import, op maat maken en vacaturescores.",
 
   languageTitle: "Taal",
   languageAuto: "Automatisch (browsertaal)",

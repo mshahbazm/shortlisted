@@ -28,12 +28,18 @@ export const onboarding: tLocale['onboarding'] = {
   talkCountReady: 'Je mehr du teilst, desto besser dein Lebenslauf — Projekte, Erfolge, alles.',
   back: 'Zurück',
   skip: 'Überspringen',
-  nameTitle: 'Wie dürfen wir dich nennen?',
-  nameLead: 'Der Name steht auf deinem Lebenslauf — nimm den, unter dem du dich bewirbst.',
+  nameTitle: "Schön, dich kennenzulernen.",
+  nameLead:
+    "Dein Name steht auf deinem Lebenslauf. Deine E-Mail ist dafür da, dir Neues zu schicken — und ab und zu zu fragen, wie es läuft.",
+  emailLabel: "E-Mail",
+  emailPlaceholder: "du@beispiel.de",
+  emailWhy:
+    "Updates und gelegentlich eine Frage, sonst nichts. Es ist kein Konto — es gibt nichts zum Einloggen, und dein Lebenslauf und deine Antworten bleiben auf diesem Computer.",
+  emailSkip: "Ohne fortfahren",
 
   welcomeTitle: 'Bringen wir dich auf die Shortlist.',
   welcomeLead:
-    "Leg dein Karriereprofil einmal an — Shortlisted verwendet deine Angaben und Antworten bei jeder Bewerbung wieder, und du prüfst alles vor dem Absenden. Alles bleibt auf diesem Computer: kein Konto, kein Server von uns, nichts, was abfließen kann.",
+    "Leg dein Karriereprofil einmal an — Shortlisted verwendet deine Angaben und Antworten bei jeder Bewerbung wieder, und du prüfst alles vor dem Absenden. Dein Lebenslauf, deine Antworten und dein Werdegang bleiben auf diesem Computer.",
   importCvTitle: 'Ich habe einen Lebenslauf',
   importCvSub: 'Lade deinen Lebenslauf hoch oder füge ihn ein — die KI macht daraus dein Profil. ~1 Minute.',
   startBlankTitle: 'Ich habe keinen Lebenslauf',

@@ -2,7 +2,7 @@
 
 export const settings = {
   title: 'Settings',
-  hint: "Everything stays on this computer — there is no account and no server of ours. Filling forms needs no setup at all; add your own AI key to turn on CV import, tailoring and fit scores.",
+  hint: "Your CV, answers and applications stay on this computer. Filling forms needs no setup at all; add your own AI key to turn on CV import, tailoring and fit scores.",
 
   languageTitle: 'Language',
   languageAuto: 'Auto (browser language)',

@@ -111,11 +111,15 @@ Small pieces over one shared engine — keep them small:
 - **The user always clicks submit.** No auto-submit, no CAPTCHA solving, no
   mass-apply.
 - CV tailoring **never invents** — truth is enforced inside the capability.
-- **Nothing phones home.** No analytics, no crash reporting, no update pings, no
-  default endpoint that happens to be ours. The only host this extension ever
-  talks to is the one the user typed into Settings.
-  **`ai/client.ts` is the only file in `src/` containing `fetch(`.** Keep it that
-  way: "your data stays yours" is the product, so a network call added elsewhere
-  breaks a promise, not just a convention.
+- **Two hosts, ever.** No analytics, no crash reporting, no update pings.
+  **`ai/client.ts` and `lib/signup.ts` are the only files in `src/` containing
+  `fetch(`** — the user's AI endpoint, and the mailing-list form for the address
+  they typed on the name step. Nothing else, and `signup.ts` never reads the
+  profile. "Your CV stays yours" is the product, so a third network call breaks
+  a promise, not just a convention.
+- **The signup is not an account.** No password, no session, nothing to sign in
+  to. Never label it "account" or "sign up" in UI copy: it would promise that a
+  second machine restores your data, which is false, and the support cost of
+  that misunderstanding outweighs the signups.
 - Plain spoken English in anything user-facing.
 - Prefer the simplest thing that works; cut what isn't needed.

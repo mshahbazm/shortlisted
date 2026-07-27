@@ -28,12 +28,18 @@ export const onboarding: tLocale['onboarding'] = {
   talkCountReady: 'Hoe meer je deelt, hoe beter je cv — projecten, successen, alles.',
   back: 'Terug',
   skip: 'Overslaan',
-  nameTitle: 'Hoe mogen we je noemen?',
-  nameLead: 'Het komt op je cv, dus gebruik de naam waaronder je solliciteert.',
+  nameTitle: "Leuk je te ontmoeten.",
+  nameLead:
+    "Je naam komt op je cv. Je e-mailadres is zodat we kunnen laten weten wat er nieuw is — en af en toe kunnen vragen hoe het gaat.",
+  emailLabel: "E-mailadres",
+  emailPlaceholder: "jij@voorbeeld.nl",
+  emailWhy:
+    "Updates en af en toe een vraag, verder niets. Het is geen account — er is niets om op in te loggen, en je cv en antwoorden blijven op deze computer.",
+  emailSkip: "Ga verder zonder",
 
   welcomeTitle: 'Zorgen dat jij op de shortlist komt.',
   welcomeLead:
-    "Maak je loopbaanprofiel één keer aan; Shortlisted hergebruikt je gegevens en antwoorden bij elke sollicitatie — jij controleert alles voordat je verstuurt. Het blijft allemaal op deze computer: geen account, geen server van ons, niets dat kan uitlekken.",
+    "Maak je loopbaanprofiel één keer aan; Shortlisted hergebruikt je gegevens en antwoorden bij elke sollicitatie — jij controleert alles voordat je verstuurt. Je cv, je antwoorden en je werkverleden blijven op deze computer.",
   importCvTitle: 'Ik heb een cv',
   importCvSub: 'Upload of plak je cv — AI maakt er je profiel van. ~1 minuut.',
   startBlankTitle: 'Ik heb geen cv',

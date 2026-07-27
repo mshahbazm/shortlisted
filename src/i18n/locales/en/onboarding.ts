@@ -32,13 +32,19 @@ export const onboarding = {
 
   welcomeTitle: "Let's get you shortlisted.",
   welcomeLead:
-    "Create your career profile once, and Shortlisted reuses your details and answers across job applications — you review everything before you submit. It all stays on this computer: no account, no server of ours, nothing to leak.",
+    "Create your career profile once, and Shortlisted reuses your details and answers across job applications — you review everything before you submit. Your CV, your answers and your job history stay on this computer.",
   importCvTitle: 'I have a CV',
   importCvSub: 'Upload or paste your resume — AI turns it into your profile. ~1 minute.',
   startBlankTitle: "I don't have a CV",
   startBlankSub: "No problem — we'll help you build your profile and a polished CV inside.",
-  nameTitle: 'What should we call you?',
-  nameLead: 'It goes on your CV, so use the name you apply under.',
+  nameTitle: "Nice to meet you.",
+  nameLead:
+    "Your name goes on your CV. Your email is so we can tell you what’s new — and now and then ask how you’re getting on.",
+  emailLabel: "Email",
+  emailPlaceholder: "you@example.com",
+  emailWhy:
+    "Updates and the odd question, nothing else. It’s not an account — there’s nothing to log into, and your CV and answers stay on this computer.",
+  emailSkip: "Continue without it",
 
   pasteTitle: 'Your CV, please.',
   pasteLead: 'Upload the PDF, or paste the text.',

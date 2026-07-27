@@ -8,9 +8,9 @@ in about two minutes each, and learns every new question so the next one is
 faster. You review everything and click submit yourself.
 
 Your CV, your salary expectations, your work history and every answer you've
-given stay in your browser, on your computer. No account, no server of ours.
+given stay in your browser, on your computer. There's no account to make.
 
-🧩 Chrome Web Store (coming soon) · ⚖️ AGPL-3.0 · 🔒 No account, no server, no telemetry
+🧩 Chrome Web Store (coming soon) · ⚖️ AGPL-3.0 · 🔒 No account · your CV never leaves your machine
 
 ---
 
@@ -65,12 +65,18 @@ given stay in your browser, on your computer. No account, no server of ours.
   That's also why it sails past the bot-detection that breaks auto-appliers:
   there's no bot to detect. A human is right there, clicking submit.
 
-- **Your data never leaves.** The only thing the extension ever contacts is the
-  AI endpoint you set up yourself. Not a privacy policy — there's simply no
-  server of ours in the code.
+- **Your data never leaves.** Your CV, answers and applications are read and
+  written entirely on your machine. The only place AI requests go is the
+  endpoint you set up yourself.
 
 All of this is open source, so you don't have to take our word for any of it —
 read the code, build it yourself.
+
+> **The one exception, stated plainly:** setup offers to take your name and
+> email so we can tell you about updates and occasionally ask how it's going.
+> It's a mailing list, not an account — there's nothing to log into, and signing
+> in elsewhere won't bring your data with you. Skip it and nothing is sent.
+> Your CV and answers are never part of it, either way.
 
 <!-- TODO before launch: screenshots — wizard, on-page fill panel, fit score -->
 
