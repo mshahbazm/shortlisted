@@ -13,7 +13,7 @@
 // Run: bun test
 
 import { expect, test, describe } from 'bun:test'
-import { clearResumeWanted, emptyProfile, hasProfileContent, markResumeWanted, normalizeProfile, normalizeSettings, resumeHelpWanted } from './types'
+import { aiConfigured, clearResumeWanted, emptyProfile, hasProfileContent, markResumeWanted, normalizeProfile, normalizeSettings, probeMatches, resumeHelpWanted } from './types'
 
 describe('normalizeSettings', () => {
   test('keeps the settings that still mean something', () => {
@@ -61,6 +61,24 @@ describe('normalizeSettings', () => {
     expect(out.someFutureFlag).toBe(1)
   })
 
+  test('aiConfigured needs both an endpoint and a model', () => {
+    expect(aiConfigured({})).toBe(false)
+    expect(aiConfigured({ aiEndpoint: 'https://x/v1' })).toBe(false)
+    expect(aiConfigured({ aiModel: 'gpt-5.2' })).toBe(false)
+    expect(aiConfigured({ aiEndpoint: '   ', aiModel: 'gpt-5.2' })).toBe(false)
+    expect(aiConfigured({ aiEndpoint: 'https://x/v1', aiModel: 'gpt-5.2' })).toBe(true)
+  })
+
+  test('a probe goes stale the moment the endpoint or model changes', () => {
+    // Otherwise Settings would keep showing a green "working" against a model
+    // that was never tested — the one thing the probe exists to prevent.
+    const aiProbe = { at: 1, endpoint: 'https://x/v1', model: 'a', json: true, vision: true }
+    expect(probeMatches({ aiEndpoint: 'https://x/v1', aiModel: 'a', aiProbe })).toBe(true)
+    expect(probeMatches({ aiEndpoint: 'https://x/v1', aiModel: 'b', aiProbe })).toBe(false)
+    expect(probeMatches({ aiEndpoint: 'https://y/v1', aiModel: 'a', aiProbe })).toBe(false)
+    expect(probeMatches({})).toBe(false)
+  })
+
   test('tolerates junk input', () => {
     expect(normalizeSettings(undefined)).toEqual({})
     expect(normalizeSettings(null)).toEqual({})
@@ -84,6 +102,24 @@ describe('normalizeProfile', () => {
   test('migrates v1 string skills without losing them', () => {
     const out = normalizeProfile({ skills: ['TypeScript', 'React'] })
     expect(out.skills.map((s) => s.name)).toEqual(['TypeScript', 'React'])
+  })
+
+  test('aiConfigured needs both an endpoint and a model', () => {
+    expect(aiConfigured({})).toBe(false)
+    expect(aiConfigured({ aiEndpoint: 'https://x/v1' })).toBe(false)
+    expect(aiConfigured({ aiModel: 'gpt-5.2' })).toBe(false)
+    expect(aiConfigured({ aiEndpoint: '   ', aiModel: 'gpt-5.2' })).toBe(false)
+    expect(aiConfigured({ aiEndpoint: 'https://x/v1', aiModel: 'gpt-5.2' })).toBe(true)
+  })
+
+  test('a probe goes stale the moment the endpoint or model changes', () => {
+    // Otherwise Settings would keep showing a green "working" against a model
+    // that was never tested — the one thing the probe exists to prevent.
+    const aiProbe = { at: 1, endpoint: 'https://x/v1', model: 'a', json: true, vision: true }
+    expect(probeMatches({ aiEndpoint: 'https://x/v1', aiModel: 'a', aiProbe })).toBe(true)
+    expect(probeMatches({ aiEndpoint: 'https://x/v1', aiModel: 'b', aiProbe })).toBe(false)
+    expect(probeMatches({ aiEndpoint: 'https://y/v1', aiModel: 'a', aiProbe })).toBe(false)
+    expect(probeMatches({})).toBe(false)
   })
 
   test('tolerates junk input', () => {

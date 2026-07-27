@@ -42,9 +42,10 @@ export default defineManifest(({ mode }) => ({
       all_frames: true,
     },
   ],
-  // No 'notifications' — nothing uses chrome.notifications, and every
-  // permission listed here costs a line in the install dialog.
-  permissions: ['storage', 'unlimitedStorage', 'sidePanel', 'scripting', 'tabs', 'alarms'],
+  // Every permission listed here costs a line in the install dialog, so nothing
+  // that isn't used gets to stay. 'alarms' went with the sync mirror it was
+  // retrying for; 'notifications' was never used at all.
+  permissions: ['storage', 'unlimitedStorage', 'sidePanel', 'scripting', 'tabs'],
   // Two jobs. It covers every page above — needed as a permission, not just a
   // content-script match, so the service worker can inject into a tab that was
   // already open when the extension loaded. And it covers the AI endpoint,

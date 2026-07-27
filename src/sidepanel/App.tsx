@@ -12,7 +12,7 @@ import { TabIcon } from './ui'
 import { cn } from '../lib/cn'
 import { Toasts } from './toast'
 import * as store from '../lib/store'
-import { resumeHelpWanted } from '../lib/types'
+import { aiConfigured, resumeHelpWanted } from '../lib/types'
 
 // Four destinations. Settings is rare enough to live behind the gear, and the
 // answer bank is profile data, so it lives inside Profile rather than taking a
@@ -53,7 +53,11 @@ export function App() {
   const [settings, , settingsLoaded] = useStore('settings')
   const [profile] = useStore('profile')
   const onboarded = Boolean(settings.onboarded)
-  const needsBuild = resumeHelpWanted(profile)
+  // Every step of the guided builder is a model call, so without one there is
+  // nothing it can do but fail on its first screen. Where we would have opened
+  // it, open Settings instead — that is the thing standing in the way, and the
+  // Profile tab still works perfectly well by hand in the meantime.
+  const needsBuild = resumeHelpWanted(profile) && aiConfigured(settings)
 
   // A wizard, once shown, stays until it calls onDone — so Entry survives the
   // moment auth flips `loggedIn` mid-flow (the has-CV door continues into
@@ -108,7 +112,9 @@ export function App() {
             onGoJobs={() => go('jobs')}
             onGoCvs={() => go('cvs')}
             onOpenSettings={() => setSettingsOpen(true)}
-            onBuildProfile={() => setActiveWizard('build')}
+            onBuildProfile={() =>
+              aiConfigured(settings) ? setActiveWizard('build') : setSettingsOpen(true)
+            }
           />
         )}
         {tab === 'jobs' && <JobsTab />}

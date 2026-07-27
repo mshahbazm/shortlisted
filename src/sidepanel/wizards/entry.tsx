@@ -8,7 +8,7 @@
 // has-CV door still continues through building → review → answers in one run,
 // since those steps depend on the in-memory CV text.
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useContent } from '../../i18n'
 import { useStore } from '../hooks'
 import { BigChoice, Button, Input, Label, Textarea } from '../ui'
@@ -20,6 +20,8 @@ import { sendSignup } from '../../lib/signup'
 import { aiConfigured, markResumeWanted, type Profile } from '../../lib/types'
 import * as store from '../../lib/store'
 import { WizCtx, answersStep, reviewStep } from './steps'
+
+const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())
 import { createUploadedResume, readCvPdf } from './cv'
 
 interface EntryState {
@@ -140,11 +142,23 @@ const paste: Step<EntryState, EntryCtx> = {
 const name: Step<EntryState, EntryCtx> = {
   view: ({ api, ctx }) => {
     const s = api.state
+    const [emailErr, setEmailErr] = useState('')
     const ready = s.firstName.trim().length > 0
     // Both paths go to the same place. The only difference is whether the
     // address travels, which is exactly what the two labels say.
+    //
+    // A typo'd address is caught here rather than dropped on the floor. The
+    // sender ignores anything that isn't an address, so without this check a
+    // mistyped email would look accepted and simply never arrive — the user
+    // would believe they had signed up. An EMPTY field is not an error: that
+    // is the same choice as the skip link, just made by not typing.
     const go = (withEmail: boolean) => {
-      if (withEmail) void ctx.signUp(s.firstName, s.lastName, s.email)
+      const email = s.email.trim()
+      if (withEmail && email && !emailOk(email)) {
+        setEmailErr(ctx.t.emailInvalid)
+        return
+      }
+      if (withEmail && email) void ctx.signUp(s.firstName, s.lastName, email)
       api.goto('ai', withEmail ? {} : { email: '' })
     }
     return (
@@ -161,11 +175,11 @@ const name: Step<EntryState, EntryCtx> = {
             spellCheck={false}
             placeholder={ctx.t.emailPlaceholder}
             value={s.email}
-            onChange={(e) => api.set({ email: e.target.value })}
+            onChange={(e) => { setEmailErr(''); api.set({ email: e.target.value }) }}
             onKeyDown={(e) => { if (e.key === 'Enter' && ready) go(true) }}
           /></Label>
         <p className="mt-0 mb-1 text-[11px] leading-[1.45] text-faint">{ctx.t.emailWhy}</p>
-        <ErrLine msg={api.error} />
+        <ErrLine msg={emailErr || api.error} />
         <Actions>
           <Button disabled={api.busy || !ready} onClick={() => go(true)}>{ctx.t.continue}</Button>
           <button
@@ -189,15 +203,26 @@ const name: Step<EntryState, EntryCtx> = {
 const ai: Step<EntryState, EntryCtx> = {
   view: ({ api, ctx }) => {
     const [settings] = useStore('settings')
-    // With a CV in hand, continuing means running the extractor; without one
-    // there is nothing left to do here.
-    const onwards = () =>
-      api.goto(api.state.door === 'haveCv' && api.state.cvText.trim().length >= 50 ? 'building' : 'end', {}, { reset: true })
+    // `building` runs the extractor, so it is only a valid destination when
+    // there is a model to run it on. Skipping without one has to land on `end`
+    // instead — otherwise the user chooses "set this up later" and is handed
+    // an error screen for the thing they just declined.
+    //
+    // `hasAi` is passed in rather than read from `settings` here: AiSetup has
+    // only just written, and this hook's copy can still be a tick behind.
+    const go = (hasAi: boolean) =>
+      api.goto(
+        hasAi && api.state.door === 'haveCv' && api.state.cvText.trim().length >= 50 ? 'building' : 'end',
+        {},
+        { reset: true },
+      )
     return (
       <StepFrame title={ctx.ta.title} lead={ctx.ta.lead}>
-        <AiSetup onSaved={onwards} saveLabel={ctx.ta.continue} />
+        <AiSetup onSaved={() => go(true)} saveLabel={ctx.ta.continue} />
         <Actions>
-          <Button variant="link" onClick={onwards}>{aiConfigured(settings) ? ctx.t.skip : ctx.ta.skipForNow}</Button>
+          <Button variant="link" onClick={() => go(aiConfigured(settings))}>
+            {aiConfigured(settings) ? ctx.t.skip : ctx.ta.skipForNow}
+          </Button>
         </Actions>
       </StepFrame>
     )
@@ -242,6 +267,15 @@ const end: Step<EntryState, EntryCtx> = {
       void (async () => {
         if (s.firstName.trim()) await store.update('profile', (p) => seedIdentity(p, s.firstName, s.lastName))
         if (wantsHelp) await store.update('profile', markResumeWanted)
+        // Reaching `end` with a PDF in hand means the user uploaded one and
+        // then skipped the AI setup — `extract` (which normally saves it) never
+        // ran. Save it anyway: they handed us a file and would not expect it to
+        // vanish. Only ask for the background read if there is a model to do it
+        // with, so the CV list doesn't open on a card marked failed.
+        if (s.cvBase64 && s.cvFileName) {
+          const id = await createUploadedResume(s.cvBase64, s.cvFileName)
+          if (aiConfigured(await store.get('settings'))) void sendMsg({ type: 'intakeResume', resumeId: id })
+        }
         ctx.exit()
       })()
       // eslint-disable-next-line react-hooks/exhaustive-deps

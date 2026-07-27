@@ -14,7 +14,10 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
   const nav = useStack()
   const [settings] = useStore('settings')
   const importRef = useRef<HTMLInputElement>(null)
+  // Cleared on every navigation: without that, "Erased." from the reset screen
+  // reappears under the backup buttons the next time you open them.
   const [msg, setMsg] = useState('')
+  const go = (screen: string) => { setMsg(''); nav.push(screen) }
 
   const s = settings
   // Merge against LIVE storage (read-modify-write), never a blind full object
@@ -28,7 +31,12 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
       const text = await file.text()
       const data = JSON.parse(text) as Partial<StorageShape>
       const defaults = storageDefaults()
-      const known: (keyof StorageShape)[] = ['profile', 'answerBank', 'pendingQuestions', 'resumes', 'applications', 'queue', 'settings']
+      // Everything the export writes, so a backup actually round-trips. Omits
+      // only `pendingNav`, which is a transient UI hint.
+      const known: (keyof StorageShape)[] = [
+        'profile', 'answerBank', 'pendingQuestions', 'resumes',
+        'applications', 'queue', 'fitScores', 'intake', 'settings',
+      ]
       const toSet: Record<string, unknown> = {}
       for (const k of known) if (data[k] !== undefined) toSet[k] = data[k] ?? defaults[k]
       await chrome.storage.local.set(toSet)
@@ -145,19 +153,19 @@ export function SettingsTab({ onClose }: { onClose: () => void }) {
 
         <div className="overflow-hidden rounded-card border border-line bg-bg">
           {/* AI leads: it is the only thing here that has to be set up. */}
-          <Row title={ta.settingsTitle} sub={aiSub} onClick={() => nav.push('ai')} />
+          <Row title={ta.settingsTitle} sub={aiSub} onClick={() => go('ai')} />
           <Row
             title={t.languageTitle}
             sub={isLocale(s.locale) ? LOCALE_LABELS[s.locale] : t.languageAuto}
-            onClick={() => nav.push('language')}
+            onClick={() => go('language')}
           />
           <Row
             title={t.whereILook}
             sub={s.detectEverywhere === false ? t.detectOff : t.detectOn}
-            onClick={() => nav.push('detect')}
+            onClick={() => go('detect')}
           />
-          <Row title={t.backupTitle} sub={t.backupSummary} onClick={() => nav.push('backup')} />
-          <Row title={t.resetTitle} sub={t.resetSummary} onClick={() => nav.push('reset')} />
+          <Row title={t.backupTitle} sub={t.backupSummary} onClick={() => go('backup')} />
+          <Row title={t.resetTitle} sub={t.resetSummary} onClick={() => go('reset')} />
         </div>
       </Body>
     </>

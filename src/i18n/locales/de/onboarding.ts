@@ -36,6 +36,7 @@ export const onboarding: tLocale['onboarding'] = {
   emailWhy:
     "Updates und gelegentlich eine Frage, sonst nichts. Es ist kein Konto — es gibt nichts zum Einloggen, und dein Lebenslauf und deine Antworten bleiben auf diesem Computer.",
   emailSkip: "Ohne fortfahren",
+  emailInvalid: "Das sieht nicht nach einer E-Mail-Adresse aus — prüf sie kurz, oder mach ohne weiter.",
 
   welcomeTitle: 'Bringen wir dich auf die Shortlist.',
   welcomeLead:

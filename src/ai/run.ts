@@ -16,6 +16,7 @@ import {
   Profile,
   Settings,
   emptyProfile,
+  aiConfigured,
   hasProfileContent,
 } from '../lib/types'
 import { applyEnrichment, diffProfile, type ProfileDelta } from '../lib/profileMerge'
@@ -50,7 +51,20 @@ export type { AssistField, AssistResultItem, CorrectionItem, VerifyField }
  *  copy and it is the storage. */
 const currentProfile = () => store.get('profile')
 
-const client = (settings: Settings): LlmClient => makeLlmClient(settings)
+/**
+ * The AI client, built from what is ACTUALLY stored.
+ *
+ * Callers pass the `Settings` they hold, but a React closure can be a render
+ * behind storage — the setup screen writes an endpoint and the very next wizard
+ * step runs a capability, and that gap is exactly wide enough to build a client
+ * with no endpoint and throw "not configured" at someone who just configured
+ * it. Storage is the source of truth, so read it; the passed value stays as a
+ * fallback for a caller that somehow holds fresher state than the disk.
+ */
+async function client(settings: Settings): Promise<LlmClient> {
+  const live = await store.get('settings')
+  return makeLlmClient(aiConfigured(live) ? live : settings)
+}
 
 // ---- resumes ----
 
@@ -64,8 +78,9 @@ export async function intakeResume(
   pdfBase64: string,
 ): Promise<{ delta: ProfileDelta; tags: string[] }> {
   const text = await pdfTextFromBase64(pdfBase64)
+  const llm = await client(settings)
   const state = await runLearnFromResume(
-    { mkClient: () => client(settings), log: (m) => console.debug('[wf]', m) },
+    { mkClient: () => llm, log: (m) => console.debug('[wf]', m) },
     { text, existing: await currentProfile() },
   )
   return { delta: state.delta ?? emptyDelta(), tags: state.incoming ? deriveResumeTags(state.incoming) : [] }
@@ -91,8 +106,9 @@ export async function learnFromResume(
   } else {
     throw new Error('Paste a bit more of your CV text, or upload a PDF.')
   }
+  const llm = await client(settings)
   const state = await runLearnFromResume(
-    { mkClient: () => client(settings), log: (m) => console.debug('[wf]', m) },
+    { mkClient: () => llm, log: (m) => console.debug('[wf]', m) },
     { text, existing: await currentProfile() },
   )
   return { delta: state.delta ?? emptyDelta(), method: 'text', quality }
@@ -100,7 +116,7 @@ export async function learnFromResume(
 
 export async function runExtractProfile(settings: Settings, cvText: string): Promise<Profile> {
   if (!cvText || cvText.trim().length < 50) throw new Error('There is not enough text there to read.')
-  return extractProfile(client(settings), cvText)
+  return extractProfile(await client(settings), cvText)
 }
 
 // ---- profile ----
@@ -121,7 +137,7 @@ export async function learnFromNote(settings: Settings, text: string): Promise<P
   }
   if (note.length < 8) return empty
   if (note.length > 2000) throw new Error('That note is too long (2000 characters max).')
-  const { usage: _usage, ...facts } = await enrichProfile(client(settings), note, await currentProfile())
+  const { usage: _usage, ...facts } = await enrichProfile(await client(settings), note, await currentProfile())
   return facts
 }
 
@@ -148,7 +164,7 @@ export async function assistFill(
     question: a.questionRaw[0] ?? a.questionNorm,
     answer: a.polished ?? a.answer,
   }))
-  const result = await fillAssist(client(settings), fields, verify, profile, answers)
+  const result = await fillAssist(await client(settings), fields, verify, profile, answers)
   return { results: result.results, corrections: result.corrections }
 }
 
@@ -190,7 +206,7 @@ export async function intakeNext(
   // Hard cap: once we've run the max rounds, stop asking and let them build.
   if (round >= MAX_INTAKE_ROUNDS) return { enough: true, theme: '', questions: [], round }
 
-  const assessment = await assessSufficiency(client(settings), {
+  const assessment = await assessSufficiency(await client(settings), {
     transcript: intakeTranscript(session),
     persona,
     coveredThemes: session.rounds.map((r) => r.theme ?? '').filter((t) => t.trim().length > 0),
@@ -218,7 +234,7 @@ export async function runBuildProfile(settings: Settings, answers?: string[]): P
   const session = await store.get('intake')
   if (!session) throw new Error('Nothing to build yet — tell us about yourself first.')
   const state = await runBuildProfileWorkflow(
-    { llm: client(settings), log: (m) => console.debug('[wf]', m) },
+    { llm: await client(settings), log: (m) => console.debug('[wf]', m) },
     intakeTranscript(session),
   )
   await store.update('intake', (s) => (s ? { ...s, status: 'done' } : s))
@@ -259,7 +275,7 @@ export async function runTailorCv(
   userNote?: string,
 ): Promise<TailorResult> {
   if (!jobText || jobText.trim().length < 80) throw new Error('Paste a bit more of the job description.')
-  const llm = client(settings)
+  const llm = await client(settings)
   const note = userNote?.trim()
 
   // The note is candidate-authored, so it's a truth source: extract its facts
@@ -288,7 +304,7 @@ export async function runScoreFit(
 ): Promise<ScoreFitResult> {
   if (!jobText || jobText.trim().length < 80) throw new Error('Paste a bit more of the job description.')
   onStep?.('Scoring this job against your profile…')
-  return scoreFit(client(settings), profile, jobText)
+  return scoreFit(await client(settings), profile, jobText)
 }
 
 export async function runQuickScore(
@@ -296,7 +312,7 @@ export async function runQuickScore(
   profile: Profile,
   jobText: string,
 ): Promise<QuickScoreResult> {
-  return quickScoreFit(client(settings), profile, jobText)
+  return quickScoreFit(await client(settings), profile, jobText)
 }
 
 // ---- answer bank ----
@@ -317,7 +333,7 @@ export async function polishAnswer(settings: Settings, question: string, answer:
   const q = question.trim().slice(0, 300)
   const a = answer.trim()
   if (!a || a.length > 600) return answer
-  const res = await client(settings)({
+  const res = await (await client(settings))({
     tier: 'mini',
     temperature: 0.2,
     maxTokens: 300,

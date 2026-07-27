@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import { useContent } from '../i18n'
 import { useStore } from './hooks'
+import * as store from '../lib/store'
 import { Button, Chip, Input, Label } from './ui'
 import { ENDPOINT_PRESETS, normalizeEndpoint, probeCapabilities } from '../ai/client'
 import { AiProbe, Settings, probeMatches } from '../lib/types'
@@ -28,7 +29,7 @@ function Hint({ children }: { children: React.ReactNode }) {
 
 export function AiSetup({ onSaved, saveLabel }: { onSaved?: () => void; saveLabel?: string }) {
   const t = useContent('ai')
-  const [settings, saveSettings] = useStore('settings')
+  const [settings] = useStore('settings')
 
   // Local draft, so a half-typed endpoint never becomes the live one — a probe
   // reads the draft, and only a successful save commits it.
@@ -51,6 +52,21 @@ export function AiSetup({ onSaved, saveLabel }: { onSaved?: () => void; saveLabe
   // A probe describes one endpoint+model pair; editing either makes it stale.
   const fresh = probeMatches(draft, probe)
 
+  // Read-modify-write against LIVE storage, never a blind full object from
+  // React state: `draft` is built from a render-time copy of settings, so
+  // writing it wholesale would silently revert anything saved elsewhere in
+  // between (the wizard's `onboarded`, a locale change). Only the AI fields
+  // this screen owns are merged in.
+  const commit = (aiProbe: AiProbe | undefined) =>
+    store.update('settings', (cur) => ({
+      ...cur,
+      aiEndpoint: draft.aiEndpoint,
+      aiKey: draft.aiKey,
+      aiModel: draft.aiModel,
+      aiMiniModel: draft.aiMiniModel,
+      aiProbe,
+    }))
+
   const test = async () => {
     setTesting(true)
     try {
@@ -58,14 +74,18 @@ export function AiSetup({ onSaved, saveLabel }: { onSaved?: () => void; saveLabe
       setProbe(result)
       // Save what we just proved, so a working setup survives a closed panel
       // even if the user never presses the button below.
-      saveSettings({ ...draft, aiProbe: result })
+      await commit(result)
     } finally {
       setTesting(false)
     }
   }
 
-  const save = () => {
-    saveSettings({ ...draft, aiProbe: fresh ? probe : undefined })
+  // Awaited, not fired-and-forgotten: the wizard's next step may run a
+  // capability immediately, and it must not start before the endpoint is on
+  // disk. (run.ts reads settings live for the same reason — belt and braces,
+  // because this is the path every single user walks.)
+  const save = async () => {
+    await commit(fresh ? probe : undefined)
     onSaved?.()
   }
 
@@ -150,7 +170,7 @@ export function AiSetup({ onSaved, saveLabel }: { onSaved?: () => void; saveLabe
         <Button variant="ghost" disabled={!ready || testing} onClick={() => void test()}>
           {testing ? t.testing : fresh ? t.testAgain : t.test}
         </Button>
-        <Button disabled={!ready} onClick={save}>
+        <Button disabled={!ready} onClick={() => void save()}>
           {saveLabel ?? t.save}
         </Button>
       </div>

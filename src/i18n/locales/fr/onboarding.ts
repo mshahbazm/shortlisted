@@ -36,6 +36,7 @@ export const onboarding: tLocale['onboarding'] = {
   emailWhy:
     "Des nouveautés et une question de temps en temps, rien d’autre. Ce n’est pas un compte : il n’y a rien où se connecter, et votre CV et vos réponses restent sur cet ordinateur.",
   emailSkip: "Continuer sans",
+  emailInvalid: "Cela ne ressemble pas à une adresse e-mail — vérifiez-la, ou continuez sans.",
 
   welcomeTitle: 'Objectif : la shortlist.',
   welcomeLead:

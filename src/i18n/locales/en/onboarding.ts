@@ -45,6 +45,7 @@ export const onboarding = {
   emailWhy:
     "Updates and the odd question, nothing else. It’s not an account — there’s nothing to log into, and your CV and answers stay on this computer.",
   emailSkip: "Continue without it",
+  emailInvalid: "That doesn’t look like an email address — check it, or continue without it.",
 
   pasteTitle: 'Your CV, please.',
   pasteLead: 'Upload the PDF, or paste the text.',
