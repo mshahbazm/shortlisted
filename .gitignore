@@ -1,4 +1,7 @@
-node_modules/
+# No trailing slash: that form matches a directory only, and a symlinked
+# node_modules (a worktree pointing at a sibling checkout's install) slipped
+# straight past it and got committed — absolute path and all.
+node_modules
 dist/
 dist-prod/
 *.zip
