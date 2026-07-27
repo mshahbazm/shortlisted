@@ -2,7 +2,7 @@
 
 export const nav = {
   home: 'Home',
-  answers: 'Answers',
+  profile: 'Profile',
   cvs: 'CVs',
   jobs: 'Jobs',
 }

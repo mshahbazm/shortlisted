@@ -49,8 +49,7 @@ chrome.runtime.onMessage.addListener((msg: Msg, sender, sendResponse) => {
   // alive, and that token dies at the first await — so panel-opening
   // messages are handled HERE, synchronously, with the sender's window id.
   if (msg.type === 'openProfileNote' || msg.type === 'openSidePanel') {
-    // openProfileNote used to deep-link the panel's profile note box. Profile
-    // editing lives on the web now, so both messages simply open the panel.
+    if (msg.type === 'openProfileNote') void store.set('pendingNav', 'tellme')
     const windowId = sender.tab?.windowId
     if (windowId !== undefined) {
       chrome.sidePanel.open({ windowId }).catch((e) => console.warn('[shortlisted] sidePanel.open failed:', e))
