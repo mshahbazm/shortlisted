@@ -17,8 +17,9 @@ import { runExtractProfile } from '../../ai/run'
 import { sendMsg } from '../../lib/messaging'
 import { AiSetup } from '../AiSetup'
 import { sendSignup } from '../../lib/signup'
-import { aiConfigured, hasProfileContent, markResumeWanted, type Profile, type Settings } from '../../lib/types'
+import { aiConfigured, markResumeWanted, type Profile, type Settings } from '../../lib/types'
 import * as store from '../../lib/store'
+import { startAt } from '../../lib/onboarding'
 import { WizCtx, answersStep, reviewStep } from './steps'
 
 const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())
@@ -46,29 +47,6 @@ const initEntry = (p: Profile, s: Settings): EntryState => ({
   email: '',
 })
 
-/**
- * Where a returning user picks up.
- *
- * Every step here writes what it learns somewhere durable — the door into
- * settings, the name onto the profile, the address into `signedUpAt`, the
- * endpoint into settings — so "what have they already answered" can be read
- * back rather than tracked. Closing the panel halfway through therefore costs
- * the current screen, not the whole flow.
- *
- * The one thing that cannot survive is the pasted CV text: it lives in wizard
- * state and never touches storage until it has been parsed. So a `haveCv` door
- * with nothing on the profile yet resumes at `paste` — asking for the CV again
- * is right, because we genuinely never got it.
- */
-function startAt(p: Profile, s: Settings): string {
-  if (!s.onboardingDoor) return 'welcome'
-  if (s.onboardingDoor === 'haveCv' && !hasProfileContent(p)) return 'paste'
-  if (!p.identity.firstName.trim()) return 'name'
-  if (!aiConfigured(s)) return 'ai'
-  // Nothing left to ask. Reached only if `onboarded` was never written — the
-  // end step sets it and closes.
-  return 'end'
-}
 
 // Seed the typed name onto identity, filling only fields that are still blank —
 // so an existing value (e.g. from a parsed CV) always wins and the typed name is
