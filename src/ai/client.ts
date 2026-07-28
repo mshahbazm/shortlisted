@@ -58,9 +58,43 @@ export function makeLlmClient(settings: Settings): LlmClient {
   const endpoint = normalizeEndpoint(settings.aiEndpoint ?? '')
   const model = settings.aiModel?.trim() ?? ''
   if (!endpoint || !model) throw new AiNotConfiguredError()
+  // Seed from what the setup probe already discovered, so a fresh service
+  // worker does not spend a call relearning it on every wake.
+  for (const p of settings.aiProbe?.refusedParams ?? []) refused.add(p)
 
   return async (req: LlmRequest): Promise<LlmResponse> =>
     withRetry(() => complete(endpoint, settings.aiKey, model, req))
+}
+
+/**
+ * Optional parameters an endpoint has told us it will not accept.
+ *
+ * Providers disagree about these, and the disagreement is a hard 400 rather
+ * than something ignorable — OpenAI's newer models reject `temperature: 0`
+ * outright ("Only the default (1) value is supported"), while every local
+ * runner and most gateways honour it. Guessing wrong in either direction
+ * breaks somebody, so the client sends the parameter, and if the endpoint
+ * names it in a 400, drops it and retries. Learned once per worker lifetime;
+ * relearning costs a single wasted call.
+ *
+ * Only parameters we can lose without changing what the model is asked to DO
+ * belong here. Temperature qualifies: it makes structured output steadier where
+ * it is supported, and its absence costs some determinism, not correctness.
+ */
+const refused = new Set<string>()
+const DROPPABLE = new Set(['temperature'])
+
+/** The `param` from an OpenAI-shaped 400, when the complaint is about a
+ *  parameter rather than the request as a whole. */
+function refusedParam(body: string): string | null {
+  try {
+    const e = JSON.parse(body)?.error
+    const param = typeof e?.param === 'string' ? e.param : ''
+    const unsupported = /unsupported|not supported|does not support/i.test(String(e?.message ?? '') + String(e?.code ?? ''))
+    return param && unsupported && DROPPABLE.has(param) ? param : null
+  } catch {
+    return null
+  }
 }
 
 async function complete(
@@ -77,7 +111,7 @@ async function complete(
     headers,
     body: JSON.stringify({
       model,
-      temperature: req.temperature ?? 0.2,
+      ...(refused.has('temperature') ? {} : { temperature: req.temperature ?? 0.2 }),
       // No output cap is sent. The previous version sent both max_tokens and
       // max_completion_tokens on the theory that servers ignore parameters they
       // do not know — they do not: OpenAI's newer models reject max_tokens
@@ -101,7 +135,18 @@ async function complete(
     throw new Error(`Could not reach ${endpoint} — is it running, and does it allow browser requests? (${e})`)
   })
 
-  if (!res.ok) throw new Error(`AI endpoint error ${res.status}: ${(await res.text()).slice(0, 300)}`)
+  if (!res.ok) {
+    const body = await res.text()
+    // "You sent a parameter I don't take" is recoverable, and the endpoint has
+    // just told us which one. Drop it and go again — once, because the retry
+    // cannot hit the same complaint twice.
+    const param = refusedParam(body)
+    if (param && !refused.has(param)) {
+      refused.add(param)
+      return complete(endpoint, apiKey, model, req)
+    }
+    throw new Error(`AI endpoint error ${res.status}: ${body.slice(0, 300)}`)
+  }
   const data = await res.json()
   return {
     text: data.choices?.[0]?.message?.content ?? '',
@@ -165,6 +210,7 @@ export async function probeCapabilities(settings: Settings): Promise<AiProbe> {
   const endpoint = normalizeEndpoint(settings.aiEndpoint ?? '')
   const model = settings.aiModel?.trim() ?? ''
   const probe: AiProbe = { at: Date.now(), endpoint, model, json: false, vision: false }
+  const before = new Set(refused)
   if (!endpoint || !model) return { ...probe, error: 'Set an endpoint and a model first.' }
 
   // 1. Structured output — the capability the whole product stands on.
@@ -179,6 +225,9 @@ export async function probeCapabilities(settings: Settings): Promise<AiProbe> {
     })
     const parsed = JSON.parse(res.text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, ''))
     probe.json = parsed?.ok === true && parsed?.n === 7
+    // Anything the endpoint refused during that call is now known; record it so
+    // every later client starts already knowing.
+    probe.refusedParams = [...refused].filter((p) => !before.has(p))
     if (!probe.json) probe.error = `The model answered, but not with the JSON it was asked for: ${res.text.slice(0, 120)}`
   } catch (e) {
     // A failure here is usually the endpoint or the key, not the model — and it

@@ -511,6 +511,10 @@ export interface AiProbe {
   model: string
   json: boolean
   vision: boolean
+  /** Optional request parameters this endpoint rejected outright during the
+   *  probe (e.g. `temperature`, which OpenAI's newer models will only accept
+   *  at its default). Remembered so no later call has to rediscover it. */
+  refusedParams?: string[]
   /** Why it failed, when it did — shown verbatim; provider errors are the most
    *  useful diagnostic we have (bad key, unknown model, endpoint typo). */
   error?: string
