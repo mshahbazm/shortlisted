@@ -163,7 +163,7 @@ const name: Step<EntryState, EntryCtx> = {
     }
     return (
       <StepFrame title={ctx.t.nameTitle} lead={ctx.t.nameLead}>
-        <div className="mb-2.5 flex gap-2.5 [&>*]:flex-1">
+        <div className="mb-2.5 flex flex-col gap-2.5">
           <Label>{ctx.t.firstName}
             <Input type="text" value={s.firstName} autoFocus onChange={(e) => api.set({ firstName: e.target.value })} /></Label>
           <Label>{ctx.t.lastName}

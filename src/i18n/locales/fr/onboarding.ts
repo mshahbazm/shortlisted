@@ -30,7 +30,7 @@ export const onboarding: tLocale['onboarding'] = {
   skip: 'Passer',
   nameTitle: "Enchanté.",
   nameLead: "Quelques informations pour commencer.",
-  emailLabel: "E-mail (facultatif)",
+  emailLabel: "E-mail",
   emailPlaceholder: "vous@exemple.com",
   emailWhy: "Nous pourrions vous écrire au sujet des mises à jour, ou pour avoir votre avis.",
   emailSkip: "Continuer sans",

@@ -39,7 +39,7 @@ export const onboarding = {
   startBlankSub: "No problem — we'll help you build your profile and a polished CV inside.",
   nameTitle: "Nice to meet you.",
   nameLead: "A couple of details to get started.",
-  emailLabel: "Email (optional)",
+  emailLabel: "Email",
   emailPlaceholder: "you@example.com",
   emailWhy: "We might email you about updates, or to ask for feedback.",
   emailSkip: "Continue without it",
