@@ -22,6 +22,7 @@ export const ai = {
   test: "Testar",
   testing: "A testar…",
   testAgain: "Testar de novo",
+  mustTest: "Testa a ligação para continuares.",
   save: "Guardar",
   continue: "Continuar",
   skipForNow: "Configurar mais tarde",

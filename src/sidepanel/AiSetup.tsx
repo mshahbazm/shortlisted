@@ -90,6 +90,11 @@ export function AiSetup({ onSaved, saveLabel }: { onSaved?: () => void; saveLabe
   }
 
   const message = fresh && probe ? probeMessage(probe, t) : null
+  // The gate. Filled-in fields prove nothing — the previous version let anyone
+  // past on data alone, so a wrong key or an unusable model was only discovered
+  // later, as a failure in the middle of importing a CV. `json` is the one that
+  // matters; `vision` only costs scanned PDFs, so it warns and lets you by.
+  const proven = fresh && probe?.json === true
 
   return (
     <div className="flex flex-col gap-3">
@@ -154,10 +159,11 @@ export function AiSetup({ onSaved, saveLabel }: { onSaved?: () => void; saveLabe
         <Button variant="ghost" disabled={!ready || testing} onClick={() => void test()}>
           {testing ? t.testing : fresh ? t.testAgain : t.test}
         </Button>
-        <Button disabled={!ready} onClick={() => void save()}>
+        <Button disabled={!proven} onClick={() => void save()}>
           {saveLabel ?? t.save}
         </Button>
       </div>
+      {ready && !proven && !testing && <Hint>{t.mustTest}</Hint>}
 
       <Hint>{t.privacyNote}</Hint>
     </div>

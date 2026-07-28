@@ -296,19 +296,29 @@ const end: Step<EntryState, EntryCtx> = {
       // The guided builder is offered to the "no CV" door only — arriving with
       // a CV is the path that skips it.
       const wantsHelp = s.door === 'noCv'
+      // try/finally, not optimism: every await below is a storage write, and a
+      // single rejection used to strand the user on this screen forever with a
+      // spinner and no way out. Closing the wizard is the one thing that must
+      // happen whatever else goes wrong — a profile that saved badly is
+      // recoverable from the Profile tab, an onboarding that never ends is not.
       void (async () => {
-        if (s.firstName.trim()) await store.update('profile', (p) => seedIdentity(p, s.firstName, s.lastName))
-        if (wantsHelp) await store.update('profile', markResumeWanted)
+        try {
+          if (s.firstName.trim()) await store.update('profile', (p) => seedIdentity(p, s.firstName, s.lastName))
+          if (wantsHelp) await store.update('profile', markResumeWanted)
         // Reaching `end` with a PDF in hand means the user uploaded one and
         // then skipped the AI setup — `extract` (which normally saves it) never
         // ran. Save it anyway: they handed us a file and would not expect it to
         // vanish. Only ask for the background read if there is a model to do it
         // with, so the CV list doesn't open on a card marked failed.
-        if (s.cvBase64 && s.cvFileName) {
-          const id = await createUploadedResume(s.cvBase64, s.cvFileName)
-          if (aiConfigured(await store.get('settings'))) void sendMsg({ type: 'intakeResume', resumeId: id })
+          if (s.cvBase64 && s.cvFileName) {
+            const id = await createUploadedResume(s.cvBase64, s.cvFileName)
+            if (aiConfigured(await store.get('settings'))) void sendMsg({ type: 'intakeResume', resumeId: id })
+          }
+        } catch (e) {
+          console.error('[shortlisted] onboarding finalise failed:', e)
+        } finally {
+          ctx.exit()
         }
-        ctx.exit()
       })()
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
