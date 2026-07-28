@@ -475,6 +475,14 @@ export interface Settings {
    *  anything, and small local models often cannot hold a JSON schema. */
   aiProbe?: AiProbe
   onboarded?: boolean
+  /** Which door the welcome screen was answered with. Persisted so a wizard
+   *  interrupted halfway resumes instead of asking again from the top. */
+  onboardingDoor?: 'haveCv' | 'noCv'
+  /** When the name/email was handed to the mailing list. Set once, on the one
+   *  screen that asks. Its only job is to stop us asking twice: a returning
+   *  user who lands back on that screen sees the name fields (prefilled from
+   *  their profile) and no email field at all, because we already have it. */
+  signedUpAt?: number
   /** UI language (i18n/locale.ts code). Unset = follow the browser language. */
   locale?: string
   /**

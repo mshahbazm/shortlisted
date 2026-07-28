@@ -51,7 +51,7 @@ export function App() {
   // you defer the AI setup, and someone who chose that should land in the app,
   // not be shown the welcome screen again every time they open the panel.
   const [settings, , settingsLoaded] = useStore('settings')
-  const [profile] = useStore('profile')
+  const [profile, , profileLoaded] = useStore('profile')
   const onboarded = Boolean(settings.onboarded)
   // Every step of the guided builder is a model call, so without one there is
   // nothing it can do but fail on its first screen. Where we would have opened
@@ -78,7 +78,10 @@ export function App() {
     setSettingsOpen(false)
   }
 
-  if (!settingsLoaded) return null
+  // Both, not just settings: the Entry wizard reads the profile on mount to
+  // decide which step to resume at and to prefill the name. Mounting it a frame
+  // early would hand it an empty profile and restart the flow from the top.
+  if (!settingsLoaded || !profileLoaded) return null
   if (!onboarded) return <EntryWizard onDone={closeWizard} />
   if (activeWizard === 'build') return <BuildWizard onDone={closeWizard} />
   if (activeWizard === 'entry') return <EntryWizard onDone={closeWizard} />

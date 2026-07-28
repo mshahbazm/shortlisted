@@ -12,12 +12,12 @@ import { useEffect, useRef, useState } from 'react'
 import { useContent } from '../../i18n'
 import { useStore } from '../hooks'
 import { BigChoice, Button, Input, Label, Textarea } from '../ui'
-import { StepFrame, Actions, ErrLine, Spinner, WizardShell, useWizard, wizard, type Step } from '../wizard'
+import { StepFrame, Actions, ErrLine, Spinner, WizardShell, useWizard, wizard, type Step, type StepApi } from '../wizard'
 import { runExtractProfile } from '../../ai/run'
 import { sendMsg } from '../../lib/messaging'
 import { AiSetup } from '../AiSetup'
 import { sendSignup } from '../../lib/signup'
-import { aiConfigured, markResumeWanted, type Profile } from '../../lib/types'
+import { aiConfigured, hasProfileContent, markResumeWanted, type Profile, type Settings } from '../../lib/types'
 import * as store from '../../lib/store'
 import { WizCtx, answersStep, reviewStep } from './steps'
 
@@ -36,7 +36,39 @@ interface EntryState {
    *  it, and conflating the two would put a marketing address on their CV. */
   email: string
 }
-const initEntry = (): EntryState => ({ door: 'noCv', cvText: '', firstName: '', lastName: '', email: '' })
+// Seeded from the stored profile rather than blank, so anyone who reaches this
+// screen a second time is not retyping a name we already hold.
+const initEntry = (p: Profile, s: Settings): EntryState => ({
+  door: s.onboardingDoor ?? 'noCv',
+  cvText: '',
+  firstName: p.identity.firstName ?? '',
+  lastName: p.identity.lastName ?? '',
+  email: '',
+})
+
+/**
+ * Where a returning user picks up.
+ *
+ * Every step here writes what it learns somewhere durable — the door into
+ * settings, the name onto the profile, the address into `signedUpAt`, the
+ * endpoint into settings — so "what have they already answered" can be read
+ * back rather than tracked. Closing the panel halfway through therefore costs
+ * the current screen, not the whole flow.
+ *
+ * The one thing that cannot survive is the pasted CV text: it lives in wizard
+ * state and never touches storage until it has been parsed. So a `haveCv` door
+ * with nothing on the profile yet resumes at `paste` — asking for the CV again
+ * is right, because we genuinely never got it.
+ */
+function startAt(p: Profile, s: Settings): string {
+  if (!s.onboardingDoor) return 'welcome'
+  if (s.onboardingDoor === 'haveCv' && !hasProfileContent(p)) return 'paste'
+  if (!p.identity.firstName.trim()) return 'name'
+  if (!aiConfigured(s)) return 'ai'
+  // Nothing left to ask. Reached only if `onboarded` was never written — the
+  // end step sets it and closes.
+  return 'end'
+}
 
 // Seed the typed name onto identity, filling only fields that are still blank —
 // so an existing value (e.g. from a parsed CV) always wins and the typed name is
@@ -55,6 +87,9 @@ function seedIdentity(p: Profile, firstName: string, lastName: string): Profile 
 interface EntryCtx extends WizCtx {
   /** The `ai` namespace — the AI-setup step shares its wording with Settings. */
   ta: ReturnType<typeof useContent<'ai'>>
+  /** Record the welcome answer, then move on. Written before navigating so an
+   *  immediately-closed panel still remembers which door was taken. */
+  pickDoor: (door: 'haveCv' | 'noCv', api: StepApi<EntryState>) => void
   /** Hand the typed name + address to the mailing list. Best-effort and never
    *  awaited by the UI — a list outage must not stand between a user and their
    *  CV. Only called from the Continue button, never from the skip. */
@@ -70,8 +105,8 @@ const welcome: Step<EntryState, EntryCtx> = {
   view: ({ api, ctx }) => (
     <StepFrame title={ctx.t.welcomeTitle} lead={ctx.t.welcomeLead}>
       <div className="flex flex-col gap-2.5">
-        <BigChoice title={<>{ctx.t.importCvTitle}</>} sub={<>{ctx.t.importCvSub}</>} onClick={() => api.goto('paste', { door: 'haveCv' })} />
-        <BigChoice title={<>{ctx.t.startBlankTitle}</>} sub={<>{ctx.t.startBlankSub}</>} onClick={() => api.goto('name', { door: 'noCv' })} />
+        <BigChoice title={<>{ctx.t.importCvTitle}</>} sub={<>{ctx.t.importCvSub}</>} onClick={() => ctx.pickDoor('haveCv', api)} />
+        <BigChoice title={<>{ctx.t.startBlankTitle}</>} sub={<>{ctx.t.startBlankSub}</>} onClick={() => ctx.pickDoor('noCv', api)} />
       </div>
     </StepFrame>
   ),
@@ -142,8 +177,13 @@ const paste: Step<EntryState, EntryCtx> = {
 const name: Step<EntryState, EntryCtx> = {
   view: ({ api, ctx }) => {
     const s = api.state
+    const [settings] = useStore('settings')
     const [emailErr, setEmailErr] = useState('')
     const ready = s.firstName.trim().length > 0
+    // Asked once, ever. If they gave it before, the field and its note are
+    // gone entirely — a prefilled address they cannot meaningfully change is
+    // just clutter, and asking again reads as though the first time failed.
+    const askEmail = !settings.signedUpAt
     // Both paths go to the same place. The only difference is whether the
     // address travels, which is exactly what the two labels say.
     //
@@ -169,27 +209,33 @@ const name: Step<EntryState, EntryCtx> = {
           <Label>{ctx.t.lastName}
             <Input type="text" value={s.lastName} onChange={(e) => api.set({ lastName: e.target.value })} /></Label>
         </div>
-        <Label className="mb-1.5">{ctx.t.emailLabel}
-          <Input
-            type="email"
-            spellCheck={false}
-            placeholder={ctx.t.emailPlaceholder}
-            value={s.email}
-            onChange={(e) => { setEmailErr(''); api.set({ email: e.target.value }) }}
-            onKeyDown={(e) => { if (e.key === 'Enter' && ready) go(true) }}
-          /></Label>
-        <p className="mt-0 mb-1 text-[11px] leading-[1.45] text-faint">{ctx.t.emailWhy}</p>
+        {askEmail && (
+          <>
+            <Label className="mb-1.5">{ctx.t.emailLabel}
+              <Input
+                type="email"
+                spellCheck={false}
+                placeholder={ctx.t.emailPlaceholder}
+                value={s.email}
+                onChange={(e) => { setEmailErr(''); api.set({ email: e.target.value }) }}
+                onKeyDown={(e) => { if (e.key === 'Enter' && ready) go(true) }}
+              /></Label>
+            <p className="mt-0 mb-1 text-[11px] leading-[1.45] text-faint">{ctx.t.emailWhy}</p>
+          </>
+        )}
         <ErrLine msg={emailErr || api.error} />
         <Actions>
           <Button disabled={api.busy || !ready} onClick={() => go(true)}>{ctx.t.continue}</Button>
-          <button
-            type="button"
-            disabled={api.busy || !ready}
-            className="cursor-pointer border-0 bg-transparent p-0 text-[11px] text-faint underline hover:text-muted disabled:cursor-default disabled:opacity-50"
-            onClick={() => go(false)}
-          >
-            {ctx.t.emailSkip}
-          </button>
+          {askEmail && (
+            <button
+              type="button"
+              disabled={api.busy || !ready}
+              className="cursor-pointer border-0 bg-transparent p-0 text-[11px] text-faint underline hover:text-muted disabled:cursor-default disabled:opacity-50"
+              onClick={() => go(false)}
+            >
+              {ctx.t.emailSkip}
+            </button>
+          )}
         </Actions>
       </StepFrame>
     )
@@ -320,8 +366,16 @@ export function EntryWizard({ onDone }: { onDone: (builtProfile?: boolean) => vo
     },
     // Login / no-CV terminal: nothing was built here — land on Home.
     exit: () => done(false),
+    pickDoor: (door, api) => {
+      void store.update('settings', (x) => ({ ...x, onboardingDoor: door }))
+      api.goto(door === 'haveCv' ? 'paste' : 'name', { door })
+    },
     signUp: async (firstName, lastName, email) => {
-      await sendSignup({ firstName, lastName, email })
+      // Only on a real send. A failed post leaves the flag unset so a later
+      // run can try again, rather than silently never asking a second time.
+      if (await sendSignup({ firstName, lastName, email })) {
+        await store.update('settings', (x) => ({ ...x, signedUpAt: Date.now() }))
+      }
     },
     extract: async (cvText, cvBase64, cvFileName, firstName, lastName) => {
       // Save the resume first, so it survives even if the AI pass fails.
@@ -338,7 +392,11 @@ export function EntryWizard({ onDone }: { onDone: (builtProfile?: boolean) => vo
     onPdf: (file) => readCvPdf(file),
   }
 
-  const { view, canBack, busy, back } = useWizard(entryWizard, ctx, initEntry())
+  const { view, canBack, busy, back } = useWizard(
+    { ...entryWizard, initial: startAt(profile, settings) },
+    ctx,
+    initEntry(profile, settings),
+  )
   return (
     <WizardShell canBack={canBack} disabled={busy} onBack={back} backLabel={t.back}>
       {view}
