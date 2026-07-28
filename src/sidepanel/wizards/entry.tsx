@@ -65,6 +65,10 @@ function seedIdentity(p: Profile, firstName: string, lastName: string): Profile 
 interface EntryCtx extends WizCtx {
   /** The `ai` namespace — the AI-setup step shares its wording with Settings. */
   ta: ReturnType<typeof useContent<'ai'>>
+  /** Already on the mailing list — read from the settings the wizard was
+   *  mounted with, not a fresh useStore, which would flash the field for a
+   *  frame before hiding it. */
+  signedUp: boolean
   /** Persist the typed name the moment the step is left, not at the end of the
    *  flow. Without this, `startAt` reads a blank profile on the next open and
    *  sends the user back to a screen they already filled in. */
@@ -159,13 +163,12 @@ const paste: Step<EntryState, EntryCtx> = {
 const name: Step<EntryState, EntryCtx> = {
   view: ({ api, ctx }) => {
     const s = api.state
-    const [settings] = useStore('settings')
     const [emailErr, setEmailErr] = useState('')
     const ready = s.firstName.trim().length > 0
     // Asked once, ever. If they gave it before, the field and its note are
     // gone entirely — a prefilled address they cannot meaningfully change is
     // just clutter, and asking again reads as though the first time failed.
-    const askEmail = !settings.signedUpAt
+    const askEmail = !ctx.signedUp
     // Both paths go to the same place. The only difference is whether the
     // address travels, which is exactly what the two labels say.
     //
@@ -324,9 +327,38 @@ const entryWizard = wizard<EntryState, EntryCtx>('welcome', {
   answers: answersStep<EntryState>(),
 })
 
+/**
+ * Gate the flow on storage, then hand it down as PROPS.
+ *
+ * `useStore` is per-component: every call starts at `storageDefaults()` with
+ * `loaded: false` and fills in asynchronously. So App checking *its own* copy
+ * before mounting this does nothing — this component's hooks were still on
+ * their first, empty render, and `useWizard` seeds its state from exactly that
+ * render. `startAt` therefore read an empty profile and empty settings every
+ * single time and dutifully returned 'welcome', while the writes it was meant
+ * to read had been landing correctly all along.
+ *
+ * Passing the loaded values in as props is what actually fixes it: `Flow`
+ * mounts only once they exist, so its lazy initialiser sees the real thing.
+ */
 export function EntryWizard({ onDone }: { onDone: (builtProfile?: boolean) => void }) {
-  const [profile, saveProfile] = useStore('profile')
-  const [settings] = useStore('settings')
+  const [profile, saveProfile, profileLoaded] = useStore('profile')
+  const [settings, , settingsLoaded] = useStore('settings')
+  if (!profileLoaded || !settingsLoaded) return null
+  return <Flow onDone={onDone} profile={profile} saveProfile={saveProfile} settings={settings} />
+}
+
+function Flow({
+  onDone,
+  profile,
+  saveProfile,
+  settings,
+}: {
+  onDone: (builtProfile?: boolean) => void
+  profile: Profile
+  saveProfile: (p: Profile) => void
+  settings: Settings
+}) {
   const t = useContent('onboarding')
   const ta = useContent('ai')
 
@@ -341,6 +373,7 @@ export function EntryWizard({ onDone }: { onDone: (builtProfile?: boolean) => vo
   const ctx: EntryCtx = {
     t,
     ta,
+    signedUp: Boolean(settings.signedUpAt),
     finish: () => {
       // Reached only via the has-CV path; extract() already saved + intaked the
       // CV. No help flag — arriving with a CV is the path that skips the builder.
