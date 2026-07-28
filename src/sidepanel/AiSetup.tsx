@@ -9,7 +9,7 @@ import { useContent } from '../i18n'
 import { useStore } from './hooks'
 import * as store from '../lib/store'
 import { Button, Chip, Input, Label } from './ui'
-import { ENDPOINT_PRESETS, normalizeEndpoint, probeCapabilities } from '../ai/client'
+import { DEFAULT_ENDPOINT, DEFAULT_MODEL, ENDPOINT_PRESETS, normalizeEndpoint, probeCapabilities } from '../ai/client'
 import { AiProbe, Settings, probeMatches } from '../lib/types'
 
 type T = ReturnType<typeof useContent<'ai'>>
@@ -33,9 +33,12 @@ export function AiSetup({ onSaved, saveLabel }: { onSaved?: () => void; saveLabe
 
   // Local draft, so a half-typed endpoint never becomes the live one — a probe
   // reads the draft, and only a successful save commits it.
-  const [endpoint, setEndpoint] = useState(settings.aiEndpoint ?? '')
+  // `||` not `??`: an empty stored value means "never configured", which should
+  // get the default back rather than an empty box. The OpenAI chip highlights
+  // itself, since selection is just "does this preset match the endpoint".
+  const [endpoint, setEndpoint] = useState(settings.aiEndpoint || DEFAULT_ENDPOINT)
   const [key, setKey] = useState(settings.aiKey ?? '')
-  const [model, setModel] = useState(settings.aiModel ?? '')
+  const [model, setModel] = useState(settings.aiModel || DEFAULT_MODEL)
   const [testing, setTesting] = useState(false)
   const [probe, setProbe] = useState<AiProbe | undefined>(settings.aiProbe)
 

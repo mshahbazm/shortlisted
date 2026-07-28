@@ -13,6 +13,9 @@ export interface LlmRequest {
   systemPrompt: string
   input: string
   temperature?: number
+  /** Advisory only — the OpenAI-compatible client does not send an output cap.
+   *  Kept because capabilities express intent with it and a different client
+   *  could honour it. See the note in ai/client.ts. */
   maxTokens?: number
   // Cost tiering: 'mini' passes (extract/match grunt work) may run on a
   // cheaper model; 'full' passes (writing) get the good one. Clients that

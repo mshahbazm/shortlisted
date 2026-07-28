@@ -20,8 +20,14 @@ export class AiNotConfiguredError extends Error {
 /** Common endpoints, offered as one-tap fills on the Settings screen. `key: false`
  *  marks a local runner that normally needs no credential. Not a whitelist —
  *  anything OpenAI-compatible can be typed in. */
+/** What a fresh install starts on, so the common case is one key away from
+ *  working rather than two fields of homework. Anything here can be replaced —
+ *  it is a starting point, not a restriction. */
+export const DEFAULT_ENDPOINT = 'https://api.openai.com/v1'
+export const DEFAULT_MODEL = 'gpt-5.6-luna'
+
 export const ENDPOINT_PRESETS: { label: string; url: string; key: boolean; hint: string }[] = [
-  { label: 'OpenAI', url: 'https://api.openai.com/v1', key: true, hint: 'gpt-5.2' },
+  { label: 'OpenAI', url: DEFAULT_ENDPOINT, key: true, hint: DEFAULT_MODEL },
   { label: 'OpenRouter', url: 'https://openrouter.ai/api/v1', key: true, hint: 'one key, most models' },
   { label: 'Groq', url: 'https://api.groq.com/openai/v1', key: true, hint: 'fast, open models' },
   { label: 'Together', url: 'https://api.together.xyz/v1', key: true, hint: 'open models' },
@@ -72,12 +78,17 @@ async function complete(
     body: JSON.stringify({
       model,
       temperature: req.temperature ?? 0.2,
-      // `max_completion_tokens` is what OpenAI's newer models want and
-      // `max_tokens` is what every compatible server still accepts. Sending
-      // max_tokens alone breaks on the former; sending both breaks nothing —
-      // servers ignore parameters they don't know.
-      max_tokens: req.maxTokens ?? 4096,
-      max_completion_tokens: req.maxTokens ?? 4096,
+      // No output cap is sent. The previous version sent both max_tokens and
+      // max_completion_tokens on the theory that servers ignore parameters they
+      // do not know — they do not: OpenAI's newer models reject max_tokens
+      // outright with a 400, which made the default model unusable.
+      //
+      // Sending only max_completion_tokens would fix that and break the local
+      // runners that only know the older name. Sending neither works
+      // everywhere, and is better anyway: every capability here asks for
+      // structured JSON, and the usual way a cap hurts is by truncating a long
+      // extraction mid-object so the parse fails. Providers apply their own
+      // sane defaults, and the user is paying their own bill.
       messages: [
         { role: 'system', content: req.systemPrompt },
         { role: 'user', content: req.input },
@@ -165,7 +176,6 @@ export async function probeCapabilities(settings: Settings): Promise<AiProbe> {
         '{"type":"object","properties":{"ok":{"type":"boolean"},"n":{"type":"integer"}},"required":["ok","n"]}',
       input: 'Set ok to true and n to 7.',
       temperature: 0,
-      maxTokens: 64,
     })
     const parsed = JSON.parse(res.text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, ''))
     probe.json = parsed?.ok === true && parsed?.n === 7
@@ -186,8 +196,6 @@ export async function probeCapabilities(settings: Settings): Promise<AiProbe> {
       headers,
       body: JSON.stringify({
         model,
-        max_tokens: 16,
-        max_completion_tokens: 16,
         messages: [
           {
             role: 'user',

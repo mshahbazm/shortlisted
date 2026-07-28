@@ -17,7 +17,7 @@ export const ai = {
   keyHintLocal: "Não é preciso para um modelo neste computador.",
   keyHint: "Guardada só neste computador.",
   modelLabel: "Modelo",
-  modelPlaceholder: "gpt-5.2",
+  modelPlaceholder: "gpt-5.6-luna",
 
   test: "Testar",
   testing: "A testar…",
