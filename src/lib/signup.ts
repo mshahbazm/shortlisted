@@ -7,10 +7,12 @@
 // installing on a second machine brings your data with it, and it does not.
 // This is local-first; the mailing list is a mailing list.
 //
-// Everything else — the CV, the answer bank, the applications, the job history —
-// stays in chrome.storage and is never read by this file. Keep it that way: the
-// value of the ask is that it is small and legible, and a user who later reads
-// this file should find exactly what the screen told them.
+// Exactly three things go out: the address, the name, and which version of the
+// extension is running. Everything else — the CV, the answer bank, the
+// applications, the job history — stays in chrome.storage and is never read by
+// this file. Keep it that way: the value of the ask is that it is small and
+// legible, and a user who later reads this file should find exactly what the
+// screen told them.
 
 // ---------------------------------------------------------------------------
 // A NOTE ON THE "SECRET" BELOW, because it is easy to get wrong.
@@ -53,6 +55,24 @@ export interface Signup {
   email: string
 }
 
+/**
+ * Which build this is, from the manifest. Sent alongside the address so a reply
+ * six months from now can be read against the version it came from — otherwise
+ * "it doesn't work" arrives with no way to tell whether it is a bug you already
+ * fixed. Non-identifying, and it costs nothing.
+ *
+ * Empty outside an extension context (tests, tooling), where `chrome` is an
+ * undeclared identifier and even optional chaining would throw.
+ */
+function extensionVersion(): string {
+  try {
+    if (typeof chrome === 'undefined' || !chrome.runtime?.getManifest) return ''
+    return chrome.runtime.getManifest().version ?? ''
+  } catch {
+    return ''
+  }
+}
+
 const looksLikeEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())
 
 /**
@@ -84,6 +104,7 @@ export async function sendSignup(s: Signup): Promise<boolean> {
       body: JSON.stringify({
         email: s.email.trim(),
         name: [s.firstName.trim(), s.lastName.trim()].filter(Boolean).join(' '),
+        version: extensionVersion(),
       }),
     })
     return true

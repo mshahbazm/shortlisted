@@ -73,7 +73,8 @@ All of this is open source, so you don't have to take our word for any of it —
 read the code, build it yourself.
 
 > **The one exception, stated plainly:** setup offers to take your name and
-> email so we can tell you about updates and occasionally ask how it's going.
+> email — sent with the extension's version number, and nothing else — so we
+> can tell you about updates and occasionally ask how it's going.
 > It's a mailing list, not an account — there's nothing to log into, and signing
 > in elsewhere won't bring your data with you. Skip it and nothing is sent.
 > Your CV and answers are never part of it, either way.
