@@ -56,12 +56,24 @@ export interface Signup {
 const looksLikeEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())
 
 /**
+ * The whole send-or-not decision, as a pure function.
+ *
+ * Split out so it can be tested without depending on whether the machine
+ * running the tests happens to have a .env — the guard is the thing worth
+ * pinning, and a test that passes only on a contributor's laptop and fails on
+ * a maintainer's is worse than no test.
+ */
+export function willSend(endpoint: string, email: string): boolean {
+  return Boolean(endpoint) && looksLikeEmail(email)
+}
+
+/**
  * Best-effort, fire-and-forget. A signup that fails must never block or even
  * be mentioned — the user came here to build a CV, and a mailing-list outage is
  * not their problem. Returns whether anything was actually sent, for tests.
  */
 export async function sendSignup(s: Signup): Promise<boolean> {
-  if (!SIGNUP_ENDPOINT || !looksLikeEmail(s.email)) return false
+  if (!willSend(SIGNUP_ENDPOINT, s.email)) return false
   try {
     await fetch(SIGNUP_ENDPOINT, {
       method: 'POST',
