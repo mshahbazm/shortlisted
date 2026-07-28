@@ -65,6 +65,10 @@ function seedIdentity(p: Profile, firstName: string, lastName: string): Profile 
 interface EntryCtx extends WizCtx {
   /** The `ai` namespace — the AI-setup step shares its wording with Settings. */
   ta: ReturnType<typeof useContent<'ai'>>
+  /** Persist the typed name the moment the step is left, not at the end of the
+   *  flow. Without this, `startAt` reads a blank profile on the next open and
+   *  sends the user back to a screen they already filled in. */
+  rememberName: (firstName: string, lastName: string) => void
   /** Record the welcome answer, then move on. Written before navigating so an
    *  immediately-closed panel still remembers which door was taken. */
   pickDoor: (door: 'haveCv' | 'noCv', api: StepApi<EntryState>) => void
@@ -177,6 +181,7 @@ const name: Step<EntryState, EntryCtx> = {
         return
       }
       if (withEmail && email) void ctx.signUp(s.firstName, s.lastName, email)
+      ctx.rememberName(s.firstName, s.lastName)
       api.goto('ai', withEmail ? {} : { email: '' })
     }
     return (
@@ -344,6 +349,10 @@ export function EntryWizard({ onDone }: { onDone: (builtProfile?: boolean) => vo
     },
     // Login / no-CV terminal: nothing was built here — land on Home.
     exit: () => done(false),
+    rememberName: (firstName, lastName) => {
+      if (!firstName.trim()) return
+      void store.update('profile', (p) => seedIdentity(p, firstName, lastName))
+    },
     pickDoor: (door, api) => {
       void store.update('settings', (x) => ({ ...x, onboardingDoor: door }))
       api.goto(door === 'haveCv' ? 'paste' : 'name', { door })
