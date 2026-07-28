@@ -155,7 +155,18 @@ async function complete(
       // sane defaults, and the user is paying their own bill.
       messages: [
         { role: 'system', content: req.systemPrompt },
-        { role: 'user', content: req.input },
+        {
+          role: 'user',
+          // Plain string unless there are images: the multimodal array shape is
+          // universally understood, but a plain string is understood by even
+          // more, so it stays the default for the 99% of calls with no images.
+          content: req.images?.length
+            ? [
+                { type: 'text', text: req.input },
+                ...req.images.map((url) => ({ type: 'image_url', image_url: { url } })),
+              ]
+            : req.input,
+        },
       ],
     }),
   }).catch((e) => {

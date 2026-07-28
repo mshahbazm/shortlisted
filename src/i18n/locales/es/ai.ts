@@ -28,7 +28,7 @@ export const ai = {
   skipForNow: "Configurar más tarde",
 
   resultOk: "Funciona: este modelo puede hacer todo lo que Shortlisted necesita.",
-  resultNoVision: "Funciona. No lee PDF escaneados, así que sube CV con texto seleccionable.",
+  resultNoVision: "Funciona. No lee imágenes, así que un CV escaneado habrá que pegarlo como texto.",
   resultBadJson: "Respondió, pero no en el formato necesario. Prueba con uno más grande.",
   resultFailed: "No se pudo conectar con esa dirección.",
 

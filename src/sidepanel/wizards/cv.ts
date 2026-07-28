@@ -2,21 +2,21 @@
 // Build's "I already have a resume" door). Pure functions, no JSX — kept out of
 // the step files so both wizards run one parse/save path, not divergent copies.
 
-import { extractPdfTextFromFile } from '../../lib/pdfText'
+import { readCvText } from '../../ai/run'
 import { bytesToBase64, uid } from '../../lib/types'
 import * as store from '../../lib/store'
 
-// Read a CV PDF's text. No AI and no network — pdf.js reads the text layer here
-// in the panel. This used to fall back to the server's OCR when the local read
-// came out poor; there is no server, so a PDF with no text layer now throws
-// (extractPdfTextFromFile says to paste the text instead) rather than silently
-// handing the extractor a page of noise.
+// Read a CV PDF's text. pdf.js reads the text layer locally; if there isn't one
+// — a scan or a photo — readCvText falls back to asking the configured model to
+// transcribe the rendered pages, but only when the setup probe proved it can
+// read images. Routed through run.ts rather than calling pdf.js directly, so
+// this path gets that fallback like every other place a CV can be uploaded.
 //
-// Crucially NO storage write either: the file's bytes ride in wizard state and
-// only become a saved resume via createUploadedResume.
+// Crucially NO storage write: the file's bytes ride in wizard state and only
+// become a saved resume via createUploadedResume.
 export async function readCvPdf(file: File): Promise<{ cvText: string; cvBase64: string; cvFileName: string }> {
   const buf = await file.arrayBuffer()
-  const cvText = await extractPdfTextFromFile(file)
+  const cvText = await readCvText(buf)
   return { cvText, cvBase64: bytesToBase64(buf), cvFileName: file.name }
 }
 

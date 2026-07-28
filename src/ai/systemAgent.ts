@@ -12,6 +12,10 @@
 export interface LlmRequest {
   systemPrompt: string
   input: string
+  /** Page images as data URLs, for the scanned-CV fallback. Sent as multimodal
+   *  content parts alongside `input`. Only models that passed the probe's
+   *  vision check should ever be handed these. */
+  images?: string[]
   temperature?: number
   /** Advisory only — the OpenAI-compatible client does not send an output cap.
    *  Kept because capabilities express intent with it and a different client
@@ -38,6 +42,8 @@ export interface AgentOptions {
   client: LlmClient
   systemPrompt: string
   input: string
+  /** See LlmRequest.images. */
+  images?: string[]
   schema?: object // JSON Schema for the expected output
   schemaName?: string
   temperature?: number
@@ -64,6 +70,7 @@ export async function systemAgent<T = unknown>(opts: AgentOptions): Promise<Agen
   const res = await opts.client({
     systemPrompt: system,
     input: opts.input,
+    images: opts.images,
     temperature: opts.temperature ?? 0.2,
     maxTokens: opts.maxTokens,
     tier: opts.tier ?? 'full',

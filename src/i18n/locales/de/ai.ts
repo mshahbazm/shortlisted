@@ -28,7 +28,7 @@ export const ai = {
   skipForNow: "Später einrichten",
 
   resultOk: "Funktioniert — dieses Modell kann alles, was Shortlisted braucht.",
-  resultNoVision: "Funktioniert. Gescannte PDFs liest es nicht — lade Lebensläufe mit markierbarem Text hoch.",
+  resultNoVision: "Funktioniert. Bilder liest es nicht — einen gescannten Lebenslauf musst du als Text einfügen.",
   resultBadJson: "Es hat geantwortet, aber nicht im nötigen Format. Versuch ein größeres Modell.",
   resultFailed: "Diese Adresse war nicht erreichbar.",
 

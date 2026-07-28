@@ -18,9 +18,10 @@ import {
   emptyProfile,
   aiConfigured,
   hasProfileContent,
+  probeMatches,
 } from '../lib/types'
 import { applyEnrichment, diffProfile, type ProfileDelta } from '../lib/profileMerge'
-import { assessTextQuality, extractPdfText } from '../lib/pdfText'
+import { assessTextQuality, extractPdfText, renderPdfPages } from '../lib/pdfText'
 import * as store from '../lib/store'
 import { makeLlmClient } from './client'
 import type { LlmClient } from './systemAgent'
@@ -29,6 +30,7 @@ import { extractProfile } from './capabilities/extract-profile'
 import { fillAssist } from './capabilities/fill-assist'
 import { quickScoreFit, scoreFit } from './capabilities/score-fit'
 import { tailorCv } from './capabilities/tailor-cv'
+import { MAX_SCAN_PAGES, readScan } from './capabilities/read-scan'
 import { assessSufficiency } from './workflows/build-profile/assess'
 import { runBuildProfile as runBuildProfileWorkflow } from './workflows/build-profile/workflow'
 import { deriveResumeTags, runLearnFromResume } from './workflows/learn-resume/workflow'
@@ -348,16 +350,45 @@ export async function polishAnswer(settings: Settings, question: string, answer:
 
 // ---- plumbing ----
 
+/** PDF → text for callers outside this module (the onboarding wizards), so the
+ *  scanned-CV fallback applies everywhere a CV can be uploaded rather than only
+ *  on the paths that happen to route through here. */
+export function readCvText(pdf: ArrayBuffer): Promise<string> {
+  return readPdf(pdf)
+}
+
+/**
+ * PDF → text, with a vision fallback for scans.
+ *
+ * pdf.js reads the text layer, which every CV exported from Word or LaTeX has.
+ * What it cannot read is a photograph or a photocopy, and that is where the
+ * server used to rasterise and run tesseract. Shipping tesseract into the
+ * extension would cost several megabytes of WASM for a minority case; the user
+ * has already configured a model, so we rasterise and ask that instead.
+ *
+ * Only attempted when the setup probe actually proved the model reads images.
+ * Sending pages to a text-only model would burn the user's tokens to be told
+ * nothing, so the honest failure — paste it instead — is better than a hopeful
+ * one.
+ */
 async function readPdf(pdf: ArrayBuffer): Promise<string> {
   const text = await extractPdfText(pdf)
-  if (text.trim().length < 100) {
-    // The server rasterized and OCR'd at this point. There is no offline
-    // equivalent worth shipping, so say plainly what will work instead.
-    throw new Error(
-      'This PDF has almost no selectable text — it is probably a scan. Paste your CV text instead.',
-    )
+  if (text.trim().length >= 100) return text
+
+  const settings = await store.get('settings')
+  if (probeMatches(settings) && settings.aiProbe?.vision) {
+    // A scan is a page of pixels: render big enough that 9pt body text
+    // survives, and cap the pages so a mis-picked 200-page PDF cannot become
+    // an expensive surprise.
+    const bytes = new Uint8Array(pdf)
+    const pages = await renderPdfPages(bytes, 1400, MAX_SCAN_PAGES)
+    const read = await readScan(await client(settings), pages)
+    if (read.trim().length >= 100) return read
   }
-  return text
+
+  throw new Error(
+    'This PDF has almost no selectable text — it is probably a scan. Paste your CV text instead.',
+  )
 }
 
 async function pdfTextFromBase64(pdfBase64: string): Promise<string> {

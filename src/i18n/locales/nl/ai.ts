@@ -28,7 +28,7 @@ export const ai = {
   skipForNow: "Later instellen",
 
   resultOk: "Werkt — dit model kan alles wat Shortlisted nodig heeft.",
-  resultNoVision: "Werkt. Het leest geen gescande pdf’s, dus upload cv’s met selecteerbare tekst.",
+  resultNoVision: "Werkt. Het leest geen afbeeldingen, dus een gescand cv moet je als tekst plakken.",
   resultBadJson: "Het antwoordde, maar niet in het formaat dat Shortlisted nodig heeft. Probeer een groter model.",
   resultFailed: "Kon dat adres niet bereiken.",
 

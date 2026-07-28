@@ -28,7 +28,7 @@ export const ai = {
   skipForNow: "Set this up later",
 
   resultOk: "Working — this model can do everything Shortlisted needs.",
-  resultNoVision: "Working. It can’t read scanned PDFs, so upload CVs with selectable text.",
+  resultNoVision: "Working. It can’t read images, so a scanned CV will need pasting as text.",
   resultBadJson: "It replied, but not in the format Shortlisted needs. Try a bigger model.",
   resultFailed: "Couldn’t reach that endpoint.",
 
