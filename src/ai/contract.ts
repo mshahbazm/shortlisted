@@ -1,8 +1,10 @@
-// The result shapes the cloud's AI capabilities return over /v1. The capability
-// LOGIC runs server-side (Shortlisted Cloud) and is NOT in this repo; the
-// extension only needs these types to render what comes back. Kept in sync with
-// the cloud by hand — the /v1 boundary validates payloads, so drift surfaces as
-// a clear error rather than a silent misparse.
+// The result shapes the AI capabilities return.
+//
+// These used to describe a wire format — the capabilities ran on a server and
+// the extension only rendered what came back. They all run here now
+// (ai/capabilities/*), so these are ordinary internal types: the capability
+// produces them, the panel renders them, and the compiler checks both ends.
+// Nothing to keep in sync with anything.
 
 import type { TailoredResume } from '../lib/types'
 

@@ -6,8 +6,9 @@ dist/
 dist-prod/
 *.zip
 .DS_Store
-# SPEC.md is a private doc (symlinked from the shortlisted-cloud repo).
-# CLAUDE.md / AGENTS.md ARE committed here — technical conventions, no business content.
+# SPEC.md is a private product doc kept outside this repo and symlinked in when
+# it happens to be checked out alongside. Never committed: this repo is public.
+# CLAUDE.md / AGENTS.md ARE committed — technical conventions, no business content.
 SPEC.md
 
 # Env & secrets (none used today; standard guard)

@@ -1,13 +1,15 @@
-// ⚠️ SHARED WITH THE CLOUD via the `extension` submodule (two checkouts on disk):
-// edit here, then sync both the extension repo and shortlisted-cloud/extension so
-// they stay identical, or the cloud compiles against a stale copy. Full note in
-// src/lib/types.ts.
+// The wrapper every AI task goes through — the pi-agent pattern.
 //
-// Ported pattern from scnz-app's systemAgent: one wrapper every AI task goes
-// through. Structured output = JSON Schema appended to the system prompt +
-// repair-parse of the reply. Runtime-agnostic: callers inject an LlmClient,
-// so the same capability code runs in the extension (BYOK/local models) and
-// on the Shortlisted Cloud server (pi-style provider layer).
+// Structured output is a JSON Schema appended to the system prompt plus a
+// repair-parse of the reply, NOT the provider's structured-output or
+// tool-calling APIs. That is what makes the model choice open: anything that
+// speaks chat-completions can run every capability here, down to a small local
+// model, because the schema is prose to the model rather than an API contract
+// to negotiate.
+//
+// Runtime-agnostic by design: callers inject an LlmClient, so the capabilities
+// know nothing about transport, keys or providers. Today there is exactly one
+// client (ai/client.ts, straight to the user's own endpoint).
 
 export interface LlmRequest {
   systemPrompt: string

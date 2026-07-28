@@ -1,11 +1,14 @@
-// Wizard B — "Let's build your resume together". Shown when the user is logged
-// in but has no profile yet (the App router decides that). Persona → free-form
-// intro → a GATHER loop (each round the backend judges the material and returns
-// the next questions, or "enough") → one EXTRACTION into a clean profile.
+// Wizard B — "Let's build your resume together". Shown when someone has no
+// profile yet and asked for help building one (the App router decides that).
+// Persona → free-form intro → a GATHER loop (each round the model judges the
+// material and returns the next questions, or "enough") → one EXTRACTION into
+// a clean profile.
 //
-// The raw material lives server-side in the `intake` table, so the flow is
-// exactly resumable: on open we fetch the in-progress session and drop the user
-// back on the round they left. Nothing is written to the profile until the end.
+// The raw material lives under the `intake` storage key rather than on the
+// profile, so the flow is exactly resumable: on open we read the in-progress
+// session and drop the user back on the round they left. Keeping raw Q&A out
+// of the profile is deliberate — it is working material, not profile data, and
+// nothing is written to the profile until the end.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 

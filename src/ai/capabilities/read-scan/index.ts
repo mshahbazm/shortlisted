@@ -1,11 +1,10 @@
 // Read a scanned CV — the fallback for a PDF with no usable text layer.
 //
 // This is OCR, done by the model the user already configured rather than by
-// shipping a WASM OCR engine. The cloud used to rasterise and run tesseract
-// server-side; there is no server now, and bundling tesseract would add several
-// megabytes to the extension for a case most CVs never hit (a PDF exported from
-// Word or LaTeX always has a text layer — scans come from a phone camera or a
-// photocopier).
+// shipping a WASM OCR engine. Bundling tesseract would add several megabytes to
+// the extension for a case most CVs never hit — a PDF exported from Word or
+// LaTeX always has a text layer, and scans come from a phone camera or a
+// photocopier.
 //
 // Transcription ONLY. It deliberately does not parse the CV into a profile:
 // that is extract-profile's job, and it is far better at it than a vision pass

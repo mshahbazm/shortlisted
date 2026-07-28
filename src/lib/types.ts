@@ -1,9 +1,10 @@
-// ⚠️ WIRE CONTRACT WITH THE CLOUD. These are the shapes sent to and received
-// from the /v1 API. The cloud keeps its own copy (shortlisted-cloud/src/lib/
-// types.ts) — there is no shared package or submodule. If you change a shape
-// here, mirror it in the cloud's copy, and rely on the cloud's /v1 payload
-// validation to surface any drift as a clear error rather than a silent
-// misparse. (Same for the result types in ai/contract.ts.)
+// The data model. Everything the extension stores about a user lives in these
+// shapes, in chrome.storage, on their machine — there is no API and nothing to
+// keep in step with anywhere else.
+//
+// The one rule that outlives any refactor: stored data is versioned and
+// migrated on READ (normalizeProfile / normalizeSettings below). Extend the
+// normalizer; never write a destructive migration.
 //
 // ---------- Profile (v2 — schema adopted from the cuee ATS candidate model) ----------
 // Dates are split integers (month 1-12, year), never strings/Date objects.
@@ -278,9 +279,9 @@ export function clearResumeWanted(p: Profile): Profile {
 
 // ── No-CV guided builder ("intake") ─────────────────────────────────────────
 // The persona split and the in-progress guided-Q&A session the resume builder
-// gathers BEFORE any profile is extracted. The raw material lives in its own
-// server-side `intake` table (never on the Profile), so the profile stays clean
-// and the flow is exactly resumable across close / restart / relogin. Distinct
+// gathers BEFORE any profile is extracted. The raw material lives under its own
+// `intake` storage key (never on the Profile), so the profile stays clean and
+// the flow is exactly resumable across close and restart. Distinct
 // from the has-CV `enrich-profile` capability, which pulls facts from an existing CV.
 export type Persona = 'starting' | 'working'
 export interface IntakeRound {
@@ -394,7 +395,7 @@ export interface ResumeVariant {
   /** Background intake state for UPLOADED resumes (tagging + additive learning):
    *  `pending` queued, `learning` in flight, `done` finished, `failed` errored
    *  (retryable). Undefined on generated resumes and legacy rows — treated as
-   *  `done`. Rides in the synced JSON; there's no server-side queue yet. */
+   *  `done`. The background worker drives it; there is no queue beyond this. */
   status?: 'pending' | 'learning' | 'done' | 'failed'
   isDefault: boolean
   createdAt: number
@@ -534,8 +535,9 @@ export function aiConfigured(s: Settings): boolean {
 
 export const defaultSettings = (): Settings => ({})
 
-// Settings keys from removed features. The cloud account (session token, email,
-// cache owner) went with the server; `aiProvider` and the per-provider key/model
+// Settings keys from removed features. The account fields (session token,
+// email, cache owner) are from a version that had one; `aiProvider` and the
+// per-provider key/model
 // pairs are from the older multi-provider BYOK layer, now one OpenAI-compatible
 // endpoint; `finderUrl` and `cloudUrl` are older still. Stripped on read so a
 // profile carried across any of those versions lands clean — and so a stale
@@ -584,9 +586,8 @@ export interface StorageShape {
   settings: Settings
   /**
    * The guided builder's in-progress transcript, so the wizard resumes exactly
-   * where it was left. This used to be a server-side `intake` table, kept off
-   * the profile so raw Q&A never polluted it — that reasoning still holds, so
-   * it stays its own storage key rather than moving onto the profile.
+   * where it was left. Kept off the profile so raw Q&A never pollutes it: it is
+   * working material, not profile data, which is why it gets its own key.
    * `null` = nothing in progress.
    */
   intake: IntakeSession | null

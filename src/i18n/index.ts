@@ -1,5 +1,5 @@
-// Typed UI content, mirroring the cloud app's i18n. React surfaces use
-// useContent(); non-React code (content script) imports getContent from
+// Typed UI content in 8 locales, English canonical. React surfaces use
+// useContent(); non-React code (the content script) imports getContent from
 // './content' directly to keep React out of that bundle.
 
 import { useMemo } from 'react'

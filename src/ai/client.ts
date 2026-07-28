@@ -89,10 +89,8 @@ const DROPPABLE = new Set(['temperature'])
 /**
  * What we already know some model families refuse, by id prefix.
  *
- * This is the durable half of what the cloud's provider registry carried (it
- * tracked, among other things, which providers wanted `max_tokens` versus
- * `max_completion_tokens`). Dropping that table is what cost two 400s in a
- * single evening.
+ * Hard-won: assuming providers ignore parameters they do not recognise cost
+ * two 400s in a single evening (`max_tokens`, then `temperature`).
  *
  * Purely an optimisation: it makes the FIRST call right instead of the second.
  * Never a gate — a model that is not listed still works, and one listed wrongly

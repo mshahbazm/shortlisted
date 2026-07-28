@@ -1,7 +1,8 @@
-// Locale codes, labels, and the content-shape helper. Mirrors the cloud app's
-// i18n system (same 8 locales, same typed-catalog approach) so the two stay in
-// step. The chosen locale persists in Settings (settings.locale); unset means
-// "follow the browser language".
+// Locale codes, labels, and the content-shape helper. English is the source of
+// truth for content AND structure, so a missing or mistyped key in any other
+// locale fails typecheck rather than shipping a blank string. The chosen locale
+// persists in Settings (settings.locale); unset means "follow the browser
+// language".
 
 export const LOCALES = ['en', 'nl', 'de', 'fr', 'es', 'it', 'pt', 'pl'] as const
 export type tLocaleCode = (typeof LOCALES)[number]
