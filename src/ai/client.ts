@@ -58,8 +58,10 @@ export function makeLlmClient(settings: Settings): LlmClient {
   const endpoint = normalizeEndpoint(settings.aiEndpoint ?? '')
   const model = settings.aiModel?.trim() ?? ''
   if (!endpoint || !model) throw new AiNotConfiguredError()
-  // Seed from what the setup probe already discovered, so a fresh service
-  // worker does not spend a call relearning it on every wake.
+  // Two seeds, both cheap. The table covers model families we already know
+  // about; the probe result covers whatever this specific endpoint turned out
+  // to refuse. Either way a fresh service worker starts knowing.
+  for (const p of seededRefusals(model)) refused.add(p)
   for (const p of settings.aiProbe?.refusedParams ?? []) refused.add(p)
 
   return async (req: LlmRequest): Promise<LlmResponse> =>
@@ -83,6 +85,34 @@ export function makeLlmClient(settings: Settings): LlmClient {
  */
 const refused = new Set<string>()
 const DROPPABLE = new Set(['temperature'])
+
+/**
+ * What we already know some model families refuse, by id prefix.
+ *
+ * This is the durable half of what the cloud's provider registry carried (it
+ * tracked, among other things, which providers wanted `max_tokens` versus
+ * `max_completion_tokens`). Dropping that table is what cost two 400s in a
+ * single evening.
+ *
+ * Purely an optimisation: it makes the FIRST call right instead of the second.
+ * Never a gate — a model that is not listed still works, and one listed wrongly
+ * still corrects itself through the refusal path. So a stale entry costs
+ * nothing worse than a parameter we did not need to omit.
+ */
+const KNOWN_REFUSALS: { prefix: string; params: string[] }[] = [
+  // OpenAI's newer models accept temperature only at its default of 1:
+  // "Unsupported value: 'temperature' does not support 0 with this model."
+  { prefix: 'gpt-5', params: ['temperature'] },
+  { prefix: 'o1', params: ['temperature'] },
+  { prefix: 'o3', params: ['temperature'] },
+  { prefix: 'o4', params: ['temperature'] },
+]
+
+/** Everything known to be refused by a model id, before it has been tried. */
+export function seededRefusals(modelId: string): string[] {
+  const id = modelId.trim().toLowerCase()
+  return KNOWN_REFUSALS.filter((r) => id.startsWith(r.prefix)).flatMap((r) => r.params)
+}
 
 /** The `param` from an OpenAI-shaped 400, when the complaint is about a
  *  parameter rather than the request as a whole. */
@@ -147,13 +177,74 @@ async function complete(
     }
     throw new Error(`AI endpoint error ${res.status}: ${body.slice(0, 300)}`)
   }
-  const data = await res.json()
+  const raw = await res.text()
+  let data: unknown
+  try {
+    data = JSON.parse(raw)
+  } catch {
+    throw new UnreadableResponseError(endpoint, raw)
+  }
+  const text = readReplyText(data)
+  if (text === null) throw new UnreadableResponseError(endpoint, raw)
+
+  const usage = (data as { usage?: { prompt_tokens?: number; completion_tokens?: number } }).usage
   return {
-    text: data.choices?.[0]?.message?.content ?? '',
-    inputTokens: data.usage?.prompt_tokens ?? 0,
-    outputTokens: data.usage?.completion_tokens ?? 0,
+    text,
+    inputTokens: usage?.prompt_tokens ?? 0,
+    outputTokens: usage?.completion_tokens ?? 0,
     model,
   }
+}
+
+/**
+ * The endpoint answered, but not in a shape we recognise.
+ *
+ * Its own class because it must NOT be retried: a body we cannot read will not
+ * become readable on the fourth attempt, and the old code spent all four before
+ * reporting "the model returned an empty answer" — which is both slow and a
+ * description of the wrong problem.
+ */
+export class UnreadableResponseError extends Error {
+  constructor(endpoint: string, body: string) {
+    super(
+      `${endpoint} answered, but not in a shape this extension understands. ` +
+        `That usually means it is not really OpenAI-compatible, or the model ` +
+        `returns its answer somewhere unusual. Response began: ${body.slice(0, 200)}`,
+    )
+    this.name = 'UnreadableResponseError'
+  }
+}
+
+/**
+ * Pull the reply text out of a chat-completions response.
+ *
+ * Providers agree on `choices[0].message.content` as a string most of the time,
+ * and then don't: the multimodal shape makes `content` an array of parts, and
+ * some servers put the text directly on the choice. Try each, in that order.
+ *
+ * Returns `null` — not `''` — when none of them apply, because the difference
+ * matters. An empty string is a model that answered with nothing, which is a
+ * real and retryable provider hiccup. `null` is a response we could not read at
+ * all, which is permanent and worth saying out loud.
+ */
+export function readReplyText(data: unknown): string | null {
+  const choice = (data as { choices?: unknown[] })?.choices?.[0] as
+    | { message?: { content?: unknown }; text?: unknown }
+    | undefined
+  if (!choice) return null
+
+  const content = choice.message?.content
+  if (typeof content === 'string') return content
+
+  // Multimodal: content is a list of parts, only some of which are text.
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => (typeof part === 'string' ? part : typeof (part as { text?: unknown })?.text === 'string' ? (part as { text: string }).text : ''))
+      .join('')
+  }
+
+  if (typeof choice.text === 'string') return choice.text
+  return null
 }
 
 // Bounded exponential backoff with jitter, ported from the server client. Empty
@@ -178,6 +269,8 @@ async function withRetry(call: () => Promise<LlmResponse>): Promise<LlmResponse>
       return res
     } catch (e) {
       lastError = e
+      // Permanent by construction: the body will not change shape on a retry.
+      if (e instanceof UnreadableResponseError) throw e
       // 4xx other than 429 will not heal — a bad key or an unknown model is
       // still bad three seconds later, and retrying just delays the message.
       if (/error 4(?!29)\d\d/.test(e instanceof Error ? e.message : String(e))) throw e
@@ -210,6 +303,7 @@ export async function probeCapabilities(settings: Settings): Promise<AiProbe> {
   const endpoint = normalizeEndpoint(settings.aiEndpoint ?? '')
   const model = settings.aiModel?.trim() ?? ''
   const probe: AiProbe = { at: Date.now(), endpoint, model, json: false, vision: false }
+  for (const p of seededRefusals(model)) refused.add(p)
   const before = new Set(refused)
   if (!endpoint || !model) return { ...probe, error: 'Set an endpoint and a model first.' }
 
