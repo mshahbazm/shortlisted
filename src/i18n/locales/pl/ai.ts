@@ -1,45 +1,35 @@
 // The AI setup screen — shown once in the first-run wizard, and living in
 // Settings after that. One namespace because it is one surface in two places.
+//
+// Deliberately terse. It is a form on a 400px panel, and every explanatory
+// sentence pushes the Save button further off screen.
 
 export const ai = {
   title: "Podłącz swoją AI.",
-  lead: "Shortlisted działa na Twoim własnym kluczu AI. Do nas nie trafia nic — Twoje CV i odpowiedzi idą prosto z tej przeglądarki do usługi, którą wybierzesz poniżej.",
+  lead: "Działa na Twoim kluczu. Do nas nie trafia nic.",
   settingsTitle: "AI",
 
-  providerLabel: "Dokąd mamy wysyłać zapytania do AI?",
   endpointLabel: "Adres API",
   endpointPlaceholder: "https://api.openai.com/v1",
-  endpointHint: "Dowolne API zgodne z OpenAI. Wybierz jedno powyżej albo wpisz własne.",
+  endpointHint: "Dowolne API zgodne z OpenAI.",
   keyLabel: "Klucz API",
   keyPlaceholder: "sk-…",
-  keyHintLocal: "Niepotrzebny dla czegoś, co działa na Twoim komputerze.",
-  keyHint: "Zapisany tylko na tym komputerze i wysyłany wyłącznie pod powyższy adres.",
+  keyHintLocal: "Niepotrzebny dla modelu na tym komputerze.",
+  keyHint: "Zapisany tylko na tym komputerze.",
   modelLabel: "Model",
   modelPlaceholder: "gpt-5.2",
-  modelHint: "Model, który pisze — dopasowane CV, opisy, odpowiedzi.",
-  miniModelLabel: "Tańszy model (opcjonalnie)",
-  miniModelPlaceholder: "zostaw puste, aby użyć tego samego",
-  miniModelHint: "Do czarnej roboty: czytania CV, oceny ofert. Mniejszy model mocno tu obniża koszt.",
-  onThisMachine: "Na tym komputerze",
 
   test: "Przetestuj",
   testing: "Testowanie…",
   testAgain: "Przetestuj ponownie",
   save: "Zapisz",
-  saved: "Zapisano",
   continue: "Dalej",
   skipForNow: "Skonfiguruj później",
 
   resultOk: "Działa — ten model potrafi wszystko, czego potrzebuje Shortlisted.",
-  resultNoVision: "Działa. Ten model nie czyta skanów PDF, więc wgrywaj CV z zaznaczalnym tekstem (albo je wklejaj).",
-  resultBadJson: "Model odpowiedział, ale nie trzymał się formatu, którego potrzebuje Shortlisted. Spróbuj większego modelu.",
+  resultNoVision: "Działa. Nie czyta skanów PDF, więc wgrywaj CV z zaznaczalnym tekstem.",
+  resultBadJson: "Odpowiedział, ale nie w wymaganym formacie. Spróbuj większego modelu.",
   resultFailed: "Nie udało się połączyć z tym adresem.",
-  untested: "Jeszcze nieprzetestowane.",
-  testedOn: (when: string) => `Przetestowano ${when}`,
 
-  privacyNote: "Twój klucz i wszystko, co piszesz, zostają na tym komputerze. Zapytania idą stąd prosto pod powyższy adres — Shortlisted nie stoi pomiędzy i niczego nie widzi. Płacisz temu dostawcy bezpośrednio, według jego cennika.",
-
-  notConfiguredTitle: "AI nie jest jeszcze skonfigurowane.",
-  notConfiguredBody: "Dodaj adres API i model, aby włączyć dopasowywanie CV, ocenę ofert i inteligentne wypełnianie.",
-  setUpAi: "Skonfiguruj AI",
+  privacyNote: "Twój klucz i wszystko, co piszesz, zostają na tym komputerze. Płacisz swojemu dostawcy bezpośrednio.",
 }

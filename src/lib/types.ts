@@ -465,13 +465,11 @@ export interface Settings {
    *  note on the Settings screen; it never leaves this machine except to the
    *  endpoint above. */
   aiKey?: string
-  /** The model that does the writing (tailoring, bios, answers). */
+  /** The model. One, deliberately: a second "cheaper model for the grunt work"
+   *  field asked every user to make a cost/quality trade-off before they had
+   *  run the thing once, and the saving is theirs to chase later if they care.
+   *  systemAgent still asks for a `tier`; the client maps both to this. */
   aiModel?: string
-  /** Optional cheaper/faster model for the grunt passes (extraction, scoring).
-   *  Unset = use `aiModel` for everything, which is always correct, just
-   *  costlier. This is the `tier: 'mini' | 'full'` split systemAgent already
-   *  asks for. */
-  aiMiniModel?: string
   /** What this endpoint+model actually proved it can do, from the last probe.
    *  Recorded rather than assumed: an OpenAI-compatible endpoint may advertise
    *  anything, and small local models often cannot hold a JSON schema. */
@@ -531,7 +529,7 @@ export const defaultSettings = (): Settings => ({})
 // profile carried across any of those versions lands clean — and so a stale
 // bearer token for a server that no longer exists does not sit in storage.
 const LEGACY_SETTINGS_KEYS = [
-  'cloudToken', 'accountEmail', 'dataOwner',
+  'cloudToken', 'accountEmail', 'dataOwner', 'aiMiniModel',
   'aiProvider', 'finderUrl', 'cloudUrl',
   'anthropicKey', 'anthropicModel', 'openaiKey', 'openaiModel',
   'ollamaEndpoint', 'ollamaModel', 'customEndpoint', 'customModel', 'customKey',

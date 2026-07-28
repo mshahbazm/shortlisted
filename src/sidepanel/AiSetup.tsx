@@ -36,7 +36,6 @@ export function AiSetup({ onSaved, saveLabel }: { onSaved?: () => void; saveLabe
   const [endpoint, setEndpoint] = useState(settings.aiEndpoint ?? '')
   const [key, setKey] = useState(settings.aiKey ?? '')
   const [model, setModel] = useState(settings.aiModel ?? '')
-  const [miniModel, setMiniModel] = useState(settings.aiMiniModel ?? '')
   const [testing, setTesting] = useState(false)
   const [probe, setProbe] = useState<AiProbe | undefined>(settings.aiProbe)
 
@@ -45,7 +44,6 @@ export function AiSetup({ onSaved, saveLabel }: { onSaved?: () => void; saveLabe
     aiEndpoint: normalizeEndpoint(endpoint),
     aiKey: key,
     aiModel: model.trim(),
-    aiMiniModel: miniModel.trim(),
   }
   const ready = Boolean(draft.aiEndpoint && draft.aiModel)
   const isLocal = /\/\/(localhost|127\.0\.0\.1)[:/]/.test(endpoint)
@@ -63,7 +61,6 @@ export function AiSetup({ onSaved, saveLabel }: { onSaved?: () => void; saveLabe
       aiEndpoint: draft.aiEndpoint,
       aiKey: draft.aiKey,
       aiModel: draft.aiModel,
-      aiMiniModel: draft.aiMiniModel,
       aiProbe,
     }))
 
@@ -92,10 +89,8 @@ export function AiSetup({ onSaved, saveLabel }: { onSaved?: () => void; saveLabe
   const message = fresh && probe ? probeMessage(probe, t) : null
 
   return (
-    <div className="flex flex-col gap-3.5">
-      <div className="flex flex-col gap-[5px]">
-        <span className="text-[11.5px] font-semibold text-muted">{t.providerLabel}</span>
-        <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap gap-1.5">
           {ENDPOINT_PRESETS.map((p) => (
             <Chip
               key={p.url}
@@ -107,8 +102,7 @@ export function AiSetup({ onSaved, saveLabel }: { onSaved?: () => void; saveLabe
             >
               {p.label}
             </Chip>
-          ))}
-        </div>
+        ))}
       </div>
 
       <Label>
@@ -145,19 +139,6 @@ export function AiSetup({ onSaved, saveLabel }: { onSaved?: () => void; saveLabe
           value={model}
           onChange={(e) => setModel(e.target.value)}
         />
-        <Hint>{t.modelHint}</Hint>
-      </Label>
-
-      <Label>
-        {t.miniModelLabel}
-        <Input
-          type="text"
-          spellCheck={false}
-          placeholder={t.miniModelPlaceholder}
-          value={miniModel}
-          onChange={(e) => setMiniModel(e.target.value)}
-        />
-        <Hint>{t.miniModelHint}</Hint>
       </Label>
 
       {message && (

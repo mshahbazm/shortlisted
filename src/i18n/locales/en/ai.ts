@@ -1,45 +1,35 @@
 // The AI setup screen — shown once in the first-run wizard, and living in
 // Settings after that. One namespace because it is one surface in two places.
+//
+// Deliberately terse. It is a form on a 400px panel, and every explanatory
+// sentence pushes the Save button further off screen.
 
 export const ai = {
-  title: 'Connect your AI.',
-  lead: 'Shortlisted runs on your own AI key. Nothing is sent to us — your CV and answers go straight from this browser to the service you pick below.',
-  settingsTitle: 'AI',
+  title: "Connect your AI.",
+  lead: "Runs on your own key. Nothing comes to us.",
+  settingsTitle: "AI",
 
-  providerLabel: 'Where should we send the AI requests?',
-  endpointLabel: 'API address',
-  endpointPlaceholder: 'https://api.openai.com/v1',
-  endpointHint: 'Any OpenAI-compatible API. Pick one above, or type your own.',
-  keyLabel: 'API key',
-  keyPlaceholder: 'sk-…',
-  keyHintLocal: 'Not needed for something running on your own machine.',
-  keyHint: 'Stored on this computer only, and sent only to the address above.',
-  modelLabel: 'Model',
-  modelPlaceholder: 'gpt-5.2',
-  modelHint: 'The model that writes — tailored CVs, bios, answers.',
-  miniModelLabel: 'Cheaper model (optional)',
-  miniModelPlaceholder: 'leave empty to use the same one',
-  miniModelHint: 'Used for the bulk work: reading CVs, scoring jobs. A smaller model here cuts the cost a lot.',
-  onThisMachine: 'On this machine',
+  endpointLabel: "API address",
+  endpointPlaceholder: "https://api.openai.com/v1",
+  endpointHint: "Any OpenAI-compatible API.",
+  keyLabel: "API key",
+  keyPlaceholder: "sk-…",
+  keyHintLocal: "Not needed for a model on this machine.",
+  keyHint: "Stored on this computer only.",
+  modelLabel: "Model",
+  modelPlaceholder: "gpt-5.2",
 
-  test: 'Test it',
-  testing: 'Testing…',
-  testAgain: 'Test again',
-  save: 'Save',
-  saved: 'Saved',
-  continue: 'Continue',
-  skipForNow: 'Set this up later',
+  test: "Test it",
+  testing: "Testing…",
+  testAgain: "Test again",
+  save: "Save",
+  continue: "Continue",
+  skipForNow: "Set this up later",
 
-  resultOk: 'Working — this model can do everything Shortlisted needs.',
-  resultNoVision: 'Working. This model can\'t read scanned PDFs, so upload CVs with selectable text (or paste them).',
-  resultBadJson: "This model replied, but couldn't follow the format Shortlisted needs. Try a bigger model.",
-  resultFailed: "Couldn't reach that endpoint.",
-  untested: 'Not tested yet.',
-  testedOn: (when: string) => `Tested ${when}`,
+  resultOk: "Working — this model can do everything Shortlisted needs.",
+  resultNoVision: "Working. It can’t read scanned PDFs, so upload CVs with selectable text.",
+  resultBadJson: "It replied, but not in the format Shortlisted needs. Try a bigger model.",
+  resultFailed: "Couldn’t reach that endpoint.",
 
-  privacyNote: "Your key and everything you write stay on this computer. Requests go straight from here to the address above — Shortlisted has no server in between and never sees any of it. You pay that provider directly, at their prices.",
-
-  notConfiguredTitle: 'AI is not set up yet.',
-  notConfiguredBody: 'Add an API address and a model to turn on CV tailoring, job scoring, and smart form filling.',
-  setUpAi: 'Set up AI',
+  privacyNote: "Your key and everything you write stay on this computer. You pay your provider directly.",
 }

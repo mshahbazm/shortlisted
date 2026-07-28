@@ -40,20 +40,21 @@ export function normalizeEndpoint(raw: string): string {
 }
 
 /**
- * The client every capability runs on. `tier: 'mini'` picks the cheap model
- * when the user configured one — the split systemAgent already asks for, now
- * pointed at two models on the same endpoint instead of two providers.
+ * The client every capability runs on.
+ *
+ * `req.tier` is ignored: capabilities still declare whether a pass is grunt
+ * work or writing, but there is one configured model and both go to it. The
+ * tier stays in the contract because it costs nothing and a future build could
+ * honour it again — asking every user to pick a second, cheaper model before
+ * they had run the thing once was the part that wasn't worth it.
  */
 export function makeLlmClient(settings: Settings): LlmClient {
   const endpoint = normalizeEndpoint(settings.aiEndpoint ?? '')
-  const full = settings.aiModel?.trim() ?? ''
-  if (!endpoint || !full) throw new AiNotConfiguredError()
-  const mini = settings.aiMiniModel?.trim() || full
+  const model = settings.aiModel?.trim() ?? ''
+  if (!endpoint || !model) throw new AiNotConfiguredError()
 
-  return async (req: LlmRequest): Promise<LlmResponse> => {
-    const model = req.tier === 'mini' ? mini : full
-    return withRetry(() => complete(endpoint, settings.aiKey, model, req))
-  }
+  return async (req: LlmRequest): Promise<LlmResponse> =>
+    withRetry(() => complete(endpoint, settings.aiKey, model, req))
 }
 
 async function complete(
